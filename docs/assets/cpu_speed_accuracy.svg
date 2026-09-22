@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="960" height="580" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="580" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="579" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">htmlsift mini vs heuristic extractors</text>
+<text x="40" y="70" font-size="13" fill="#565d66">WMB test545, 544 pages, CPU single thread (Ryzen 5 3600). Time one run, extraction only; htmlsift F1 = 3-seed test mean (seeds 0-2).</text>
+<rect x="40" y="104" width="880" height="302" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="230" y="130" font-size="10" fill="#8a9199" font-weight="700" letter-spacing="0.6">ROUGE-5 F1</text>
+<text x="540" y="130" font-size="9.5" fill="#8a9199" text-anchor="end">higher is better</text>
+<text x="640" y="130" font-size="10" fill="#8a9199" font-weight="700" letter-spacing="0.6">MEDIAN MS PER PAGE</text>
+<text x="880" y="130" font-size="9.5" fill="#8a9199" text-anchor="end">lower is better</text>
+<text x="56" y="181" font-size="12.5" fill="#1b1f24" font-weight="700">htmlsift mini</text>
+<rect x="230" y="168" width="233.275" height="18" fill="#c17d11" rx="4"/>
+<text x="471.275" y="181" font-size="11" fill="#1b1f24" font-weight="700" class="m">0.901</text>
+<rect x="640" y="168" width="216.6" height="18" fill="#c17d11" rx="4"/>
+<text x="864.6" y="181" font-size="11" fill="#1b1f24" font-weight="700" class="m">36.1 ms</text>
+<text x="880" y="195" font-size="9.5" fill="#8a9199" text-anchor="end" class="m">mean 79.7 ms</text>
+<text x="56" y="239" font-size="12.5" fill="#1b1f24">readability</text>
+<rect x="230" y="226" width="156.24" height="18" fill="#6b7480" rx="4"/>
+<text x="394.24" y="239" font-size="11" fill="#1b1f24" class="m">0.802</text>
+<rect x="640" y="226" width="115.8" height="18" fill="#6b7480" rx="4"/>
+<text x="763.8" y="239" font-size="11" fill="#1b1f24" class="m">19.3 ms</text>
+<text x="880" y="253" font-size="9.5" fill="#8a9199" text-anchor="end" class="m">mean 33.7 ms</text>
+<text x="56" y="297" font-size="12.5" fill="#1b1f24">trafilatura</text>
+<rect x="230" y="284" width="118.188" height="18" fill="#6b7480" rx="4"/>
+<text x="356.188" y="297" font-size="11" fill="#1b1f24" class="m">0.752</text>
+<rect x="640" y="284" width="187.2" height="18" fill="#6b7480" rx="4"/>
+<text x="835.2" y="297" font-size="11" fill="#1b1f24" class="m">31.2 ms</text>
+<text x="880" y="311" font-size="9.5" fill="#8a9199" text-anchor="end" class="m">mean 70.8 ms</text>
+<text x="56" y="355" font-size="12.5" fill="#1b1f24">resiliparse</text>
+<rect x="230" y="342" width="87.9625" height="18" fill="#6b7480" rx="4"/>
+<text x="325.963" y="355" font-size="11" fill="#1b1f24" class="m">0.714</text>
+<rect x="640" y="342" width="11.4" height="18" fill="#6b7480" rx="4"/>
+<text x="659.4" y="355" font-size="11" fill="#1b1f24" class="m">1.9 ms</text>
+<text x="880" y="369" font-size="9.5" fill="#8a9199" text-anchor="end" class="m">mean 4.5 ms</text>
+<line x1="319.59" y1="144" x2="319.59" y2="374" stroke="#565d66" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="313.59" y="388" font-size="9.5" fill="#565d66" text-anchor="end" class="m">select-all floor 0.716</text>
+<line x1="533.645" y1="144" x2="533.645" y2="374" stroke="#15663c" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="527.645" y="388" font-size="9.5" fill="#15663c" text-anchor="end" class="m">oracle ceiling 0.992</text>
+<text x="640" y="388" font-size="9.5" fill="#8a9199">heuristics deterministic: one run = mean</text>
+<rect x="40" y="422" width="880" height="108" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="56" y="448" font-size="12" fill="#1b1f24" font-weight="700">Trafilatura time divided by ours, by page size (mean).</text>
+<text x="56" y="466" font-size="10.5" fill="#565d66">Above 1.0x we are faster. Short pages favour us; the longest pages favour trafilatura.</text>
+<rect x="96" y="480" width="138" height="26" fill="#f7ecd9" rx="6"/>
+<text x="106" y="498" font-size="10" fill="#565d66" class="m">&lt;1k tokens</text>
+<text x="224" y="498" font-size="12" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">1.3x</text>
+<text x="106" y="516" font-size="9" fill="#8a9199" class="m">n = 140</text>
+<rect x="246" y="480" width="138" height="26" fill="#f7ecd9" rx="6"/>
+<text x="256" y="498" font-size="10" fill="#565d66" class="m">1k-4k tokens</text>
+<text x="374" y="498" font-size="12" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">1.2x</text>
+<text x="256" y="516" font-size="9" fill="#8a9199" class="m">n = 248</text>
+<rect x="396" y="480" width="138" height="26" fill="#e9ecef" rx="6"/>
+<text x="406" y="498" font-size="10" fill="#565d66" class="m">4k-16k tokens</text>
+<text x="524" y="498" font-size="12" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">1.0x</text>
+<text x="406" y="516" font-size="9" fill="#8a9199" class="m">n = 120</text>
+<rect x="546" y="480" width="138" height="26" fill="#e9ecef" rx="6"/>
+<text x="556" y="498" font-size="10" fill="#565d66" class="m">16k-32k tokens</text>
+<text x="674" y="498" font-size="12" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">0.9x</text>
+<text x="556" y="516" font-size="9" fill="#8a9199" class="m">n = 21</text>
+<rect x="696" y="480" width="138" height="26" fill="#e9ecef" rx="6"/>
+<text x="706" y="498" font-size="10" fill="#565d66" class="m">&gt;32k tokens</text>
+<text x="824" y="498" font-size="12" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">0.6x</text>
+<text x="706" y="516" font-size="9" fill="#8a9199" class="m">n = 15</text>
+<rect x="40" y="541" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="550" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">14.9 F1 points over trafilatura, in a similar speed tier.</tspan><tspan fill="#565d66"></tspan></text>
+<!-- source: results/speed-wmb.md (mini = 311m-table-bigru-fABC int8 ONNX, one-run timing); F1 = 3-seed test mean results/generalization.md; trafilatura 2.2.0, readability-lxml 0.9, resiliparse 1.0.9; docs/CLAIMS.md -->
+</svg>

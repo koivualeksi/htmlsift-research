@@ -1,0 +1,74 @@
+[project]
+name = "htmlsift-research"
+version = "0.1.0"
+description = "Reproduction harness for the htmlsift web main-content extraction results."
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+# The operator tools (tools/, deploy/pod/, bench/) load the repo-root .env via python-dotenv;
+# base so every tool has it regardless of which extra, and download_results installs
+# with just .[repro]. The reproduction pipeline (core/vendors) imports none of it.
+dependencies = ["python-dotenv==1.2.1"]
+
+# Editable namespace package so core/vendors/trainers/tools import absolutely.
+# namespaces = true (no __init__.py) keeps vendors/<board>/upstream/ verbatim (§9).
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "vendors*", "trainers*", "tools*", "bench*", "deploy*", "export*"]
+namespaces = true
+
+[project.optional-dependencies]
+repro = [
+    "huggingface-hub==1.12.2",
+    "lxml==6.1.1",
+    "html2text==2025.4.15",
+    "tldextract==5.3.2",
+    "jieba==0.42.1",
+    "rouge_score==0.1.2",
+]
+# GPU training + model eval: the torch stack. A local GPU is all you need --
+# `pip install .[repro,train]` and the trainers work, no RunPod involved. On a pod or a
+# newer card, install the matching torch build from the pytorch cu128 index first
+# (deploy/pod/pod_train.sh and deploy/pod/pod_bench.sh do this); pip then treats torch as satisfied.
+train = [
+    "torch==2.11.0",
+    "transformers==5.15.0",
+    "numpy==2.2.6",
+    "xgboost==3.4.1",
+    "scikit-learn==1.7.2",   # xgb.XGBClassifier (trainers/xgb.py) needs it
+]
+# Operator-only: driving sweeps onto RunPod (tools/upload_data.py, deploy/pod/launch.py).
+# Never a reproduction dep -- a stranger reproducing a number never touches RunPod.
+runpod = [
+    "boto3==1.43.73",
+]
+test = [
+    "pytest==8.4.1",
+]
+# Laptop-only speed+F1 comparison (bench/speed/cpu_compare.py): the third-party extractors we time
+# and score our model against. Needs [repro] too (HTML2TextWrapper, the WMB scorer). Never a
+# reproduction dep for our own numbers -- only for regenerating the §7 comparison. onnx builds
+# the shipped mini's graphs (tools/release.py mini); onnxruntime runs them (compare.py --onnx),
+# CPU-EP only -- the GPU wheel (onnxruntime-gpu) is not required for the CPU speed sheet.
+bench = [
+    "trafilatura==2.2.0",
+    "resiliparse==1.0.9",
+    "readability-lxml==0.9",
+    "onnx==1.22.0",
+    "onnxruntime==1.22.0",
+]
+# GPU-only: MinerU-HTML v1.1 (opendatalab/MinerU-HTML-v1.1-hunyuan0.5B-compact, the Dripper
+# lineage; imports as mineru_html), the WMB team's own extractor, for the §7 GPU throughput+F1
+# comparison (bench/speed/gpu_dripper.py). Its [vllm] extra pins
+# vllm==0.11.1 -> torch==2.9.0 + transformers<5, which collide head-on with [train] (torch 2.11 /
+# transformers 5.15) -- so MinerU-HTML NEVER shares a pod or venv with our model. On its pod
+# (deploy/pod/pod_dripper.sh, route B) vLLM/torch/CUDA come pre-matched from the vllm/vllm-openai base
+# image; this extra adds only mineru-html and its pure-python deps, so pip never touches that
+# stack. The pod does NOT install [repro] (its huggingface-hub==1.12.2 pin conflicts with the
+# image's transformers 4.x <1.0); pod_dripper.sh installs the torch-free scorer leaf deps directly.
+bench-gpu = [
+    "mineru-html==1.1.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 584" width="960" height="584" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="584" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="583" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">Where two benchmarks disagree on main content</text>
+<text x="40" y="70" font-size="13" fill="#565d66">Train on WCXB labels instead of WMB labels, score both on WCXB test511: word-F1 points gained per page type. 311m-10 encoder, 3 seeds each.</text>
+<rect x="40" y="108" width="880" height="398" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<line x1="312.2" y1="122" x2="312.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="312.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">-5</text>
+<line x1="349.2" y1="122" x2="349.2" y2="452" stroke="#565d66" stroke-width="1"/>
+<text x="349.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">0</text>
+<line x1="386.2" y1="122" x2="386.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="386.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+5</text>
+<line x1="423.2" y1="122" x2="423.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="423.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+10</text>
+<line x1="460.2" y1="122" x2="460.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="460.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+15</text>
+<line x1="497.2" y1="122" x2="497.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="497.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+20</text>
+<line x1="534.2" y1="122" x2="534.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="534.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+25</text>
+<line x1="571.2" y1="122" x2="571.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="571.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+30</text>
+<line x1="608.2" y1="122" x2="608.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="608.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+35</text>
+<line x1="645.2" y1="122" x2="645.2" y2="452" stroke="#e9ecef" stroke-width="1"/>
+<text x="645.2" y="468" font-size="10.5" fill="#8a9199" text-anchor="middle" class="m">+40</text>
+<text x="349.2" y="486" font-size="10.5" fill="#8a9199" text-anchor="middle">gain in word-F1 points when trained on WCXB labels</text>
+<text x="790" y="134" font-size="9.5" fill="#8a9199" text-anchor="end" font-weight="700" letter-spacing="0.5">WMB-trained</text>
+<text x="896" y="134" font-size="9.5" fill="#8a9199" text-anchor="end" font-weight="700" letter-spacing="0.5">WCXB-trained</text>
+<text x="56" y="169" font-size="12.5" fill="#1b1f24" font-weight="700">collection</text>
+<text x="132.75" y="169" font-size="10" fill="#8a9199" class="m">n=34</text>
+<rect x="349.2" y="156" width="258.186" height="18" fill="#b3261e" rx="4"/>
+<line x1="597.43" y1="165" x2="617.342" y2="165" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="597.43" y1="160" x2="597.43" y2="170" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="617.342" y1="160" x2="617.342" y2="170" stroke="#1b1f24" stroke-width="1.2"/>
+<text x="625.342" y="169" font-size="11" fill="#1b1f24" font-weight="700" class="m">+34.9</text>
+<text x="790" y="169" font-size="11" fill="#565d66" text-anchor="end" class="m">0.531</text>
+<text x="896" y="169" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.879</text>
+<text x="56" y="215" font-size="12.5" fill="#1b1f24" font-weight="700">product</text>
+<text x="112.125" y="215" font-size="10" fill="#8a9199" class="m">n=28</text>
+<rect x="349.2" y="202" width="79.402" height="18" fill="#b3261e" rx="4"/>
+<line x1="413.187" y1="211" x2="444.017" y2="211" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="413.187" y1="206" x2="413.187" y2="216" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="444.017" y1="206" x2="444.017" y2="216" stroke="#1b1f24" stroke-width="1.2"/>
+<text x="452.017" y="215" font-size="11" fill="#1b1f24" font-weight="700" class="m">+10.7</text>
+<text x="790" y="215" font-size="11" fill="#565d66" text-anchor="end" class="m">0.828</text>
+<text x="896" y="215" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.935</text>
+<text x="56" y="261" font-size="12.5" fill="#1b1f24" font-weight="700">listing</text>
+<text x="112.125" y="261" font-size="10" fill="#8a9199" class="m">n=40</text>
+<rect x="349.2" y="248" width="68.08" height="18" fill="#b3261e" rx="4"/>
+<line x1="394.267" y1="257" x2="440.293" y2="257" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="394.267" y1="252" x2="394.267" y2="262" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="440.293" y1="252" x2="440.293" y2="262" stroke="#1b1f24" stroke-width="1.2"/>
+<text x="448.293" y="261" font-size="11" fill="#1b1f24" font-weight="700" class="m">+9.2</text>
+<text x="790" y="261" font-size="11" fill="#565d66" text-anchor="end" class="m">0.667</text>
+<text x="896" y="261" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.759</text>
+<text x="56" y="307" font-size="12.5" fill="#1b1f24" font-weight="700">article</text>
+<text x="112.125" y="307" font-size="10" fill="#8a9199" class="m">n=257</text>
+<rect x="349.2" y="294" width="28.194" height="18" fill="#b3261e" rx="4"/>
+<line x1="376.446" y1="303" x2="378.342" y2="303" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="376.446" y1="298" x2="376.446" y2="308" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="378.342" y1="298" x2="378.342" y2="308" stroke="#1b1f24" stroke-width="1.2"/>
+<text x="386.342" y="307" font-size="11" fill="#1b1f24" font-weight="700" class="m">+3.8</text>
+<text x="790" y="307" font-size="11" fill="#565d66" text-anchor="end" class="m">0.934</text>
+<text x="896" y="307" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.972</text>
+<text x="56" y="353" font-size="12.5" fill="#1b1f24">service</text>
+<text x="107.75" y="353" font-size="10" fill="#8a9199" class="m">n=59</text>
+<rect x="349.2" y="340" width="21.238" height="18" fill="#6b7480" rx="4"/>
+<line x1="362.891" y1="349" x2="377.985" y2="349" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="362.891" y1="344" x2="362.891" y2="354" stroke="#1b1f24" stroke-width="1.2"/>
+<line x1="377.985" y1="344" x2="377.985" y2="354" stroke="#1b1f24" stroke-width="1.2"/>
+<text x="385.985" y="353" font-size="11" fill="#1b1f24" class="m">+2.9</text>
+<text x="790" y="353" font-size="11" fill="#565d66" text-anchor="end" class="m">0.827</text>
+<text x="896" y="353" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.856</text>
+<text x="56" y="399" font-size="12.5" fill="#565d66">forum</text>
+<text x="95.25" y="399" font-size="10" fill="#8a9199" class="m">n=51</text>
+<rect x="344.242" y="386" width="4.958" height="18" fill="#c3c9cf" rx="4"/>
+<line x1="332.679" y1="395" x2="355.805" y2="395" stroke="#565d66" stroke-width="1.2"/>
+<line x1="332.679" y1="390" x2="332.679" y2="400" stroke="#565d66" stroke-width="1.2"/>
+<line x1="355.805" y1="390" x2="355.805" y2="400" stroke="#565d66" stroke-width="1.2"/>
+<text x="324.679" y="399" font-size="11" fill="#8a9199" text-anchor="end" class="m">-0.7  noise</text>
+<text x="790" y="399" font-size="11" fill="#565d66" text-anchor="end" class="m">0.867</text>
+<text x="896" y="399" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.860</text>
+<text x="56" y="445" font-size="12.5" fill="#565d66">documentation</text>
+<text x="145.25" y="445" font-size="10" fill="#8a9199" class="m">n=42</text>
+<rect x="344.39" y="432" width="4.81" height="18" fill="#c3c9cf" rx="4"/>
+<line x1="340.033" y1="441" x2="348.747" y2="441" stroke="#565d66" stroke-width="1.2"/>
+<line x1="340.033" y1="436" x2="340.033" y2="446" stroke="#565d66" stroke-width="1.2"/>
+<line x1="348.747" y1="436" x2="348.747" y2="446" stroke="#565d66" stroke-width="1.2"/>
+<text x="332.033" y="445" font-size="11" fill="#8a9199" text-anchor="end" class="m">-0.6  noise</text>
+<text x="790" y="445" font-size="11" fill="#565d66" text-anchor="end" class="m">0.956</text>
+<text x="896" y="445" font-size="11" fill="#1b1f24" text-anchor="end" class="m">0.950</text>
+<text x="904" y="486" font-size="10" fill="#8a9199" text-anchor="end">whisker: combined std of the two 3-seed means; a bar inside it, or under 1 pt, is noise</text>
+<rect x="40" y="527" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="536" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">The gap lives on collection pages. </tspan><tspan fill="#565d66">Collection pages gain 35 points under WCXB's policy; product and listing gain 11 and 9, article 4,</tspan></text>
+<text x="58" y="554" font-size="12.5" fill="#565d66">service 3; forum and documentation move inside seed noise. Same model, different idea of main content.</text>
+<!-- source: results/generalization.md, WCXB per type (wmb-311m-10 vs wcxb-311m-10); n from vendors/wcxb/data/splits.json -->
+</svg>

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 714" width="960" height="714" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="714" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="713" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">The labeling policy is learned from a few hundred pages</text>
+<text x="40" y="70" font-size="13" fill="#565d66">WMB val732 ROUGE-5 F1 as the training pool grows. Stratified nested prefixes of the 7,280-page pool; 3 seeds, best-epoch, mean ± std.</text>
+<rect x="40" y="104" width="880" height="380" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<line x1="110" y1="428" x2="880" y2="428" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="432" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.60</text>
+<line x1="110" y1="391.25" x2="880" y2="391.25" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="395.25" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.65</text>
+<line x1="110" y1="354.5" x2="880" y2="354.5" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="358.5" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.70</text>
+<line x1="110" y1="317.75" x2="880" y2="317.75" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="321.75" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.75</text>
+<line x1="110" y1="281" x2="880" y2="281" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="285" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.80</text>
+<line x1="110" y1="244.25" x2="880" y2="244.25" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="248.25" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.85</text>
+<line x1="110" y1="207.5" x2="880" y2="207.5" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="211.5" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.90</text>
+<line x1="110" y1="170.75" x2="880" y2="170.75" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="174.75" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.95</text>
+<line x1="110" y1="134" x2="880" y2="134" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="138" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">1.00</text>
+<text x="110" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">125</text>
+<text x="241.311" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">250</text>
+<text x="372.622" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">500</text>
+<text x="503.933" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">1,000</text>
+<text x="635.244" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">2,000</text>
+<text x="766.555" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">4,000</text>
+<text x="880" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">7,280</text>
+<text x="495" y="466" font-size="11" fill="#565d66" text-anchor="middle">training pages (log scale); 7,280 = the full pool</text>
+<line x1="110" y1="149.876" x2="880" y2="149.876" stroke="#15663c" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="876" y="143.876" font-size="10.5" fill="#15663c" text-anchor="end">DOM oracle ceiling  0.978</text>
+<line x1="110" y1="380.298" x2="880" y2="380.298" stroke="#b3261e" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="876" y="374.298" font-size="10.5" fill="#b3261e" text-anchor="end">trafilatura (val732)  0.665</text>
+<line x1="110" y1="401.613" x2="880" y2="401.613" stroke="#565d66" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="876" y="416.613" font-size="10.5" fill="#565d66" text-anchor="end">select-all floor  0.636</text>
+<polygon points="110.0,250.9 241.3,233.2 372.6,227.8 503.9,217.7 635.2,213.7 766.6,208.3 880.0,203.2 880.0,208.3 766.6,210.8 635.2,217.9 503.9,222.4 372.6,232.8 241.3,238.6 110.0,259.8" fill="#3d6fb4" opacity="0.12"/>
+<polyline points="110.0,255.3 241.3,235.9 372.6,230.3 503.9,220.1 635.2,215.8 766.6,209.6 880.0,205.7" fill="none" stroke="#3d6fb4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="110" cy="255.349" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="241.311" cy="235.871" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="372.622" cy="230.285" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="503.933" cy="220.069" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="635.244" cy="215.805" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="766.555" cy="209.558" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="880" cy="205.736" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<text x="118" y="245.349" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.835</text>
+<text x="888" y="209.736" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.902</text>
+<polygon points="110.0,271.2 241.3,251.7 372.6,240.6 503.9,233.6 635.2,225.4 766.6,221.7 880.0,218.5 880.0,222.9 766.6,222.9 635.2,227.4 503.9,237.3 372.6,250.9 241.3,257.1 110.0,282.0" fill="#6a4c9c" opacity="0.12"/>
+<polyline points="110.0,276.6 241.3,254.4 372.6,245.8 503.9,235.4 635.2,226.4 766.6,222.3 880.0,220.7" fill="none" stroke="#6a4c9c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="110" cy="276.59" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="241.311" cy="254.393" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="372.622" cy="245.793" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="503.933" cy="235.43" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="635.244" cy="226.389" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="766.555" cy="222.273" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="880" cy="220.656" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<text x="118" y="296.59" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.806</text>
+<text x="888" y="224.656" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.882</text>
+<polygon points="110.0,310.8 241.3,292.5 372.6,272.5 503.9,257.4 635.2,250.1 766.6,240.0 880.0,235.4 880.0,238.9 766.6,244.4 635.2,252.2 503.9,268.9 372.6,281.7 241.3,295.9 110.0,370.6" fill="#c17d11" opacity="0.12"/>
+<polyline points="110.0,340.7 241.3,294.2 372.6,277.1 503.9,263.1 635.2,251.2 766.6,242.2 880.0,237.1" fill="none" stroke="#c17d11" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="110" cy="340.682" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="241.311" cy="294.23" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="372.622" cy="277.104" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="503.933" cy="263.139" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="635.244" cy="251.159" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="766.555" cy="242.192" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="880" cy="237.12" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<text x="118" y="360.682" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.719</text>
+<text x="888" y="241.12" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.860</text>
+<line x1="112" y1="174.1" x2="126" y2="174.1" stroke="#3d6fb4" stroke-width="2.5"/>
+<text x="131" y="178.1" font-size="11" fill="#565d66">311m encoder, 10 layers</text>
+<line x1="273.5" y1="174.1" x2="287.5" y2="174.1" stroke="#6a4c9c" stroke-width="2.5"/>
+<text x="292.5" y="178.1" font-size="11" fill="#565d66">97m encoder, 6 layers, int8 QAT</text>
+<line x1="479" y1="174.1" x2="493" y2="174.1" stroke="#c17d11" stroke-width="2.5"/>
+<text x="498" y="178.1" font-size="11" fill="#565d66">311m table + features (mini)</text>
+<rect x="40" y="500" width="880" height="118" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="56" y="524" font-size="10" fill="#8a9199" font-weight="700" letter-spacing="0.5">best-epoch F1, mean over 3 seeds</text>
+<text x="342.857" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">125</text>
+<text x="428.571" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">250</text>
+<text x="514.286" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">500</text>
+<text x="600" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">1,000</text>
+<text x="685.714" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">2,000</text>
+<text x="771.429" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">4,000</text>
+<text x="857.143" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">7,280</text>
+<line x1="56" y1="532" x2="904" y2="532" stroke="#e9ecef" stroke-width="1"/>
+<circle cx="62" cy="552" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<text x="74" y="556" font-size="11" fill="#1b1f24">311m encoder, 10 layers</text>
+<text x="342.857" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.835</text>
+<text x="428.571" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.861</text>
+<text x="514.286" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.869</text>
+<text x="600" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.883</text>
+<text x="685.714" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.889</text>
+<text x="771.429" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.897</text>
+<text x="857.143" y="556" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.902</text>
+<circle cx="62" cy="578" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<text x="74" y="582" font-size="11" fill="#1b1f24">97m encoder, 6 layers, int8 QAT</text>
+<text x="342.857" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.806</text>
+<text x="428.571" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.836</text>
+<text x="514.286" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.848</text>
+<text x="600" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.862</text>
+<text x="685.714" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.874</text>
+<text x="771.429" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.880</text>
+<text x="857.143" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.882</text>
+<circle cx="62" cy="604" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<text x="74" y="608" font-size="11" fill="#1b1f24">311m table + features (mini)</text>
+<text x="342.857" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.719</text>
+<text x="428.571" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.782</text>
+<text x="514.286" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.805</text>
+<text x="600" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.824</text>
+<text x="685.714" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.841</text>
+<text x="771.429" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.853</text>
+<text x="857.143" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.860</text>
+<rect x="40" y="639" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="648" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Most of the gain arrives in the first few hundred pages. </tspan><tspan fill="#565d66">With 125 pages the 311m encoder already clears the select-all floor by 20 points</tspan></text>
+<text x="58" y="666" font-size="12.5" fill="#565d66">and 500 pages come within 3.3 of the full pool. The 97m needs about 4x the pages for the same score, and the no-encoder table needs the</text>
+<text x="58" y="684" font-size="12.5" fill="#565d66">whole pool to reach what the 311m has at 250.</text>
+<!-- source: results/wmb-finetune.md, results/wmb-finetune-qat.md, results/wmb-frozen.md (training-set size, val best-epoch); floor and ceiling docs/CLAIMS.md -->
+</svg>

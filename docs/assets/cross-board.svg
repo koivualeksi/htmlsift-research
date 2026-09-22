@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 574" width="960" height="574" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="574" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="573" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">Trained on one board, scored on all three</text>
+<text x="40" y="70" font-size="13" fill="#565d66">Each column is that board's own metric with its floor and ceiling: read down a column, never across a row. Test folds, 3 seeds, mean ± std.</text>
+<rect x="40" y="104" width="880" height="392" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="395" y="134" font-size="12" fill="#1b1f24" text-anchor="middle" font-weight="700">WMB test545</text>
+<text x="395" y="149" font-size="10" fill="#565d66" text-anchor="middle">ROUGE-5</text>
+<text x="600" y="134" font-size="12" fill="#1b1f24" text-anchor="middle" font-weight="700">WCXB test511</text>
+<text x="600" y="149" font-size="10" fill="#565d66" text-anchor="middle">word-F1</text>
+<text x="805" y="134" font-size="12" fill="#1b1f24" text-anchor="middle" font-weight="700">DAnIEL 1,689</text>
+<text x="805" y="149" font-size="10" fill="#565d66" text-anchor="middle">ROUGE-L macro</text>
+<line x1="56" y1="160" x2="904" y2="160" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="192" font-size="12" fill="#1b1f24" font-weight="700">311m-10 encoder</text>
+<circle cx="196" cy="188" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="192" font-size="10.5" fill="#565d66">trained on WMB</text>
+<rect x="310" y="182" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="182" width="132.639" height="8" fill="#3d6fb4" rx="4" opacity="1"/>
+<text x="310" y="206" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.9311 ± 0.0027</text>
+<text x="480" y="206" font-size="9.5" fill="#3d6fb4" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="515" y="182" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="182" width="89.1069" height="8" fill="#3d6fb4" rx="4" opacity="0.45"/>
+<text x="515" y="206" font-size="10.5" fill="#1b1f24" class="m">0.8633 ± 0.0016</text>
+<rect x="720" y="182" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="182" width="147.448" height="8" fill="#3d6fb4" rx="4" opacity="0.45"/>
+<text x="720" y="206" font-size="10.5" fill="#1b1f24" class="m">0.9175 ± 0.0027</text>
+<circle cx="196" cy="238" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="242" font-size="10.5" fill="#565d66">trained on WCXB</text>
+<rect x="310" y="232" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="232" width="81.4301" height="8" fill="#3d6fb4" rx="4" opacity="0.45"/>
+<text x="310" y="256" font-size="10.5" fill="#1b1f24" class="m">0.8479 ± 0.0107</text>
+<rect x="515" y="232" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="232" width="124.949" height="8" fill="#3d6fb4" rx="4" opacity="1"/>
+<text x="515" y="256" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.9209 ± 0.0007</text>
+<text x="685" y="256" font-size="9.5" fill="#3d6fb4" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="720" y="232" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="232" width="135.17" height="8" fill="#3d6fb4" rx="4" opacity="0.45"/>
+<text x="720" y="256" font-size="10.5" fill="#1b1f24" class="m">0.8826 ± 0.0027</text>
+<line x1="56" y1="264" x2="904" y2="264" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="292" font-size="12" fill="#1b1f24" font-weight="700">97m-6 int8 QAT</text>
+<circle cx="196" cy="288" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="292" font-size="10.5" fill="#565d66">trained on WMB</text>
+<rect x="310" y="282" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="282" width="129.254" height="8" fill="#6a4c9c" rx="4" opacity="1"/>
+<text x="310" y="306" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.9256 ± 0.0048</text>
+<text x="480" y="306" font-size="9.5" fill="#6a4c9c" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="515" y="282" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="282" width="81.2665" height="8" fill="#6a4c9c" rx="4" opacity="0.45"/>
+<text x="515" y="306" font-size="10.5" fill="#1b1f24" class="m">0.8507 ± 0.0030</text>
+<rect x="720" y="282" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="282" width="138.301" height="8" fill="#6a4c9c" rx="4" opacity="0.45"/>
+<text x="720" y="306" font-size="10.5" fill="#1b1f24" class="m">0.8915 ± 0.0082</text>
+<circle cx="196" cy="338" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="342" font-size="10.5" fill="#565d66">trained on WCXB</text>
+<rect x="310" y="332" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="332" width="72.8132" height="8" fill="#6a4c9c" rx="4" opacity="0.45"/>
+<text x="310" y="356" font-size="10.5" fill="#1b1f24" class="m">0.8339 ± 0.0034</text>
+<rect x="515" y="332" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="332" width="116.984" height="8" fill="#6a4c9c" rx="4" opacity="1"/>
+<text x="515" y="356" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.9081 ± 0.0020</text>
+<text x="685" y="356" font-size="9.5" fill="#6a4c9c" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="720" y="332" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="332" width="130.737" height="8" fill="#6a4c9c" rx="4" opacity="0.45"/>
+<text x="720" y="356" font-size="10.5" fill="#1b1f24" class="m">0.8700 ± 0.0082</text>
+<line x1="56" y1="364" x2="904" y2="364" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="392" font-size="12" fill="#1b1f24" font-weight="700">311m table</text>
+<text x="56" y="407" font-size="12" fill="#1b1f24" font-weight="700">+ features, int8</text>
+<circle cx="196" cy="388" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="392" font-size="10.5" fill="#565d66">trained on WMB</text>
+<rect x="310" y="382" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="382" width="114.113" height="8" fill="#c17d11" rx="4" opacity="1"/>
+<text x="310" y="406" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.9010 ± 0.0031</text>
+<text x="480" y="406" font-size="9.5" fill="#c17d11" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="515" y="382" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="382" width="79.213" height="8" fill="#c17d11" rx="4" opacity="0.45"/>
+<text x="515" y="406" font-size="10.5" fill="#1b1f24" class="m">0.8474 ± 0.0089</text>
+<rect x="720" y="382" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="382" width="134.149" height="8" fill="#c17d11" rx="4" opacity="0.45"/>
+<text x="720" y="406" font-size="10.5" fill="#1b1f24" class="m">0.8797 ± 0.0025</text>
+<circle cx="196" cy="438" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<text x="206" y="442" font-size="10.5" fill="#565d66">trained on WCXB</text>
+<rect x="310" y="432" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="310" y="432" width="75.7676" height="8" fill="#c17d11" rx="4" opacity="0.45"/>
+<text x="310" y="456" font-size="10.5" fill="#1b1f24" class="m">0.8387 ± 0.0108</text>
+<rect x="515" y="432" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="515" y="432" width="104.228" height="8" fill="#c17d11" rx="4" opacity="1"/>
+<text x="515" y="456" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.8876 ± 0.0046</text>
+<text x="685" y="456" font-size="9.5" fill="#c17d11" text-anchor="end" font-weight="700">in-domain</text>
+<rect x="720" y="432" width="170" height="8" fill="#e9ecef" rx="4"/>
+<rect x="720" y="432" width="93.9011" height="8" fill="#c17d11" rx="4" opacity="0.45"/>
+<text x="720" y="456" font-size="10.5" fill="#1b1f24" class="m">0.7653 ± 0.0186</text>
+<text x="56" y="480" font-size="10" fill="#8a9199">bar = position between that board's select-all floor (left end) and oracle ceiling (right end); faded = zero-shot</text>
+<rect x="40" y="517" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="526" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Crossing boards costs 6 to 8 points either way. </tspan><tspan fill="#565d66">A WMB-trained encoder loses 5.8 pt onto WCXB; a WCXB-trained one loses 8.3 pt onto WMB, and</tspan></text>
+<text x="58" y="544" font-size="12.5" fill="#565d66">the WMB-trained model leads on the neutral third board. The table arm without an encoder transfers worst to DAnIEL.</text>
+<!-- source: results/generalization.md (test F1 per board, 3 seeds); floors and ceilings docs/CLAIMS.md -->
+</svg>

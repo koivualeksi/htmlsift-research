@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 604" width="960" height="604" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="604" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="603" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">Three signals, one pass</text>
+<text x="40" y="70" font-size="13" fill="#565d66">Contextual boilerplate removal needs three signals. Heuristics carry one and a half; an LLM carries all three but generates token by token.</text>
+<line x1="40" y1="96" x2="408.413" y2="96" stroke="#d7dbe0" stroke-width="1"/>
+<text x="480" y="100" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="1">THE THREE SIGNALS</text>
+<line x1="551.587" y1="96" x2="920" y2="96" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="40" y="112" width="280" height="118" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<circle cx="66" cy="140" r="12" fill="#15663c" stroke="none" stroke-width="2"/>
+<text x="66" y="144.5" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">1</text>
+<text x="88" y="145" font-size="14" fill="#1b1f24" font-weight="700">Element hierarchy</text>
+<text x="56" y="172" font-size="11.5" fill="#565d66">where the block sits in the DOM:</text>
+<text x="56" y="189" font-size="11.5" fill="#565d66">tag, depth, link ancestry</text>
+<text x="56" y="206" font-size="11.5" fill="#565d66">a footer link reads like body text</text>
+<rect x="340" y="112" width="280" height="118" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<circle cx="366" cy="140" r="12" fill="#15663c" stroke="none" stroke-width="2"/>
+<text x="366" y="144.5" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">2</text>
+<text x="388" y="145" font-size="14" fill="#1b1f24" font-weight="700">Text meaning</text>
+<text x="356" y="172" font-size="11.5" fill="#565d66">what the block says, in any</text>
+<text x="356" y="189" font-size="11.5" fill="#565d66">language, as a vector</text>
+<text x="356" y="206" font-size="11.5" fill="#565d66">not length or link density</text>
+<rect x="640" y="112" width="280" height="118" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<circle cx="666" cy="140" r="12" fill="#15663c" stroke="none" stroke-width="2"/>
+<text x="666" y="144.5" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">3</text>
+<text x="688" y="145" font-size="14" fill="#1b1f24" font-weight="700">Page-wide context</text>
+<text x="656" y="172" font-size="11.5" fill="#565d66">each block judged against the</text>
+<text x="656" y="189" font-size="11.5" fill="#565d66">whole page; repeated boilerplate</text>
+<text x="656" y="206" font-size="11.5" fill="#565d66">only shows up in contrast</text>
+<line x1="40" y1="252" x2="411.8" y2="252" stroke="#d7dbe0" stroke-width="1"/>
+<text x="480" y="256" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="1">WHO CARRIES THEM</text>
+<line x1="548.2" y1="252" x2="920" y2="252" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="40" y="268" width="880" height="258" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="380" y="294" font-size="10" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="0.8">HIERARCHY</text>
+<text x="560" y="294" font-size="10" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="0.8">TEXT MEANING</text>
+<text x="760" y="294" font-size="10" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="0.8">PAGE-WIDE CONTEXT</text>
+<line x1="56" y1="304" x2="904" y2="304" stroke="#e9ecef" stroke-width="1"/>
+<text x="64" y="334" font-size="12.5" fill="#1b1f24" font-weight="700">Heuristics</text>
+<text x="64" y="350" font-size="10" fill="#8a9199">trafilatura, resiliparse, readability</text>
+<path d="M374,332 l4,5 l9,-11" fill="none" stroke="#1a8f4f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="380" y="351" font-size="9.5" fill="#8a9199" text-anchor="middle">tag rules</text>
+<path d="M553,330 l14,0" fill="none" stroke="#c17d11" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="560" y="351" font-size="9.5" fill="#8a9199" text-anchor="middle">text stats only</text>
+<path d="M755,325 l10,10 M765,325 l-10,10" fill="none" stroke="#b9c0c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="760" y="351" font-size="9.5" fill="#8a9199" text-anchor="middle">fixed rules</text>
+<line x1="56" y1="361" x2="904" y2="361" stroke="#e9ecef" stroke-width="1"/>
+<text x="64" y="384" font-size="12.5" fill="#1b1f24" font-weight="700">LLM extractor</text>
+<text x="64" y="400" font-size="10" fill="#8a9199">generates the page</text>
+<path d="M374,382 l4,5 l9,-11" fill="none" stroke="#1a8f4f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M554,382 l4,5 l9,-11" fill="none" stroke="#1a8f4f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M754,382 l4,5 l9,-11" fill="none" stroke="#1a8f4f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="56" y1="411" x2="904" y2="411" stroke="#e9ecef" stroke-width="1"/>
+<rect x="48" y="412" width="864" height="48" fill="#e3ebf6" rx="7" opacity="0.7"/>
+<text x="64" y="434" font-size="12.5" fill="#1b1f24" font-weight="700">htmlsift base</text>
+<text x="64" y="450" font-size="10" fill="#8a9199">encoder, 10 layers</text>
+<path d="M374,432 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="380" y="451" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">markdown markers</text>
+<path d="M554,432 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="560" y="451" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">fine-tuned encoder</text>
+<path d="M754,432 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="760" y="451" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">encoder attention + BiGRU</text>
+<rect x="48" y="462" width="864" height="48" fill="#f7ecd9" rx="7" opacity="0.7"/>
+<text x="64" y="484" font-size="12.5" fill="#1b1f24" font-weight="700">htmlsift mini</text>
+<text x="64" y="500" font-size="10" fill="#8a9199">embedding table, no encoder</text>
+<path d="M374,482 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="380" y="501" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">33 structural features</text>
+<path d="M554,482 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="560" y="501" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">frozen token table</text>
+<path d="M754,482 l4,5 l9,-11" fill="none" stroke="#15663c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="760" y="501" font-size="9.5" fill="#565d66" text-anchor="middle" class="m">BiGRU</text>
+<rect x="40" y="547" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="556" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">All three, without generating a token. </tspan><tspan fill="#565d66">One encoder pass (base) or one table lookup (mini) plus one recurrent sweep, then a threshold. What</tspan></text>
+<text x="58" y="574" font-size="12.5" fill="#565d66">that costs in time is a separate measured figure (cpu_speed_accuracy.svg).</text>
+<!-- source: core/model.py, core/features.py, docs/PROTOCOL.md -->
+</svg>

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="640" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="639" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">Element labels vs line labels</text>
+<text x="40" y="70" font-size="13" fill="#565d66">The same page labeled two ways. htmlsift renders it to markdown lines first, then keeps or drops each line.</text>
+<line x1="40" y1="96" x2="428.738" y2="96" stroke="#d7dbe0" stroke-width="1"/>
+<text x="480" y="100" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="1">THE CONCEPT</text>
+<line x1="531.263" y1="96" x2="920" y2="96" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="40" y="112" width="360" height="262" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="56" y="140" font-size="12" fill="#1b1f24" font-weight="700" letter-spacing="0.8">OTHER EXTRACTORS</text>
+<text x="56" y="158" font-size="12" fill="#565d66">keep or drop each HTML element</text>
+<rect x="56" y="174" width="328" height="34" fill="#e9ecef" rx="7" stroke="#ccd2d8" stroke-width="1"/>
+<text x="68" y="196" font-size="11" fill="#8a9199" class="m">&lt;nav&gt;</text>
+<text x="109" y="196" font-size="11" fill="#565d66" class="m">Home · About · Login</text>
+<rect x="328" y="182" width="33.675" height="18" fill="#ffffff" rx="9.0" stroke="#b9c0c7" stroke-width="1"/>
+<text x="344.837" y="194.42" font-size="9.5" fill="#565d66" text-anchor="middle" font-weight="700">OUT</text>
+<rect x="56" y="216" width="328" height="34" fill="#dcefe3" rx="7" stroke="#9fceb7" stroke-width="1"/>
+<text x="68" y="238" font-size="11" fill="#15663c" class="m">&lt;h2&gt;</text>
+<text x="102.4" y="238" font-size="11" fill="#1b1f24" class="m">The 2026 field report</text>
+<rect x="332" y="224" width="28.45" height="18" fill="#15663c" rx="9.0"/>
+<text x="346.225" y="236.42" font-size="9.5" fill="#ffffff" text-anchor="middle" font-weight="700">IN</text>
+<rect x="56" y="258" width="328" height="34" fill="#dcefe3" rx="7" stroke="#9fceb7" stroke-width="1"/>
+<text x="68" y="280" font-size="11" fill="#15663c" class="m">&lt;p&gt;</text>
+<text x="95.8" y="280" font-size="11" fill="#1b1f24" class="m">Downloads opened this week.</text>
+<rect x="332" y="266" width="28.45" height="18" fill="#15663c" rx="9.0"/>
+<text x="346.225" y="278.42" font-size="9.5" fill="#ffffff" text-anchor="middle" font-weight="700">IN</text>
+<path d="M64,294 L64,317.0 L72,317.0" fill="none" stroke="#ccd2d8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="74" y="300" width="310" height="34" fill="#e9ecef" rx="7" stroke="#ccd2d8" stroke-width="1"/>
+<text x="86" y="322" font-size="11" fill="#8a9199" class="m">&lt;a&gt;</text>
+<text x="113.8" y="322" font-size="11" fill="#565d66" class="m">Subscribe now</text>
+<rect x="328" y="308" width="33.675" height="18" fill="#ffffff" rx="9.0" stroke="#b9c0c7" stroke-width="1"/>
+<text x="344.837" y="320.42" font-size="9.5" fill="#565d66" text-anchor="middle" font-weight="700">OUT</text>
+<text x="56" y="360" font-size="10.5" fill="#565d66" font-style="italic">the annotation unit is the element</text>
+<line x1="404" y1="243" x2="456" y2="243" stroke="#565d66" stroke-width="1.5"/>
+<line x1="456" y1="243" x2="448.979" y2="239.165" stroke="#565d66" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="456" y1="243" x2="448.979" y2="246.835" stroke="#565d66" stroke-width="1.5" stroke-linecap="round"/>
+<text x="430" y="233" font-size="10.5" fill="#565d66" text-anchor="middle" font-weight="600">render</text>
+<text x="430" y="267" font-size="9.5" fill="#8a9199" text-anchor="middle" class="m">lxml</text>
+<rect x="460" y="112" width="460" height="262" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="476" y="140" font-size="12" fill="#1b1f24" font-weight="700" letter-spacing="0.8">HTMLSIFT</text>
+<text x="476" y="158" font-size="12" fill="#565d66">keep or drop each rendered line</text>
+<rect x="476" y="174" width="428" height="34" fill="#e9ecef" rx="7" stroke="#ccd2d8" stroke-width="1"/>
+<text x="488" y="196" font-size="11" fill="#565d66" class="m">Home · About · Login</text>
+<rect x="848" y="182" width="33.675" height="18" fill="#ffffff" rx="9.0" stroke="#b9c0c7" stroke-width="1"/>
+<text x="864.837" y="194.42" font-size="9.5" fill="#565d66" text-anchor="middle" font-weight="700">OUT</text>
+<rect x="476" y="216" width="428" height="34" fill="#dcefe3" rx="7" stroke="#9fceb7" stroke-width="1"/>
+<text x="488" y="238" font-size="11" fill="#1b1f24" class="m">## The 2026 field report</text>
+<rect x="852" y="224" width="28.45" height="18" fill="#15663c" rx="9.0"/>
+<text x="866.225" y="236.42" font-size="9.5" fill="#ffffff" text-anchor="middle" font-weight="700">IN</text>
+<rect x="476" y="258" width="428" height="46" fill="#dcefe3" rx="7" stroke="#9fceb7" stroke-width="1"/>
+<text x="488" y="273" font-size="8.5" fill="#b3261e" font-weight="700" letter-spacing="0.6">MIXED LINE: one verdict for both</text>
+<text x="488" y="292" font-size="11"><tspan fill="#1b1f24" class="m">Downloads opened this week. </tspan><tspan fill="#b3261e" class="m">Subscribe now</tspan></text>
+<rect x="852" y="266" width="28.45" height="18" fill="#15663c" rx="9.0"/>
+<text x="866.225" y="278.42" font-size="9.5" fill="#ffffff" text-anchor="middle" font-weight="700">IN</text>
+<text x="476" y="360" font-size="10.5" fill="#565d66" font-style="italic">the annotation unit is the line; every line knows its DOM elements</text>
+<line x1="40" y1="396" x2="421.962" y2="396" stroke="#d7dbe0" stroke-width="1"/>
+<text x="480" y="400" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" letter-spacing="1">THE TRADE-OFF</text>
+<line x1="538.038" y1="396" x2="920" y2="396" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="40" y="412" width="430" height="150" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="56" y="430" width="10" height="10" fill="#b3261e" rx="2"/>
+<text x="74" y="440" font-size="13.5" fill="#1b1f24" font-weight="700">Lower gold ceiling</text>
+<text x="56" y="460" font-size="11" fill="#565d66">WMB oracle: the best ROUGE-5 F1 any selection can reach.</text>
+<line x1="56" y1="472" x2="454" y2="472" stroke="#e9ecef" stroke-width="1"/>
+<text x="190" y="492" font-size="10" fill="#8a9199" class="m" letter-spacing="0.5">test545</text>
+<text x="340" y="492" font-size="10" fill="#8a9199" class="m" letter-spacing="0.5">val732</text>
+<text x="56" y="516" font-size="11.5" fill="#565d66">element labels</text>
+<text x="190" y="516" font-size="12" fill="#565d66" class="m">1.000</text>
+<text x="340" y="516" font-size="12" fill="#565d66" class="m">1.000</text>
+<text x="56" y="542" font-size="11.5" fill="#1b1f24" font-weight="600">htmlsift lines</text>
+<text x="190" y="542" font-size="12"><tspan fill="#1b1f24" font-weight="700" class="m">0.992</tspan><tspan fill="#b3261e" font-weight="700" class="m">  -0.8 pt</tspan></text>
+<text x="340" y="542" font-size="12"><tspan fill="#1b1f24" font-weight="700" class="m">0.978</tspan><tspan fill="#b3261e" font-weight="700" class="m">  -2.2 pt</tspan></text>
+<rect x="490" y="412" width="430" height="150" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="506" y="430" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="524" y="440" font-size="13.5" fill="#1b1f24" font-weight="700">Fewer predictions to classify</text>
+<text x="506" y="460" font-size="11" fill="#565d66">Blocks per page: content-bearing elements vs rendered lines.</text>
+<line x1="506" y1="472" x2="904" y2="472" stroke="#e9ecef" stroke-width="1"/>
+<text x="640" y="492" font-size="10" fill="#8a9199" class="m" letter-spacing="0.5">test545</text>
+<text x="790" y="492" font-size="10" fill="#8a9199" class="m" letter-spacing="0.5">val732</text>
+<text x="506" y="516" font-size="11.5" fill="#565d66">element labels</text>
+<text x="640" y="516" font-size="12" fill="#565d66" class="m">369</text>
+<text x="790" y="516" font-size="12" fill="#565d66" class="m">366</text>
+<text x="506" y="542" font-size="11.5" fill="#1b1f24" font-weight="600">htmlsift lines</text>
+<text x="640" y="542" font-size="12"><tspan fill="#1b1f24" font-weight="700" class="m">284</tspan><tspan fill="#15663c" font-weight="700" class="m">  -23%</tspan></text>
+<text x="790" y="542" font-size="12"><tspan fill="#1b1f24" font-weight="700" class="m">211</tspan><tspan fill="#15663c" font-weight="700" class="m">  -42%</tspan></text>
+<rect x="40" y="583" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="592" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">One unit end to end. </tspan><tspan fill="#565d66">The line the model scores is the line the label names and the line the serializer writes back; a mixed line costs</tspan></text>
+<text x="58" y="610" font-size="12.5" fill="#565d66">under 1 point of ceiling on test.</text>
+<!-- source: docs/CLAIMS.md (WMB oracle ceilings, n=544 / 732); block counts per page as measured for README-outline (add the command to CLAIMS) -->
+</svg>

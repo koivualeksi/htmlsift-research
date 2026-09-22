@@ -1,0 +1,33 @@
+# GPU throughput bench (bench/speed/gpu_throughput.py) on the local card. The GPU sibling of
+# deploy/docker/Dockerfile: same pinned stack, but CUDA torch. cu126 matches a CUDA-12.6 driver
+# (e.g. RTX 4060, driver 560.x); the wheel bundles its own CUDA runtime and uses the driver
+# libs injected by `docker run --gpus all`, so no CUDA base image is needed. gpu_throughput.py is
+# speed-only (no F1 gate), which is why a GPU sibling of the CPU image is fine.
+#
+# A local same-card ratio is valid on any card; the report prints the card, so document it.
+#
+#   docker build -f deploy/docker/Dockerfile.gpu -t htmlsift-bench-gpu .
+#   docker run --rm --gpus all -v "$PWD/vendors/wmb/data:/repo/vendors/wmb/data" -v "$PWD/97m-6_s0.pt:/repo/ckpt.pt" -v "$HOME/.cache/huggingface:/root/.cache/huggingface" htmlsift-bench-gpu --ckpt /repo/ckpt.pt --device cuda --fold test
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 HF_HUB_DISABLE_TELEMETRY=1
+
+WORKDIR /repo
+COPY pyproject.toml ./
+COPY core core
+COPY vendors vendors
+COPY bench bench
+COPY trainers trainers
+
+# cu126 torch (matches the CUDA-12.6 driver); separate layer so a rebuild reuses the ~2.5 GB
+# download. torch==2.11.0+cu126 satisfies the [train] `torch==2.11.0` pin (PEP 440 ignores the
+# local +cu126 label). The extras then see torch already installed.
+RUN pip install --no-cache-dir torch==2.11.0 --index-url https://download.pytorch.org/whl/cu126
+RUN pip install --no-cache-dir -e ".[repro,bench,train]"
+
+# `docker run --gpus all` on a slim base injects only the "utility" capability (nvidia-smi);
+# CUDA compute needs libcuda injected too, or torch.cuda.is_available() is False. The
+# nvidia/cuda images set this; a plain python base must set it itself.
+ENV NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+ENTRYPOINT ["python", "bench/speed/gpu_throughput.py"]

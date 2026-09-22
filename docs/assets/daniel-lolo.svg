@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 536" width="960" height="536" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
+<rect x="0" y="0" width="960" height="536" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="535" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">DAnIEL: train on four languages, score the fifth</text>
+<text x="40" y="70" font-size="13" fill="#565d66">Leave-one-language-out on the appendix board. 311m-10, 4 epochs, 3 seeds; ROUGE-L F1 on the held-out language against that language's oracle ceiling.</text>
+<rect x="40" y="104" width="880" height="336" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
+<text x="56" y="130" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">HELD-OUT LANGUAGE</text>
+<text x="330" y="130" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">HELD-OUT F1</text>
+<text x="500" y="130" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">ORACLE CEILING</text>
+<text x="620" y="130" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">POINTS UNDER THE CEILING</text>
+<line x1="56" y1="140" x2="904" y2="140" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="178" font-size="13" fill="#1b1f24" font-weight="700">Chinese</text>
+<text x="56" y="194" font-size="10" fill="#8a9199" class="m">zh, n = 401 pages</text>
+<text x="330" y="180" font-size="15" fill="#1b1f24" font-weight="700" class="m">0.9595</text>
+<text x="390" y="180" font-size="10.5" fill="#565d66" class="m">± 0.0027</text>
+<text x="500" y="180" font-size="12" fill="#15663c" class="m">0.9875</text>
+<rect x="620" y="168" width="91" height="16" fill="#3d6fb4" rx="4"/>
+<text x="719" y="180" font-size="11" fill="#1b1f24" font-weight="700" class="m">2.8 pt</text>
+<line x1="56" y1="200" x2="904" y2="200" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="230" font-size="13" fill="#1b1f24" font-weight="700">Greek</text>
+<text x="56" y="246" font-size="10" fill="#8a9199" class="m">el, n = 273 pages</text>
+<text x="330" y="232" font-size="15" fill="#1b1f24" font-weight="700" class="m">0.9555</text>
+<text x="390" y="232" font-size="10.5" fill="#565d66" class="m">± 0.0083</text>
+<text x="500" y="232" font-size="12" fill="#15663c" class="m">0.9922</text>
+<rect x="620" y="220" width="119.275" height="16" fill="#3d6fb4" rx="4"/>
+<text x="747.275" y="232" font-size="11" fill="#1b1f24" font-weight="700" class="m">3.7 pt</text>
+<line x1="56" y1="252" x2="904" y2="252" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="282" font-size="13" fill="#1b1f24" font-weight="700">English</text>
+<text x="56" y="298" font-size="10" fill="#8a9199" class="m">en, n = 475 pages</text>
+<text x="330" y="284" font-size="15" fill="#1b1f24" font-weight="700" class="m">0.9507</text>
+<text x="390" y="284" font-size="10.5" fill="#565d66" class="m">± 0.0005</text>
+<text x="500" y="284" font-size="12" fill="#15663c" class="m">0.9962</text>
+<rect x="620" y="272" width="147.875" height="16" fill="#3d6fb4" rx="4"/>
+<text x="775.875" y="284" font-size="11" fill="#1b1f24" font-weight="700" class="m">4.5 pt</text>
+<line x1="56" y1="304" x2="904" y2="304" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="334" font-size="13" fill="#1b1f24" font-weight="700">Polish</text>
+<text x="56" y="350" font-size="10" fill="#8a9199" class="m">pl, n = 274 pages</text>
+<text x="330" y="336" font-size="15" fill="#1b1f24" font-weight="700" class="m">0.9174</text>
+<text x="390" y="336" font-size="10.5" fill="#565d66" class="m">± 0.0030</text>
+<text x="500" y="336" font-size="12" fill="#15663c" class="m">0.9694</text>
+<rect x="620" y="324" width="169" height="16" fill="#3d6fb4" rx="4"/>
+<text x="797" y="336" font-size="11" fill="#1b1f24" font-weight="700" class="m">5.2 pt</text>
+<line x1="56" y1="356" x2="904" y2="356" stroke="#e9ecef" stroke-width="1"/>
+<text x="56" y="386" font-size="13" fill="#1b1f24" font-weight="700">Russian</text>
+<text x="56" y="402" font-size="10" fill="#8a9199" class="m">ru, n = 266 pages</text>
+<text x="330" y="388" font-size="15" fill="#1b1f24" font-weight="700" class="m">0.9021</text>
+<text x="390" y="388" font-size="10.5" fill="#565d66" class="m">± 0.0042</text>
+<text x="500" y="388" font-size="12" fill="#15663c" class="m">0.9627</text>
+<rect x="620" y="376" width="196.95" height="16" fill="#3d6fb4" rx="4"/>
+<text x="824.95" y="388" font-size="11" fill="#1b1f24" font-weight="700" class="m">6.1 pt</text>
+<text x="620" y="424" font-size="10" fill="#8a9199" text-anchor="middle" class="m">0</text>
+<text x="685" y="424" font-size="10" fill="#8a9199" text-anchor="middle" class="m">2</text>
+<text x="750" y="424" font-size="10" fill="#8a9199" text-anchor="middle" class="m">4</text>
+<text x="815" y="424" font-size="10" fill="#8a9199" text-anchor="middle" class="m">6</text>
+<text x="880" y="424" font-size="10" fill="#8a9199" text-anchor="middle" class="m">8</text>
+<text x="620" y="438" font-size="9.5" fill="#8a9199">0 = perfect selection of the gold paragraphs</text>
+<rect x="40" y="461" width="10" height="10" fill="#15663c" rx="2"/>
+<text x="58" y="470" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Out-of-language, not in-domain. </tspan><tspan fill="#565d66">A model that never saw the language lands 3 to 6 points under that language's oracle ceiling; Polish and</tspan></text>
+<text x="58" y="488" font-size="12.5" fill="#565d66">Russian are hardest. The metric is reimplemented from the SIGIR 2025 paper (no scorer ships with the corpus) and is not yet established as</text>
+<text x="58" y="506" font-size="12.5" fill="#565d66">like-for-like with the zero-shot column.</text>
+<!-- source: results/daniel-lolo.md (held-out test, 3 seeds); per-language oracle ceilings docs/REPRODUCE.md; caveats docs/LIMITS.md -->
+</svg>

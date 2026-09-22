@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+# .venv_baselines is separate on purpose: the baseline extractors pin lxml and
+# nltk versions that conflict with the validated render path.
+.venv_*/
+
+# Benchmark corpora — the default landing site for `htmlsift acquire`, ~1.9 GB
+# across the three boards. Read from here, never committed.
+vendors/*/data/
+
+# Top-level scratch: routing experiments, exported bundles, run logs, smoke
+# outputs. CLAUDE.md §2 — data/ is ignored in full.
+/data/
+
+# results/ is committed, not ignored: it holds the rendered result tables
+# (tools/download_results.py) that the writeup and README cite. Raw artifacts
+# (weights, ledgers, caches) are covered by the extension/dir rules below.
+
+# Weights, exports and embedding caches. Expensive to reproduce and not git's
+# problem — they live on disk. Listed by extension as well as by directory
+# because a stray copy outside the expected folder is the case that bites:
+# GitHub hard-rejects any single file over 100 MB and git itself warns about
+# nothing.
+*.pt
+*.pt.*
+*.safetensors
+*.onnx
+*.npy
+*.npz
+checkpoints/
+cache/
+embeddings/
+
+# Corpora and per-record score dumps anywhere in the tree.
+*.jsonl
+*.jsonl.gz
+*.tar.gz
+# Test fixtures are the one carve-out. They must stay small enough to read.
+!tests/**/fixtures/**
+
+# Secrets
+.env
+
+# Tooling state — no project content
+.claude/
+
+# Local agent guidance, kept on disk but not published. AGENTS.md is the public
+# overview; CLAUDE.md holds the local working notes and stays out of the repo.
+CLAUDE.md
+
+# Campaign scratch — the archive keeps these, this public repo does not
+# (CLAUDE.md §10: no campaign journal, plan, or status file here).
+/wmb_issues/
+
+# OS
+.DS_Store
+Thumbs.db

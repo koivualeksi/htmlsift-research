@@ -1,0 +1,14 @@
+# Keep the build context small and keep data/weights OUT of the image (§2). Without this the
+# ~1.9 GB of gitignored WMB data under vendors/*/data ships to the daemon on every build and
+# bakes into the image. Corpora and ckpts mount at run time instead.
+data/
+**/data/
+.venv/
+**/__pycache__/
+*.bak
+*.pt
+.git/
+results/
+docs/
+*.md
+.env
