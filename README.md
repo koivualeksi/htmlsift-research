@@ -480,7 +480,7 @@ choose.
 - **WCXB — Web Content Extraction Benchmark.** Foley, *WCXB: A Multi-Type Web Content
   Extraction Benchmark*. [arXiv:2605.21097](https://arxiv.org/abs/2605.21097) ·
   [repo](https://github.com/Murrough-Foley/web-content-extraction-benchmark)
-- **DAnIEL.** Multilingual news corpus (Lejeune et al.,
+- **DAnIEL.** Multilingual news corpus (Mutuvi et al.,
   [LREC 2020](https://aclanthology.org/2020.lrec-1.509/)); main-content scoring follows
   *Multilingual Evaluation of Main Content Extractors for Web Pages*, SIGIR 2025
   ([ACM](https://dl.acm.org/doi/10.1145/3726302.3730234)).
