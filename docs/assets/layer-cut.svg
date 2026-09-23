@@ -1,21 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 598" width="960" height="598" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 634" width="960" height="634" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
 <style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
-<rect x="0" y="0" width="960" height="598" fill="#f1f3f5"/>
-<rect x="0.5" y="0.5" width="959" height="597" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="0" y="0" width="960" height="634" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="633" fill="none" stroke="#d7dbe0" stroke-width="1"/>
 <text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">Frozen embeddings do not need the whole encoder</text>
 <text x="40" y="70" font-size="13" fill="#565d66">WMB val732 ROUGE-5 F1 vs encoder layers kept (granite-311m).</text>
 <text x="40" y="86" font-size="13" fill="#565d66">Frozen screen (best-epoch) against the fine-tuned encoder (epoch-mean, §6).</text>
 <rect x="40" y="120" width="880" height="400" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
-<line x1="110" y1="435.455" x2="880" y2="435.455" stroke="#e9ecef" stroke-width="1"/>
-<text x="100" y="439.455" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.86</text>
-<line x1="110" y1="378.364" x2="880" y2="378.364" stroke="#e9ecef" stroke-width="1"/>
-<text x="100" y="382.364" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.87</text>
-<line x1="110" y1="321.273" x2="880" y2="321.273" stroke="#e9ecef" stroke-width="1"/>
-<text x="100" y="325.273" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.88</text>
-<line x1="110" y1="264.182" x2="880" y2="264.182" stroke="#e9ecef" stroke-width="1"/>
-<text x="100" y="268.182" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.89</text>
-<line x1="110" y1="207.091" x2="880" y2="207.091" stroke="#e9ecef" stroke-width="1"/>
-<text x="100" y="211.091" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.90</text>
+<line x1="110" y1="443.067" x2="880" y2="443.067" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="447.067" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.84</text>
+<line x1="110" y1="401.2" x2="880" y2="401.2" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="405.2" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.85</text>
+<line x1="110" y1="359.333" x2="880" y2="359.333" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="363.333" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.86</text>
+<line x1="110" y1="317.467" x2="880" y2="317.467" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="321.467" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.87</text>
+<line x1="110" y1="275.6" x2="880" y2="275.6" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="279.6" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.88</text>
+<line x1="110" y1="233.733" x2="880" y2="233.733" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="237.733" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.89</text>
+<line x1="110" y1="191.867" x2="880" y2="191.867" stroke="#e9ecef" stroke-width="1"/>
+<text x="100" y="195.867" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.90</text>
 <line x1="110" y1="150" x2="880" y2="150" stroke="#e9ecef" stroke-width="1"/>
 <text x="100" y="154" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.91</text>
 <text x="110" y="482" font-size="10.5" fill="#8a9199" text-anchor="middle">0</text>
@@ -35,72 +39,104 @@
 <text x="127" y="142" font-size="11" fill="#565d66">fine-tuned, 3 seeds</text>
 <circle cx="254.5" cy="138" r="4.5" fill="#ffffff" stroke="#3d6fb4" stroke-width="2"/>
 <text x="266.5" y="142" font-size="11" fill="#565d66">fine-tuned, &lt;3 seeds</text>
-<line x1="392.5" y1="138" x2="406.5" y2="138" stroke="#15663c" stroke-width="2.5"/>
-<text x="411.5" y="142" font-size="11" fill="#565d66">frozen screen</text>
-<polyline points="110.0,437.2 145.0,436.0 180.0,397.2 215.0,372.1 250.0,416.0 285.0,381.2 320.0,362.9 355.0,331.0 390.0,296.7 425.0,300.1 460.0,307.6 495.0,277.3 530.0,257.3 565.0,275.0 600.0,285.9 635.0,319.0 670.0,289.9 705.0,310.4 740.0,323.6 775.0,375.5 810.0,409.2 845.0,390.9 880.0,417.8" fill="none" stroke="#15663c" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="145" cy="436.025" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="180" cy="397.204" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="215" cy="372.084" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="250" cy="416.044" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="285" cy="381.218" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="320" cy="362.949" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="355" cy="330.978" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="390" cy="296.724" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="425" cy="300.149" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="460" cy="307.571" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="495" cy="277.313" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="530" cy="257.331" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="565" cy="275.029" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="600" cy="285.876" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="635" cy="318.989" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="670" cy="289.873" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="705" cy="310.425" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="740" cy="323.556" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="775" cy="375.509" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="810" cy="409.193" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="845" cy="390.924" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="880" cy="417.756" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="530" cy="257.331" r="4.5" fill="#15663c" stroke="#ffffff" stroke-width="2"/>
-<line x1="110" y1="450.869" x2="110" y2="423.465" stroke="#15663c" stroke-width="1.5"/>
-<circle cx="110" cy="437.167" r="5.5" fill="#15663c" stroke="#ffffff" stroke-width="2"/>
-<text x="122" y="455.167" font-size="10.5" fill="#1b1f24" class="m">0 layers  0.860</text>
-<text x="885" y="421.756" font-size="10.5" fill="#1b1f24" class="m">0.863</text>
-<line x1="460" y1="215.084" x2="460" y2="235.065" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="460" y1="235.065" x2="460" y2="247.625" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="456.5" y1="235.065" x2="463.5" y2="235.065" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="456.5" y1="247.625" x2="463.5" y2="247.625" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="454" y1="241.345" x2="466" y2="241.345" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="460" cy="215.084" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
-<line x1="495" y1="223.647" x2="495" y2="244.771" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="495" y1="244.771" x2="495" y2="266.465" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="491.5" y1="244.771" x2="498.5" y2="244.771" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="491.5" y1="266.465" x2="498.5" y2="266.465" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="489" y1="255.618" x2="501" y2="255.618" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="495" cy="223.647" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
-<line x1="530" y1="197.956" x2="530" y2="235.636" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="530" y1="235.636" x2="530" y2="245.913" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="526.5" y1="235.636" x2="533.5" y2="235.636" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="526.5" y1="245.913" x2="533.5" y2="245.913" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="524" y1="240.775" x2="536" y2="240.775" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="530" cy="197.956" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
-<line x1="565" y1="190.535" x2="565" y2="221.935" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="565" y1="221.935" x2="565" y2="232.211" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="561.5" y1="221.935" x2="568.5" y2="221.935" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="561.5" y1="232.211" x2="568.5" y2="232.211" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="559" y1="227.073" x2="571" y2="227.073" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="565" cy="190.535" r="3.6" fill="#ffffff" stroke="#3d6fb4" stroke-width="2"/>
-<line x1="845" y1="195.673" x2="845" y2="228.215" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="839" y1="228.215" x2="851" y2="228.215" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="845" cy="195.673" r="3.6" fill="#ffffff" stroke="#3d6fb4" stroke-width="2"/>
-<line x1="880" y1="202.524" x2="880" y2="223.076" stroke="#3d6fb4" stroke-width="1.5"/>
-<line x1="880" y1="223.076" x2="880" y2="253.905" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="876.5" y1="223.076" x2="883.5" y2="223.076" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="876.5" y1="253.905" x2="883.5" y2="253.905" stroke="#3d6fb4" stroke-width="1.3"/>
-<line x1="874" y1="238.491" x2="886" y2="238.491" stroke="#3d6fb4" stroke-width="2.2"/>
-<circle cx="880" cy="202.524" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
-<text x="449" y="245.345" font-size="10.5" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">keeper  0.894</text>
+<line x1="392.5" y1="138" x2="406.5" y2="138" stroke="#c17d11" stroke-width="2.5"/>
+<text x="411.5" y="142" font-size="11" fill="#565d66">frozen, with features</text>
+<line x1="543" y1="138" x2="557" y2="138" stroke="#15663c" stroke-width="2.5"/>
+<text x="562" y="142" font-size="11" fill="#565d66">frozen, no features</text>
+<polyline points="110.0,442.6 145.0,441.0 180.0,410.8 215.0,377.8 250.0,377.3 285.0,344.3 320.0,331.7 355.0,309.5 390.0,306.2 425.0,281.5 460.0,288.2 495.0,279.8 530.0,260.9 565.0,261.8 600.0,284.8 635.0,278.5 670.0,296.5 705.0,299.9 740.0,312.9 775.0,345.1 810.0,377.8 845.0,369.0 880.0,422.1" fill="none" stroke="#15663c" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="145" cy="440.973" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="180" cy="410.829" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="215" cy="377.755" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="250" cy="377.336" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="285" cy="344.261" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="320" cy="331.701" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="355" cy="309.512" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="390" cy="306.163" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="425" cy="281.461" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="460" cy="288.16" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="495" cy="279.787" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="530" cy="260.947" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="565" cy="261.784" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="600" cy="284.811" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="635" cy="278.531" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="670" cy="296.533" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="705" cy="299.883" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="740" cy="312.861" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="775" cy="345.099" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="810" cy="377.755" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="845" cy="368.963" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="880" cy="422.133" r="2.8" fill="#15663c" stroke="#ffffff" stroke-width="1.5"/>
+<line x1="110" y1="450.603" x2="110" y2="434.693" stroke="#15663c" stroke-width="1.5"/>
+<circle cx="110" cy="442.648" r="5.5" fill="#15663c" stroke="#ffffff" stroke-width="2"/>
+<polyline points="110.0,360.6 145.0,359.8 180.0,331.3 215.0,312.9 250.0,345.1 285.0,319.6 320.0,306.2 355.0,282.7 390.0,257.6 425.0,260.1 460.0,265.6 495.0,243.4 530.0,228.7 565.0,241.7 600.0,249.6 635.0,273.9 670.0,252.6 705.0,267.6 740.0,277.3 775.0,315.4 810.0,340.1 845.0,326.7 880.0,346.4" fill="none" stroke="#c17d11" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="145" cy="359.752" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="180" cy="331.283" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="215" cy="312.861" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="250" cy="345.099" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="285" cy="319.56" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="320" cy="306.163" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="355" cy="282.717" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="390" cy="257.597" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="425" cy="260.109" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="460" cy="265.552" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="495" cy="243.363" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="530" cy="228.709" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="565" cy="241.688" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="600" cy="249.643" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="635" cy="273.925" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="670" cy="252.573" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="705" cy="267.645" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="740" cy="277.275" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="775" cy="315.373" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="810" cy="340.075" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="845" cy="326.677" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="880" cy="346.355" r="2.8" fill="#c17d11" stroke="#ffffff" stroke-width="1.5"/>
+<line x1="110" y1="370.637" x2="110" y2="350.541" stroke="#c17d11" stroke-width="1.5"/>
+<circle cx="110" cy="360.589" r="5.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="530" cy="228.709" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="530" cy="260.947" r="4.5" fill="#15663c" stroke="#ffffff" stroke-width="2"/>
+<text x="122" y="378.589" font-size="10.5" fill="#1b1f24" class="m">0 layers  0.860</text>
+<text x="122" y="460.648" font-size="10.5" fill="#1b1f24" class="m">0.840</text>
+<text x="885" y="350.355" font-size="10.5" fill="#1b1f24" class="m">0.863</text>
+<text x="885" y="426.133" font-size="10.5" fill="#1b1f24" class="m">0.845</text>
+<line x1="460" y1="197.728" x2="460" y2="212.381" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="460" y1="212.381" x2="460" y2="221.592" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="456.5" y1="212.381" x2="463.5" y2="212.381" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="456.5" y1="221.592" x2="463.5" y2="221.592" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="454" y1="216.987" x2="466" y2="216.987" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="460" cy="197.728" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
+<line x1="495" y1="204.008" x2="495" y2="219.499" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="495" y1="219.499" x2="495" y2="235.408" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="491.5" y1="219.499" x2="498.5" y2="219.499" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="491.5" y1="235.408" x2="498.5" y2="235.408" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="489" y1="227.453" x2="501" y2="227.453" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="495" cy="204.008" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
+<line x1="530" y1="185.168" x2="530" y2="212.8" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="530" y1="212.8" x2="530" y2="220.336" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="526.5" y1="212.8" x2="533.5" y2="212.8" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="526.5" y1="220.336" x2="533.5" y2="220.336" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="524" y1="216.568" x2="536" y2="216.568" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="530" cy="185.168" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
+<line x1="565" y1="179.725" x2="565" y2="202.752" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="565" y1="202.752" x2="565" y2="210.288" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="561.5" y1="202.752" x2="568.5" y2="202.752" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="561.5" y1="210.288" x2="568.5" y2="210.288" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="559" y1="206.52" x2="571" y2="206.52" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="565" cy="179.725" r="3.6" fill="#ffffff" stroke="#3d6fb4" stroke-width="2"/>
+<line x1="845" y1="183.493" x2="845" y2="207.357" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="839" y1="207.357" x2="851" y2="207.357" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="845" cy="183.493" r="3.6" fill="#ffffff" stroke="#3d6fb4" stroke-width="2"/>
+<line x1="880" y1="188.517" x2="880" y2="203.589" stroke="#3d6fb4" stroke-width="1.5"/>
+<line x1="880" y1="203.589" x2="880" y2="226.197" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="876.5" y1="203.589" x2="883.5" y2="203.589" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="876.5" y1="226.197" x2="883.5" y2="226.197" stroke="#3d6fb4" stroke-width="1.3"/>
+<line x1="874" y1="214.893" x2="886" y2="214.893" stroke="#3d6fb4" stroke-width="2.2"/>
+<circle cx="880" cy="188.517" r="3.6" fill="#3d6fb4" stroke="#ffffff" stroke-width="1"/>
+<text x="449" y="220.987" font-size="10.5" fill="#1b1f24" text-anchor="end" font-weight="700" class="m">keeper  0.894</text>
 <rect x="40" y="541" width="10" height="10" fill="#15663c" rx="2"/>
-<text x="58" y="550" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Cut the encoder, take the cheapest depth on the plateau. </tspan><tspan fill="#565d66">Frozen quality peaks at 12 layers (0.891) and falls off by 22. Fine-tuning lifts</tspan></text>
-<text x="58" y="568" font-size="12.5" fill="#565d66">every depth above that peak and flattens them, so the keeper takes the shallowest, 10 layers.</text>
-<!-- source: results/wmb-frozen.md (311m bigru/ABC, best-epoch), results/wmb-finetune.md (311m bigru/none, 8 ep, both bases), docs/LIMITS.md -->
+<text x="58" y="550" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Cut the encoder, take the cheapest depth on the plateau. </tspan><tspan fill="#565d66">Frozen quality peaks near 12 layers and falls off by 22. Structural features add</tspan></text>
+<text x="58" y="568" font-size="12.5" fill="#565d66">about 1 to 2 points to the frozen readout (0.891 with, 0.884 without, at the peak) but nothing once the encoder fine-tunes (0.8940 vs</text>
+<text x="58" y="586" font-size="12.5" fill="#565d66">0.8942 at 10 layers). Fine-tuning lifts every depth above both frozen curves and flattens them, so the keeper takes the shallowest, 10</text>
+<text x="58" y="604" font-size="12.5" fill="#565d66">layers.</text>
+<!-- source: results/wmb-frozen.md (311m bigru/none and bigru/ABC, best-epoch), results/wmb-finetune.md (311m bigru/none, 8 ep, both bases), docs/CLAIMS.md (features flat after fine-tuning), docs/LIMITS.md -->
 </svg>

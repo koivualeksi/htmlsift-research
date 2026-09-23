@@ -208,11 +208,12 @@ granite r2 311M embedder (a GPU model). The next two sections are why it is only
 
 ![Frozen embedding quality peaks near layer 12 and falls by layer 22](docs/assets/layer-cut.svg)
 
-Frozen embedding quality peaks near layer 12 (val 0.891) and *falls* to 0.863 by the full
-22, so depth isn't free. Fine-tuning then flattens layers 10 through 22, so `base` takes
-the shallowest that works, **10 layers**, dropping 55% of the encoder at no measured cost
-on val. (int8 QAT is accuracy-neutral, and structural features are redundant once the
-encoder fine-tunes; details in [`docs/CLAIMS.md`](docs/CLAIMS.md).)
+Frozen embedding quality peaks near layer 12 and *falls* toward layer 22, so depth isn't
+free. Structural features lift the frozen readout a point or two (val 0.891 with, 0.884
+without, at the peak) but add nothing once the encoder fine-tunes. Fine-tuning then
+flattens layers 10 through 22, so `base` takes the shallowest that works, **10 of 22
+layers**, at no measured cost on val. (int8 QAT is accuracy-neutral; details in
+[`docs/CLAIMS.md`](docs/CLAIMS.md).)
 
 ### Learns the policy fast
 
@@ -220,8 +221,8 @@ encoder fine-tunes; details in [`docs/CLAIMS.md`](docs/CLAIMS.md).)
 
 Most of the accuracy arrives in the first few hundred labelled pages. The model learns a
 benchmark's labelling policy quickly, so retraining on your own labels is cheap. On 311m-10 only 125 pages
-already clear the select-all floor by 17 points (0.808 vs 0.636); 500 come within 3.4
-points of the full 7,280-page pool (0.862 vs 0.897).
+already clear the select-all floor by 20 points (0.835 vs 0.636, best-epoch val732); 500 come
+within 3.3 points of the full 6,548-page train split (0.869 vs 0.902).
 
 ## "Main content" is a policy, not a fact
 
@@ -230,18 +231,42 @@ benchmarks disagree on what "main content" even is.
 
 ![The same page type, labelled by two benchmarks in opposite directions](docs/assets/benchmark-divergence.svg)
 
+WMB and WCXB don't just contain different pages. They encode different <em>labelling policies</em>. Train the same 311m-10 encoder on each, score both on WCXB, and the gap concentrates on <strong>collection</strong> pages (an e-commerce category page): 0.53 for the WMB-trained model against 0.88 for the WCXB-trained one, +34.9 word-F1. On forums and documentation the two agree within a point.
+
 <table>
 <tr valign="top">
 <td width="60%"><img width="100%" src="docs/assets/annotation-example.svg" alt="One page type, opposite calls: keep the grid or drop it"></td>
 <td width="40%">
-
-WMB and WCXB don't just contain different pages. They encode different <em>labelling policies</em>. Train the same 311m-10 encoder on each, score both on WCXB, and the gap concentrates on <strong>collection</strong> pages (an e-commerce category page): 0.53 for the WMB-trained model against 0.88 for the WCXB-trained one, +34.9 word-F1. On forums and documentation the two agree within a point.
 
 The pages show it plainly. On a product-grid page, WCXB keeps the intro blurb and the whole grid; WMB keeps the heading and drops the grid (on <code>apeainthepod.com/&hellip;/tees-and-tanks</code>, 2 of 809 blocks are main content). Where the policies point at the same thing (arxiv abstracts, nytimes article bodies) they agree.
 
 </td>
 </tr>
 </table>
+
+The extractors we compare against are no exception. Each carries its own idea of main
+content, and it surfaces the moment you score one on a benchmark it was not built for.
+trafilatura, tuned for articles, leads the heuristics on WCXB and then falls to the back on
+the multilingual news of DAnIEL. readability is the reverse, strong on DAnIEL and last on
+WCXB. resiliparse trails on both. None of them is broken. Each fits one policy and misses
+another, the same split the benchmarks show.
+
+Because our models learn the policy instead of hard-coding it, they hold up across both.
+Trained on WMB and run zero-shot, base scores above every heuristic on each board; mini, the
+CPU model, lands just behind the strongest heuristic on each and clears the other two. So it
+never tops a board it was not trained on, but it is the consistent one, and when the policy
+does not match yours you retrain it (see [Retraining on your own data](#retraining-on-your-own-data)).
+
+| model | WCXB, word-F1 | DAnIEL, ROUGE-L |
+|---|---|---|
+| base (311m-10) | 0.8633 | 0.9175 |
+| mini (int8 table) | 0.8474 | 0.8797 |
+| trafilatura | 0.8584 | 0.8265 |
+| readability | 0.7653 | 0.8925 |
+| resiliparse | 0.7909 | 0.7094 |
+
+WCXB test511, DAnIEL 1,689 (macro over five languages), zero-shot. Read down each column,
+not across: the two metrics differ. Regenerate with `bench/accuracy/heuristics.py`.
 
 Two things follow, and the rest of this repo depends on them: cross-board numbers are
 policy comparisons, not model rankings; and no model is trained on a board it is scored
@@ -279,6 +304,9 @@ accuracy at the heuristic tier (see [Scope & honesty](#scope--honesty)).
 | trafilatura | 31.2 | 32.0 | 0.7525 |
 | readability | 19.3 | 51.7 | 0.8016 |
 | resiliparse | 1.9 | 522.5 | 0.7135 |
+
+mini's F1 here is the seed-1 ONNX keeper (the single model timed in this run); its 3-seed
+accuracy mean is 0.9010 ± 0.0031, in the Results table above.
 
 </details>
 
@@ -365,18 +393,18 @@ val732 best-epoch unless a row says test545; 3 seeds where a spread is shown, el
 
 | lever | what we compared | result | verdict |
 |---|---|---|---|
-| backbone size | 311m vs 97m encoder | test 0.9311 vs 0.9215 | both ship: base (F1) and small (CPU) |
-| frozen screen | probe every layer frozen, pick the readout depth | 311m peaks ~L12 (0.884), falls to 0.845 at L22; 97m peaks L5 (0.875), 0.797 at L12 | accuracy lives mid-stack, so cut there |
+| backbone size | 311m vs 97m encoder | test 0.9311 vs 0.9215 | 311m ships as base (F1); 97m is the unpublished lite arm |
+| frozen screen | probe every layer frozen, pick the readout depth | 311m peaks ~L12 (0.891 with feats, 0.884 without), falls to 0.863 / 0.845 at L22; 97m peaks L5 (0.881 / 0.875), 0.841 / 0.797 at L12 | accuracy lives mid-stack, so cut there |
 | cut the encoder | keep 10/22 (311m), 6/12 (97m) vs full | test 0.9311 vs 0.9348 (311m); 0.9215 vs 0.9224 (97m) | flat, so halve the layers at no accuracy cost |
 | head type | BiGRU vs linear vs transformer vs XGBoost | finetuned 97m-6: 0.8903 / 0.8745 / 0.8791; frozen: BiGRU > XGB > linear > transformer | BiGRU |
-| BiGRU size | hidden 256 vs 128 | 0.8546 vs 0.8531; head 2.8x faster, ~12% faster end-to-end (CPU) | flat accuracy, modest CPU gain at the same speed tier, so 256 ships |
+| BiGRU size | hidden 256 vs 128 | 0.8546 vs 0.8531; head 2.8x faster, ~12% faster end-to-end (CPU) | flat accuracy; 128's ~12% end-to-end gain is not decision-grade at this speed tier, so 256 ships |
 | structural features (ABC) | none vs depth/link/tag feats | frozen +1.5-3 pt (311m L12 XGB 0.855 -> 0.870); finetuned +0.35 | help frozen/table, redundant once finetuned; kept in mini |
-| QAT W8A8 | quant-aware int8 encoder vs fp32 | +0.01 epoch-mean / -0.23 best-epoch | ships (97m-6-qat); size, not CPU speed |
+| QAT W8A8 | quant-aware int8 encoder vs fp32 | +0.01 epoch-mean / -0.23 best-epoch | accuracy-neutral; the int8 of the unpublished 97m-6-qat lite arm; size, not CPU speed |
 | PTQ-dynamic | post-training int8, no retrain | -0.38 pt val and test (3 seeds) | dead foil: loses accuracy, no speedup, QAT dominates |
 | emb-int8 | int8 the encoder embedding table | -0.02 val / +0.01 test | flat, so kept as a size lever |
 | width cap | truncate long blocks before windowing | 97m-6 none 0.890 vs cap64 0.896 (1 seed) | speed/width lever, not accuracy |
 | band attention | chunked band attention, bit-identical weights | GPU 18.4 -> 24.6 pg/s (311m-10) | speed lever, same accuracy |
-| data efficiency | train on 125 -> 7,280 pages | 125 pages already 0.835 vs 0.902 full | policy learns from a few hundred pages |
+| data efficiency | train on 125 -> 6,548 pages | 125 pages already 0.835 vs 0.902 full | policy learns from a few hundred pages |
 | embedding table (mini) | drop the encoder: embeddings + BiGRU + feats | test 0.9010 vs 0.9311 encoder | ~3 pt under, fastest CPU, so the mini artifact |
 
 ## Retraining on your own data
@@ -414,12 +442,16 @@ The load-bearing caveats, in full in [`docs/LIMITS.md`](docs/LIMITS.md):
 - **Not faster than trafilatura or resiliparse on CPU.** The win is accuracy; the speed
   sits at the heuristic tier. The one speed win is GPU throughput against MinerU-HTML,
   above.
+- **The accuracy win is in-domain, not universal.** On WMB our models clear the heuristics
+  by a wide margin. Zero-shot on other annotation policies the margin shrinks: base still
+  edges every heuristic on WCXB and DAnIEL, while mini lands just behind the board leader on
+  each and ahead of the rest. Full table under [Main content is a policy](#main-content-is-a-policy-not-a-fact).
 - **311m encoder depth is not decision-grade on test.** 311m-22 beats 311m-10 by 0.37,
   inside the seed noise, so no depth claim either way. The 97m half is flat 6 → 12.
 - **The GPU claim is sustained throughput at matched accuracy**, on one card type against
   one competitor. Never the ~126x median-latency ratio, and never across cards or against a
   CPU tool.
-- **No full-set WMB number.** Training uses 7,280 of 7,809; published full-set boards are
+- **No full-set WMB number.** Training uses 6,548 of 7,809; published full-set boards are
   context only, every baseline re-run under this harness.
 - **WCXB has 139 dev/test duplicates**, used as-is; WMB's raw html carries the annotators'
   selection marker, stripped from our input but visible to a competitor fed the raw page.
@@ -433,10 +465,18 @@ against its output), which is acceptable here and only here: it is a reproductio
 not a distributed library. That is the reason the pip package renders with lxml instead,
 and can be Apache-2.0.
 
+The GPL covers this harness, not the models it produces. Trained weights are outputs, not
+a derivative of the code, so they carry no copyleft obligation: the published `base` and
+`mini` weights are **Apache-2.0** (matching the `htmlsift` package and its Hugging Face
+repo), and weights you train by retraining on your own data are yours to license as you
+choose.
+
 ## References
 
 - **WMB — WebMainBench.** The training benchmark; ROUGE-5 main-content metric.
-  [opendatalab/WebMainBench](https://github.com/opendatalab/WebMainBench)
+  Liu et al., *Dripper: Token-Efficient Main HTML Extraction with a Lightweight LM*.
+  [arXiv:2511.23119](https://arxiv.org/abs/2511.23119) ·
+  [repo](https://github.com/opendatalab/WebMainBench)
 - **WCXB — Web Content Extraction Benchmark.** Foley, *WCXB: A Multi-Type Web Content
   Extraction Benchmark*. [arXiv:2605.21097](https://arxiv.org/abs/2605.21097) ·
   [repo](https://github.com/Murrough-Foley/web-content-extraction-benchmark)

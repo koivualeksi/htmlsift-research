@@ -11,7 +11,7 @@ their function verbatim, on the 545.
 | licence | Apache-2.0 |
 | benchmark repo | https://github.com/opendatalab/WebMainBench |
 | eval code and html2text config | https://github.com/opendatalab/MinerU-HTML |
-| paper | https://arxiv.org/abs/2511.16397 |
+| paper | Liu et al., *Dripper: Token-Efficient Main HTML Extraction with a Lightweight LM* (introduces WebMainBench) — https://arxiv.org/abs/2511.23119 |
 
 ## What acquire downloads
 

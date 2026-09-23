@@ -67,7 +67,7 @@ Drift anywhere in the html2text config, the mean-pooling, the window boundaries,
 - **Read results down a column, never across a row.** The benchmarks encode different
   labelling policies, so cross-board numbers are policy comparisons, not model rankings.
   No model is trained on a board it is scored against.
-- **No full-set WMB number.** Training uses 7,280 of 7,809; full-set boards are cited
+- **No full-set WMB number.** Training uses 6,548 of 7,809; full-set boards are cited
   as context only, and every baseline is re-run under this harness.
 - **Never commit data, weights, caches, or run outputs.** Corpora are read from
   configured paths. `data/` is ignored in full.

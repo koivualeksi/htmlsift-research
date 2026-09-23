@@ -15,8 +15,9 @@ is no `evaluate.py` to vendor, so the adapter implements the metric and
 |---|---|
 | corpus | https://github.com/rundimeco/waddle — path `corpora/Corpus_daniel_v2.1` |
 | licence | GPL-3.0 (whole `waddle` repo); compatible with this repo's GPL-3.0-or-later |
-| paper | https://dl.acm.org/doi/10.1145/3726302.3730234 (SIGIR '25) |
-| paper PDF | https://maurelf.users.greyc.fr/docs/conferences/SIGIR_2025_paper_1968.pdf |
+| corpus paper | Mutuvi et al., *A Dataset for Multi-lingual Epidemiological Event Extraction*, LREC 2020 — https://aclanthology.org/2020.lrec-1.509/ |
+| scoring paper | *Multilingual Evaluation of Main Content Extractors for Web Pages*, SIGIR '25 — https://dl.acm.org/doi/10.1145/3726302.3730234 |
+| scoring paper PDF | https://maurelf.users.greyc.fr/docs/conferences/SIGIR_2025_paper_1968.pdf |
 
 ## What acquire downloads
 

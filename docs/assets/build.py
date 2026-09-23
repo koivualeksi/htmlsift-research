@@ -622,7 +622,10 @@ def divergence():
 # =====================================================================================
 FROZEN_ABC = [0.8599, 0.8667, 0.8711, 0.8634, 0.8695, 0.8727, 0.8783, 0.8843, 0.8837, 0.8824, 0.8877,
               0.8912, 0.8881, 0.8862, 0.8804, 0.8855, 0.8819, 0.8796, 0.8705, 0.8646, 0.8678, 0.8631]  # layers 1..22, bigru/ABC, best-epoch, 1 seed
-TABLE_ABC = (0.8597, 0.0024)   # 311m-table bigru/ABC, 3 seeds, best-epoch
+FROZEN_NONE = [0.8405, 0.8477, 0.8556, 0.8557, 0.8636, 0.8666, 0.8719, 0.8727, 0.8786, 0.8770, 0.8790,
+               0.8835, 0.8833, 0.8778, 0.8793, 0.8750, 0.8742, 0.8711, 0.8634, 0.8556, 0.8577, 0.8450]  # layers 1..22, bigru/none, best-epoch, 1 seed
+TABLE_ABC = (0.8597, 0.0024)    # 311m-table bigru/ABC, 3 seeds, best-epoch
+TABLE_NONE = (0.8401, 0.0019)   # 311m-table bigru/none, 3 seeds, best-epoch
 # fine-tuned val, 311m bigru/none, 8 ep (results/wmb-finetune.md): each depth is drawn as a
 # best-epoch dot dropping to its epoch-mean (the §6 selection basis) with the mean's ±seed std.
 # (layers, best-epoch, epoch-mean, epoch-mean seed std or None, n_seeds)
@@ -639,10 +642,10 @@ def layer_cut():
     top, H = y0 + 12, 400
     s.card(40, top, 880, H)
     px0, px1, py0, py1 = 110, 880, top + 30, top + H - 56
-    lo, hi = 0.855, 0.910
+    lo, hi = 0.835, 0.910
     y_of = lambda v: py1 - (v - lo) / (hi - lo) * (py1 - py0)
     x_of = lambda L: px0 + L / 22 * (px1 - px0)
-    yaxis(s, px0, px1, y_of, [0.86, 0.87, 0.88, 0.89, 0.90, 0.91])
+    yaxis(s, px0, px1, y_of, [0.84, 0.85, 0.86, 0.87, 0.88, 0.89, 0.90, 0.91])
     for L in range(0, 23, 2):
         s.text(x_of(L), py1 + 18, str(L), 10.5, FAINT, "middle")
     s.text((px0 + px1) / 2, py1 + 38,
@@ -652,19 +655,28 @@ def layer_cut():
     legend(s, px0, top + 22,
            [("fine-tuned, 3 seeds", BLUE, "dot"),
             ("fine-tuned, <3 seeds", BLUE, "hollow"),
-            ("frozen screen", GREEN, "line")])
+            ("frozen, with features", AMBER, "line"),
+            ("frozen, no features", GREEN, "line")])
 
-    # frozen screen (green); the 0-layer point is the same green curve's left end
-    pts = [(x_of(0), y_of(TABLE_ABC[0]))] + [(x_of(L + 1), y_of(v)) for L, v in enumerate(FROZEN_ABC)]
-    s.poly(pts, GREEN, 2.1)
-    for (x, y) in pts[1:]:
-        s.circle(x, y, 2.8, GREEN, sw=1.5)
-    s.circle(x_of(12), y_of(0.8912), 4.5, GREEN)
-    tx, ty = x_of(0), y_of(TABLE_ABC[0])
-    s.line(tx, y_of(TABLE_ABC[0] - TABLE_ABC[1]), tx, y_of(TABLE_ABC[0] + TABLE_ABC[1]), GREEN, 1.5)
-    s.circle(tx, ty, 5.5, GREEN)
-    s.text(tx + 12, ty + 18, "0 layers  0.860", 10.5, INK, mono=True)
+    # frozen screen, two readout heads: text embeddings only (green) and + structural features (amber).
+    # the 0-layer point is each curve's left end, the embedding table with no encoder.
+    def frozen_curve(series, table, color):
+        pts = [(x_of(0), y_of(table[0]))] + [(x_of(L + 1), y_of(v)) for L, v in enumerate(series)]
+        s.poly(pts, color, 2.1)
+        for (x, y) in pts[1:]:
+            s.circle(x, y, 2.8, color, sw=1.5)
+        tx = x_of(0)
+        s.line(tx, y_of(table[0] - table[1]), tx, y_of(table[0] + table[1]), color, 1.5)
+        s.circle(tx, y_of(table[0]), 5.5, color)
+
+    frozen_curve(FROZEN_NONE, TABLE_NONE, GREEN)
+    frozen_curve(FROZEN_ABC, TABLE_ABC, AMBER)
+    s.circle(x_of(12), y_of(0.8912), 4.5, AMBER)          # with-features peak (footer callout)
+    s.circle(x_of(12), y_of(0.8835), 4.5, GREEN)          # no-features peak
+    s.text(x_of(0) + 12, y_of(TABLE_ABC[0]) + 18, "0 layers  0.860", 10.5, INK, mono=True)
+    s.text(x_of(0) + 12, y_of(TABLE_NONE[0]) + 18, "0.840", 10.5, INK, mono=True)
     s.text(x_of(22) + 5, y_of(0.8631) + 4, "0.863", 10.5, INK, mono=True)
+    s.text(x_of(22) + 5, y_of(0.8450) + 4, "0.845", 10.5, INK, mono=True)
 
     # fine-tuned: best-epoch dot, stick down to the epoch-mean tick, ±seed std around the mean
     for L, best, mean, msd, n in FT:
@@ -685,17 +697,20 @@ def layer_cut():
     s.text(kx - 11, ky + 4, "keeper  0.894", 10.5, INK, "end", 700, mono=True)
 
     s.footer(top + H + 30, "Cut the encoder, take the cheapest depth on the plateau.",
-             "Frozen quality peaks at 12 layers (0.891) and falls off by 22. Fine-tuning lifts every depth "
-             "above that peak and flattens them, so the keeper takes the shallowest, 10 layers.",
-             "source: results/wmb-frozen.md (311m bigru/ABC, best-epoch), "
-             "results/wmb-finetune.md (311m bigru/none, 8 ep, both bases), docs/LIMITS.md")
+             "Frozen quality peaks near 12 layers and falls off by 22. Structural features add about 1 to 2 "
+             "points to the frozen readout (0.891 with, 0.884 without, at the peak) but nothing once the encoder "
+             "fine-tunes (0.8940 vs 0.8942 at 10 layers). Fine-tuning lifts every depth above both frozen curves "
+             "and flattens them, so the keeper takes the shallowest, 10 layers.",
+             "source: results/wmb-frozen.md (311m bigru/none and bigru/ABC, best-epoch), "
+             "results/wmb-finetune.md (311m bigru/none, 8 ep, both bases), "
+             "docs/CLAIMS.md (features flat after fine-tuning), docs/LIMITS.md")
     s.save("layer-cut.svg")
 
 
 # =====================================================================================
 # 8. data-efficiency.svg -- three arms, best-epoch, with the value grid
 # =====================================================================================
-PAGES = [125, 250, 500, 1000, 2000, 4000, 7280]
+PAGES = [125, 250, 500, 1000, 2000, 4000, 6548]
 LADDERS = [  # label, color, [(mean, std)] per PAGES, best-epoch val732, 3 seeds
     ("311m encoder, 10 layers", BLUE,
      [(0.8349, 0.0060), (0.8614, 0.0037), (0.8690, 0.0034), (0.8829, 0.0032), (0.8887, 0.0029), (0.8972, 0.0017), (0.9024, 0.0035)]),
@@ -711,17 +726,17 @@ TRAFI_VAL = 0.6649   # trafilatura 2.2.0 ROUGE-5 on WMB val732 (NOT test545's 0.
 def data_efficiency():
     s = SVG(720)
     y0 = s.frame("The labeling policy is learned from a few hundred pages",
-                 "WMB val732 ROUGE-5 F1 as the training pool grows. Stratified nested prefixes of the 7,280-page pool; 3 seeds, best-epoch, mean ± std.")
+                 "WMB val732 ROUGE-5 F1 as the training set grows. Stratified nested prefixes of the 6,548-page train split; 3 seeds, best-epoch, mean ± std.")
     top, H = y0 + 12, 380
     s.card(40, top, 880, H)
     px0, px1, py0, py1 = 110, 880, top + 30, top + H - 56
     lo, hi = 0.60, 1.0
     y_of = lambda v: py1 - (v - lo) / (hi - lo) * (py1 - py0)
     yaxis(s, px0, px1, y_of, [0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00])
-    lx = lambda n: px0 + (math.log2(n) - math.log2(125)) / (math.log2(7280) - math.log2(125)) * (px1 - px0)
+    lx = lambda n: px0 + (math.log2(n) - math.log2(125)) / (math.log2(6548) - math.log2(125)) * (px1 - px0)
     for n in PAGES:
         s.text(lx(n), py1 + 18, f"{n:,}", 10.5, FAINT, "middle")
-    s.text((px0 + px1) / 2, py1 + 38, "training pages (log scale); 7,280 = the full pool", 11, MUTED, "middle")
+    s.text((px0 + px1) / 2, py1 + 38, "training pages (log scale); 6,548 = the full train split", 11, MUTED, "middle")
     s.line(px0, y_of(CEIL_VAL), px1, y_of(CEIL_VAL), GREEN, 1.2, dash="5 4")
     s.text(px1 - 4, y_of(CEIL_VAL) - 6, "DOM oracle ceiling  0.978", 10.5, GREEN, "end")
     # trafilatura and the floor are close; label trafilatura above its line and the floor below
@@ -738,7 +753,7 @@ def data_efficiency():
         for n, (m, sd) in zip(PAGES, vals):
             s.circle(lx(n), y_of(m), 4.5, color)
         s.text(lx(125) + 8, y_of(vals[0][0]) + (-10 if color == BLUE else 20), f"{vals[0][0]:.3f}", 10.5, INK, "start", 700, mono=True)
-        s.text(lx(7280) + 8, y_of(vals[-1][0]) + 4, f"{vals[-1][0]:.3f}", 10.5, INK, "start", 700, mono=True)
+        s.text(lx(6548) + 8, y_of(vals[-1][0]) + 4, f"{vals[-1][0]:.3f}", 10.5, INK, "start", 700, mono=True)
     legend(s, px0 + 4, y_of(0.94), [(l, c, "line") for l, c, _ in LADDERS])
 
     # value grid

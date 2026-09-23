@@ -49,7 +49,7 @@ was measured under a bf16 optimiser bug that froze most of the encoder's weight 
 This repo's own fp32 311m-22 is now scored at 3 seeds (val and test545, `CLAIMS.md`):
 +0.37 over 311m-10, inside the seed noise, so it neither reproduces the archive's loss
 nor establishes a gain. No GPU claim beyond the regime-matched one below. No full-set WMB number
-(training uses 7,280 of 7,809; published full-set boards are context only, every
+(training uses 6,548 of 7,809; published full-set boards are context only, every
 baseline re-run under this harness).
 
 **Optimizations are separated by objective, never multiplied.** int8 (QAT) is
@@ -71,6 +71,13 @@ whales. Never "faster than trafilatura / resiliparse" in the absolute, and never
 blended factor: the published figure is the measured ratio with its population and its
 size-dependence. The encoder arms are slower than the table; GPU is a separate regime
 with its own paragraph below.
+
+**The F1 win is in-domain; off-policy it narrows.** The 0.8994-vs-0.7525 margin above is WMB,
+the training policy. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`, `results/heuristics-wcxb.md`,
+`results/heuristics-daniel.md`), the gap closes: base stays ahead of every heuristic on both
+boards, while mini lands just behind the strongest heuristic on each (trafilatura on WCXB,
+readability on DAnIEL) and ahead of the other two. No heuristic is strong on both boards; each
+encodes a policy, so the ranking moves with the board (`annotation-divergence.md`).
 
 **Threads do not change the tier.** The mini's ONNX forward parallelizes with ORT intra-op
 threads (thread-safe), but end-to-end gains are sub-linear and capped: the single-threaded
@@ -106,9 +113,10 @@ extraction of a one-heading page is scored identically to a wrong one. We score 
 board their way regardless, since every leaderboard entry eats the same artifact, but it puts
 a floor under how close any extractor can get to the ceiling.
 
-**We train on 7,280 of 7,809.** The 529 pages sharing a `track_id` with the 545-page
-test board are held out of the training pool (§4), so no full-set WMB number is
-produced here and published full-set boards are context only.
+**We train on 6,548 of 7,809.** The 529 pages sharing a `track_id` with the 545-page
+test board are held out, leaving a 7,280-page pool, and a domain-grouped 732-page val
+fold is held for model selection (§4) — so gradient training sees 6,548. No full-set WMB
+number is produced here and published full-set boards are context only.
 
 **The raw html carries the annotators' selection marks.** WMB's `html` is the page as
 it sat in the annotation tool, and the gold elements carry `class="mark-selected"` (with

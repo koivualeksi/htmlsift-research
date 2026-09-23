@@ -3,7 +3,7 @@
 <rect x="0" y="0" width="960" height="714" fill="#f1f3f5"/>
 <rect x="0.5" y="0.5" width="959" height="713" fill="none" stroke="#d7dbe0" stroke-width="1"/>
 <text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">The labeling policy is learned from a few hundred pages</text>
-<text x="40" y="70" font-size="13" fill="#565d66">WMB val732 ROUGE-5 F1 as the training pool grows. Stratified nested prefixes of the 7,280-page pool; 3 seeds, best-epoch, mean ± std.</text>
+<text x="40" y="70" font-size="13" fill="#565d66">WMB val732 ROUGE-5 F1 as the training set grows. Stratified nested prefixes of the 6,548-page train split; 3 seeds, best-epoch, mean ± std.</text>
 <rect x="40" y="104" width="880" height="380" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
 <line x1="110" y1="428" x2="880" y2="428" stroke="#e9ecef" stroke-width="1"/>
 <text x="100" y="432" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">0.60</text>
@@ -24,49 +24,49 @@
 <line x1="110" y1="134" x2="880" y2="134" stroke="#e9ecef" stroke-width="1"/>
 <text x="100" y="138" font-size="10.5" fill="#8a9199" text-anchor="end" class="m">1.00</text>
 <text x="110" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">125</text>
-<text x="241.311" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">250</text>
-<text x="372.622" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">500</text>
-<text x="503.933" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">1,000</text>
-<text x="635.244" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">2,000</text>
-<text x="766.555" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">4,000</text>
-<text x="880" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">7,280</text>
-<text x="495" y="466" font-size="11" fill="#565d66" text-anchor="middle">training pages (log scale); 7,280 = the full pool</text>
+<text x="244.826" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">250</text>
+<text x="379.652" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">500</text>
+<text x="514.479" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">1,000</text>
+<text x="649.305" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">2,000</text>
+<text x="784.131" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">4,000</text>
+<text x="880" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">6,548</text>
+<text x="495" y="466" font-size="11" fill="#565d66" text-anchor="middle">training pages (log scale); 6,548 = the full train split</text>
 <line x1="110" y1="149.876" x2="880" y2="149.876" stroke="#15663c" stroke-width="1.2" stroke-dasharray="5 4"/>
 <text x="876" y="143.876" font-size="10.5" fill="#15663c" text-anchor="end">DOM oracle ceiling  0.978</text>
 <line x1="110" y1="380.298" x2="880" y2="380.298" stroke="#b3261e" stroke-width="1.2" stroke-dasharray="5 4"/>
 <text x="876" y="374.298" font-size="10.5" fill="#b3261e" text-anchor="end">trafilatura (val732)  0.665</text>
 <line x1="110" y1="401.613" x2="880" y2="401.613" stroke="#565d66" stroke-width="1.2" stroke-dasharray="5 4"/>
 <text x="876" y="416.613" font-size="10.5" fill="#565d66" text-anchor="end">select-all floor  0.636</text>
-<polygon points="110.0,250.9 241.3,233.2 372.6,227.8 503.9,217.7 635.2,213.7 766.6,208.3 880.0,203.2 880.0,208.3 766.6,210.8 635.2,217.9 503.9,222.4 372.6,232.8 241.3,238.6 110.0,259.8" fill="#3d6fb4" opacity="0.12"/>
-<polyline points="110.0,255.3 241.3,235.9 372.6,230.3 503.9,220.1 635.2,215.8 766.6,209.6 880.0,205.7" fill="none" stroke="#3d6fb4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="110.0,250.9 244.8,233.2 379.7,227.8 514.5,217.7 649.3,213.7 784.1,208.3 880.0,203.2 880.0,208.3 784.1,210.8 649.3,217.9 514.5,222.4 379.7,232.8 244.8,238.6 110.0,259.8" fill="#3d6fb4" opacity="0.12"/>
+<polyline points="110.0,255.3 244.8,235.9 379.7,230.3 514.5,220.1 649.3,215.8 784.1,209.6 880.0,205.7" fill="none" stroke="#3d6fb4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="110" cy="255.349" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
-<circle cx="241.311" cy="235.871" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
-<circle cx="372.622" cy="230.285" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
-<circle cx="503.933" cy="220.069" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
-<circle cx="635.244" cy="215.805" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
-<circle cx="766.555" cy="209.558" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="244.826" cy="235.871" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="379.652" cy="230.285" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="514.479" cy="220.069" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="649.305" cy="215.805" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
+<circle cx="784.131" cy="209.558" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
 <circle cx="880" cy="205.736" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
 <text x="118" y="245.349" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.835</text>
 <text x="888" y="209.736" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.902</text>
-<polygon points="110.0,271.2 241.3,251.7 372.6,240.6 503.9,233.6 635.2,225.4 766.6,221.7 880.0,218.5 880.0,222.9 766.6,222.9 635.2,227.4 503.9,237.3 372.6,250.9 241.3,257.1 110.0,282.0" fill="#6a4c9c" opacity="0.12"/>
-<polyline points="110.0,276.6 241.3,254.4 372.6,245.8 503.9,235.4 635.2,226.4 766.6,222.3 880.0,220.7" fill="none" stroke="#6a4c9c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="110.0,271.2 244.8,251.7 379.7,240.6 514.5,233.6 649.3,225.4 784.1,221.7 880.0,218.5 880.0,222.9 784.1,222.9 649.3,227.4 514.5,237.3 379.7,250.9 244.8,257.1 110.0,282.0" fill="#6a4c9c" opacity="0.12"/>
+<polyline points="110.0,276.6 244.8,254.4 379.7,245.8 514.5,235.4 649.3,226.4 784.1,222.3 880.0,220.7" fill="none" stroke="#6a4c9c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="110" cy="276.59" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
-<circle cx="241.311" cy="254.393" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
-<circle cx="372.622" cy="245.793" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
-<circle cx="503.933" cy="235.43" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
-<circle cx="635.244" cy="226.389" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
-<circle cx="766.555" cy="222.273" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="244.826" cy="254.393" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="379.652" cy="245.793" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="514.479" cy="235.43" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="649.305" cy="226.389" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
+<circle cx="784.131" cy="222.273" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
 <circle cx="880" cy="220.656" r="4.5" fill="#6a4c9c" stroke="#ffffff" stroke-width="2"/>
 <text x="118" y="296.59" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.806</text>
 <text x="888" y="224.656" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.882</text>
-<polygon points="110.0,310.8 241.3,292.5 372.6,272.5 503.9,257.4 635.2,250.1 766.6,240.0 880.0,235.4 880.0,238.9 766.6,244.4 635.2,252.2 503.9,268.9 372.6,281.7 241.3,295.9 110.0,370.6" fill="#c17d11" opacity="0.12"/>
-<polyline points="110.0,340.7 241.3,294.2 372.6,277.1 503.9,263.1 635.2,251.2 766.6,242.2 880.0,237.1" fill="none" stroke="#c17d11" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="110.0,310.8 244.8,292.5 379.7,272.5 514.5,257.4 649.3,250.1 784.1,240.0 880.0,235.4 880.0,238.9 784.1,244.4 649.3,252.2 514.5,268.9 379.7,281.7 244.8,295.9 110.0,370.6" fill="#c17d11" opacity="0.12"/>
+<polyline points="110.0,340.7 244.8,294.2 379.7,277.1 514.5,263.1 649.3,251.2 784.1,242.2 880.0,237.1" fill="none" stroke="#c17d11" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="110" cy="340.682" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<circle cx="241.311" cy="294.23" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<circle cx="372.622" cy="277.104" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<circle cx="503.933" cy="263.139" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<circle cx="635.244" cy="251.159" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<circle cx="766.555" cy="242.192" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="244.826" cy="294.23" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="379.652" cy="277.104" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="514.479" cy="263.139" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="649.305" cy="251.159" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
+<circle cx="784.131" cy="242.192" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
 <circle cx="880" cy="237.12" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
 <text x="118" y="360.682" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.719</text>
 <text x="888" y="241.12" font-size="10.5" fill="#1b1f24" font-weight="700" class="m">0.860</text>
@@ -84,7 +84,7 @@
 <text x="600" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">1,000</text>
 <text x="685.714" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">2,000</text>
 <text x="771.429" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">4,000</text>
-<text x="857.143" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">7,280</text>
+<text x="857.143" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">6,548</text>
 <line x1="56" y1="532" x2="904" y2="532" stroke="#e9ecef" stroke-width="1"/>
 <circle cx="62" cy="552" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
 <text x="74" y="556" font-size="11" fill="#1b1f24">311m encoder, 10 layers</text>
