@@ -17,6 +17,7 @@ from pathlib import Path
 from core.prep_page import prep_page
 from vendors.shared import bench_ops
 from vendors.daniel.adapter.eval import ISO, LANGS, score
+from vendors.shared.html_text import html_to_text
 from vendors.shared.labeling import join_selected
 
 DATA = Path(__file__).resolve().parents[1] / "data"
@@ -123,6 +124,21 @@ class DanielBenchmark:
             blk, _, ref, lang = rows[tid]
             assert len(pr) == len(blk), f"probs/blocks mismatch {tid}: {len(pr)} vs {len(blk)}"
             pred = join_selected(blk, [v > thr for v in pr])
+            fs.append(score(ref, pred, lang))
+        n = len(fs)
+        return {"n": n, "prec": sum(s["prec"] for s in fs) / n,
+                "rec": sum(s["rec"] for s in fs) / n, "f1": sum(s["f1"] for s in fs) / n}
+
+    def score_text(self, outputs, fold):
+        """{tid: (text, kind)} -> {n, prec, rec, f1}: an extractor's standard output judged
+        by DAnIEL ROUGE-L. html-kind flattened to text (html_to_text), text-kind used as-is
+        -- the same conversion for every extractor. Overall per-record mean (micro), not the
+        per-language macro; the vendored eval.score is the metric. score(ref, pred, lang)."""
+        rows = self._fold_rows(fold)
+        fs = []
+        for tid, (text, kind) in outputs.items():
+            _, _, ref, lang = rows[tid]
+            pred = html_to_text(text) if kind == "html" else text
             fs.append(score(ref, pred, lang))
         n = len(fs)
         return {"n": n, "prec": sum(s["prec"] for s in fs) / n,

@@ -77,7 +77,7 @@ def _env(threads_desc):
             f"Pins: {pins}.", ""]
 
 
-def report(methods, board, fold, tokens, pop, env, scorable, notes, regen):
+def report(methods, board, fold, tokens, pop, env, scorable, notes, regen=""):
     """methods: name -> {tid: Output} (empties included). Every method is scored over one
     population -- the cmc-scored pages in `scorable` -- on both speed and F1: an empty return is
     timed and scores as an empty prediction, only a crash is excluded. notes[name] carries the

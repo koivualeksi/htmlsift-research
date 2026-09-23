@@ -13,6 +13,7 @@ from pathlib import Path
 
 from core.prep_page import prep_page
 from vendors.shared import bench_ops
+from vendors.shared.html_text import html_to_text
 from vendors.wcxb.adapter.labels import join_selected, wcxb_eval
 
 WCXB = Path(__file__).resolve().parents[1]
@@ -115,6 +116,22 @@ class WCXBBenchmark:
             assert len(pr) == len(blk), f"probs/blocks mismatch {tid}: {len(pr)} vs {len(blk)}"
             pred = join_selected(blk, [v > thr for v in pr])
             fs.append(wcxb_eval.word_f1(pred, ref))
+        n = len(fs)
+        return {"n": n, "prec": sum(p for p, _, _ in fs) / n,
+                "rec": sum(r for _, r, _ in fs) / n, "f1": sum(f for _, _, f in fs) / n}
+
+    def score_text(self, outputs, fold):
+        """{tid: (text, kind)} -> {n, prec, rec, f1}: an extractor's standard output judged
+        by WCXB word-F1. html-kind is flattened to text (html_to_text), text-kind used as-is
+        -- the same conversion for every extractor, ours included (bench/accuracy/heuristics.py).
+        Metric is the vendored wcxb_eval.word_f1; per-record mean, as score_fold. The caller
+        fixes the population (one shared set across methods); this scores exactly what it is
+        given, so an empty prediction scores 0 against a non-empty ref."""
+        rows = self._fold_rows(fold)
+        fs = []
+        for tid, (text, kind) in outputs.items():
+            pred = html_to_text(text) if kind == "html" else text
+            fs.append(wcxb_eval.word_f1(pred, rows[tid][2]))
         n = len(fs)
         return {"n": n, "prec": sum(p for p, _, _ in fs) / n,
                 "rec": sum(r for _, r, _ in fs) / n, "f1": sum(f for _, _, f in fs) / n}

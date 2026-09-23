@@ -30,16 +30,23 @@ class Spec:
     name: str
     fn: callable          # html -> main-content str, or None/"" for a miss
     kind: str             # "html" or "text"
+    text_fn: callable = None   # native plain-text output, for text-metric boards (WCXB/DAnIEL);
+    #                            None => the tool has no text mode, so text mode reuses fn/kind
 
 
-def register(name, kind):
+def register(name, kind, text_fn=None):
     def deco(fn):
-        EXTRACTORS[name] = Spec(name, fn, kind)
+        EXTRACTORS[name] = Spec(name, fn, kind, text_fn)
         return fn
     return deco
 
 
-@register("trafilatura", "html")
+def _trafilatura_txt(html):
+    import trafilatura
+    return trafilatura.extract(html, output_format="txt")
+
+
+@register("trafilatura", "html", text_fn=_trafilatura_txt)
 def _trafilatura(html):
     import trafilatura
     return trafilatura.extract(html, output_format="html")
@@ -57,14 +64,16 @@ def _resiliparse(html):
     return extract_plain_text(html, main_content=True)
 
 
-def _one(spec, html):
+def _one(spec, html, text=False):
+    fn = spec.text_fn if (text and spec.text_fn) else spec.fn
+    kind = "text" if (text and spec.text_fn) else spec.kind
     t0 = time.perf_counter()
-    raw = spec.fn(html)
+    raw = fn(html)
     ms = (time.perf_counter() - t0) * 1e3
-    return Output(ms, raw or "", spec.kind)   # an empty return is a completed run: timed, and scored as an empty prediction
+    return Output(ms, raw or "", kind)   # an empty return is a completed run: timed, and scored as an empty prediction
 
 
-def run(name, pages, warmup=5):
+def run(name, pages, warmup=5, text=False):
     """Time `name` over `pages` (tid -> {html, ...}); return (tid -> Output, notes). Warmup pages
     run untimed first to absorb the library's first-call cost, then every page is timed. An empty
     return is KEPT -- it ran to completion, so its time is valid and it scores as an empty
@@ -74,13 +83,13 @@ def run(name, pages, warmup=5):
     items = [(tid, p["html"]) for tid, p in pages.items() if p.get("html")]
     for _, html in items[:warmup]:
         try:
-            _one(spec, html)
+            _one(spec, html, text)
         except Exception:
             pass
     out, empty, raised = {}, 0, 0
     for tid, html in items:
         try:
-            o = _one(spec, html)
+            o = _one(spec, html, text)
         except Exception:
             raised += 1
             continue
