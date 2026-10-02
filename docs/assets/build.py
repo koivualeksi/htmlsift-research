@@ -509,7 +509,7 @@ def tiers():
 # =====================================================================================
 # 5. annotation-example.svg -- same page kind, opposite gold
 # =====================================================================================
-def annotation_example():
+def annotation_example(footer=True, name="annotation-example.svg"):
     s = SVG(560)
     y0 = s.frame("Same kind of page, opposite gold",
                  "Two shop category pages, each a heading and blurb above a product grid. WCXB kept blurb and grid; WMB kept the blurb and dropped the grid.")
@@ -552,10 +552,16 @@ def annotation_example():
     page(490, BLUE, BLUE_T, "WMB", "apeainthepod.com/maternity/tees-and-tanks.asp", "same page kind", "blurb",
          "gold = heading + blurb; 2 of 809 blocks, 241 priced tees dropped")
 
-    s.footer(top + 330 + 72, "Two policies, not two difficulties.",
-             "This is why every cross-board number is reported as its own cell, never blended, and why the harness never trains on a board it reports.",
-             "source: gold of WCXB dev-0643 (vendors/wcxb/data/wcxb.jsonl) and WMB 09157708-8786-480f-ac55-145501dd5c1c (vendors/wmb/data/blocks.jsonl)")
-    s.save("annotation-example.svg")
+    source = ("source: gold of WCXB dev-0643 (vendors/wcxb/data/wcxb.jsonl) and "
+              "WMB 09157708-8786-480f-ac55-145501dd5c1c (vendors/wmb/data/blocks.jsonl)")
+    if footer:
+        s.footer(top + 330 + 72, "Two policies, not two difficulties.",
+                 "This is why every cross-board number is reported as its own cell, never blended, and why the harness never trains on a board it reports.",
+                 source)
+    else:  # LinkedIn cut: no takeaway line; trim the canvas to the last caption
+        s.end_y = top + 330 + 46
+        s.b.append(f"<!-- {esc(source)} -->")
+    s.save(name)
 
 
 # =====================================================================================
@@ -1024,3 +1030,4 @@ if __name__ == "__main__":
                data_efficiency, cpu_speed_accuracy, cross_board, daniel_lolo,
                gpu_speed_accuracy_full, gpu_speed_accuracy_lite):
         fn()
+    annotation_example(footer=False, name="annotation-example-linkedin.svg")
