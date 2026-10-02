@@ -7,8 +7,13 @@ mean mirrors WMBBenchmark.score_fold.
 Implements vendors.shared.benchmark.Benchmark. WCXB has no carved val fold: dev is
 both the train set and the val monitor (train == val), so build_pages resolves
 "train" and "val" to the same dev pages; test is never trained on or labeled.
+
+The one exception is a page-type ladder (page_type set): every fold holds that type
+only, train rungs are prefixes of one seeded shuffle of its dev pages, and val is the
+dev that follows the top rung -- fixed across rungs, disjoint from every one.
 """
 import json
+import random
 from pathlib import Path
 
 from core.prep_page import prep_page
@@ -24,12 +29,14 @@ FEATS = DATA / "feats.jsonl"
 class WCXBBenchmark:
     name = "wcxb"
     holdout_groups = ()
-    supports_train_limit = False
+    supports_train_limit = True       # page-type ladders only (train_subset)
 
-    def __init__(self):
+    def __init__(self, page_type=None, top=None):
+        self.page_type, self.top = page_type, top
         self._feats = None        # raw feats.jsonl {tid: [n, K]}, loaded once
-        self._rows = {}           # split -> {tid: (blocks, labels|None, ref)}, cached
+        self._cache = {}          # split -> {tid: (blocks, labels|None, ref)}, cached
         self._page_types = {}     # tid -> page_type, populated by _fold_rows
+        self._order = None        # the page-type ladder's shuffled dev order
 
     # ---- fold resolution (WCXB: train == val == dev; test is the 511) ----
 
@@ -39,7 +46,7 @@ class WCXBBenchmark:
         wcxb.jsonl (no labels, ref kept for scoring). Empty renders (blocks []) stay --
         build_pages/export_probs handle them, score_fold scores pred="" as F1 0."""
         split = "test" if fold == "test" else "dev"
-        if split not in self._rows:
+        if split not in self._cache:
             labels = {}
             if split == "dev":
                 with open(DATA / "labels.jsonl", encoding="utf-8") as f:
@@ -50,11 +57,11 @@ class WCXBBenchmark:
             with open(DATA / "wcxb.jsonl", encoding="utf-8") as f:
                 for line in f:
                     r = json.loads(line)
-                    if r["split"] == split:
+                    if r["split"] == split and self.page_type in (None, r["page_type"]):
                         tid = r["track_id"]
                         refs[tid] = r["main_content"] or ""
                         self._page_types[tid] = r["page_type"]
-            keep = set(labels) if split == "dev" else set(refs)
+            keep = set(labels) & set(refs) if split == "dev" else set(refs)
             rows = {}
             with open(DATA / "blocks.jsonl", encoding="utf-8") as f:
                 for line in f:
@@ -62,8 +69,28 @@ class WCXBBenchmark:
                     tid = r["track_id"]
                     if tid in keep:
                         rows[tid] = (r["blocks"], labels.get(tid), refs.get(tid, ""))
-            self._rows[split] = rows
-        return self._rows[split]
+            self._cache[split] = rows
+        return self._cache[split]
+
+    def _ladder(self):
+        if self._order is None:
+            order = sorted(t for t, r in self._fold_rows("train").items() if r[0])
+            random.Random(20260815).shuffle(order)
+            assert self.top < len(order),                 f"top rung {self.top} leaves no {self.page_type} val pages (have {len(order)})"
+            self._order = order
+        return self._order
+
+    def train_subset(self, n):
+        assert self.page_type and n <= self.top, "train_subset needs page_type and n <= top"
+        return set(self._ladder()[:n])
+
+    def _rows(self, fold):
+        # train-time view of a fold: under a ladder, val is the carve after the top rung
+        rows = self._fold_rows(fold)
+        if self.page_type and fold == "val":
+            val = set(self._ladder()[self.top:])
+            rows = {t: r for t, r in rows.items() if t in val}
+        return rows
 
     def raw_features(self):
         if self._feats is None:
@@ -73,8 +100,10 @@ class WCXBBenchmark:
     # ---- Benchmark protocol ----
 
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None):
-        rows = self._fold_rows(fold)
-        items = [(tid, blk, lab) for tid, (blk, lab, _) in rows.items() if blk]
+        assert not (self.page_type and fold == "train" and ids is None),             "a page-type run trains only on a train_subset rung"
+        # file order, ids only filter: iterating the set would make page order hash-seeded
+        items = [(tid, blk, lab) for tid, (blk, lab, _) in self._rows(fold).items()
+                 if blk and (ids is None or tid in ids)]
         return [prep_page(tok, tid, blk, lab, window, cap=cap,
                           feats=(feats[tid] if feats else None))
                 for tid, blk, lab in items[:limit]]
@@ -85,7 +114,7 @@ class WCXBBenchmark:
         labeling.join_selected and scores through the vendored word_f1 -- the one
         prediction assembly, shared with labels.py / evaluate.py. workers ignored
         (word_f1 is cheap; no fork pool, unlike WMB's ROUGE)."""
-        rows = self._fold_rows("val")
+        rows = self._rows("val")
         blocks = {p["tid"]: rows[p["tid"]][0] for p in val_pages}
         refs = {p["tid"]: rows[p["tid"]][2] for p in val_pages}
 
@@ -99,7 +128,7 @@ class WCXBBenchmark:
         return score_val
 
     def _fold_blocks(self, fold):
-        return {tid: r[0] for tid, r in self._fold_rows(fold).items()}
+        return {tid: r[0] for tid, r in self._rows(fold).items()}
 
     def export_probs(self, fold, tok, infer_fn, out_path, window, cap=0, feats=None, limit=None):
         return bench_ops.export_probs(self._fold_blocks, fold, tok, infer_fn, out_path,
@@ -149,6 +178,8 @@ class WCXBBenchmark:
         return {t: sum(v) / len(v) for t, v in by.items()}
 
     def _train_ids(self):
+        if self.page_type:
+            return self._ladder()[:self.top]
         return self._fold_rows("train").keys()
 
     def load_features(self, group="ABC"):

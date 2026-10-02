@@ -10,7 +10,7 @@ from typing import Protocol
 class Benchmark(Protocol):
     name: str                                    # "wmb" / "wcxb" -- for result paths + messages
     holdout_groups: tuple                        # leave-one-out training groups (DAnIEL langs); () = unsupported
-    supports_train_limit: bool                   # the data-efficiency ladder (WMB pool prefixes)
+    supports_train_limit: bool                   # the data-efficiency ladder (train_subset)
 
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None) -> list[dict]:
         """This board's fold -> prepared pages: empty renders dropped, z-scored
@@ -54,13 +54,15 @@ class Benchmark(Protocol):
 
 # Board registry: name -> Benchmark. Lazy per-board imports keep this a load-time leaf,
 # so importing the Protocol never drags in a board.
-def load_benchmark(name, holdout=None):
+def load_benchmark(name, holdout=None, page_type=None, top=None):
+    if page_type is not None and name != "wcxb":
+        raise SystemExit(f"--page-type is a WCXB ladder; not supported for {name}")
     if name == "wmb":
         from vendors.wmb.adapter.benchmark import WMBBenchmark
         return WMBBenchmark()
     if name == "wcxb":
         from vendors.wcxb.adapter.benchmark import WCXBBenchmark
-        return WCXBBenchmark()
+        return WCXBBenchmark(page_type=page_type, top=top)
     if name == "daniel":
         from vendors.daniel.adapter.benchmark import DanielBenchmark
         return DanielBenchmark(holdout=holdout)

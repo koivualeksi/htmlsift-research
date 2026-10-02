@@ -31,7 +31,8 @@ def setup(args, tag):
     run dir, open the ledger (resolve_repo + shard) and resume its done-set. tag is the
     result-file stem (finetune_results / frozen_results / ...). Returns the base-Ctx
     fields as kwargs for the trainer's own Ctx subclass."""
-    bench = load_benchmark(args.benchmark, getattr(args, "holdout", None))
+    bench = load_benchmark(args.benchmark, getattr(args, "holdout", None),
+                           getattr(args, "page_type", None), getattr(args, "top", None))
     dev = torch.device(args.device)
     out_dir = Path(args.out) if args.out else ROOT / "data" / "runs" / bench.name
     out_dir.mkdir(parents=True, exist_ok=True)

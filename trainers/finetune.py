@@ -178,6 +178,8 @@ def _run_board(args, tag, arms, seeds, train_limits, holdout):
                         rec["train_limit"] = tl
                     if holdout:
                         rec["holdout"] = holdout
+                    if args.page_type:
+                        rec["page_type"] = args.page_type
                     if args.export_test:
                         _test(ctx, model, tok, fz, arm, seed, rec)
                     if args.quant_eval:
@@ -210,6 +212,9 @@ def main():
     ap.add_argument("--train-limit", default=None,
                     help="subsample training pool to N pages (or a comma list N1,N2,... "
                          "run in sequence), stratified by level to match val (nested subsets)")
+    ap.add_argument("--page-type", default=None,
+                    help="WCXB one-type ladder (article/service/forum/...): train rungs and "
+                         "val carved from that type's dev, test = that type's test pages")
     ap.add_argument("--lolo", action="store_true",
                     help="DAnIEL leave-one-language-out: train all five held-out languages "
                          "in one run; results only, no keepers")
@@ -226,6 +231,9 @@ def main():
         raise SystemExit(f"{bench.name} needs --holdout <group> or --lolo")
     if args.train_limit is not None and not bench.supports_train_limit:
         raise SystemExit(f"--train-limit not supported for {bench.name}")
+    if args.page_type and (args.train_limit is None or args.keep):
+        raise SystemExit("--page-type runs a train-limit ladder, results only: "
+                         "needs --train-limit, no --keep")
     if args.quant_eval and args.qat_w8a8:
         raise SystemExit("--quant-eval scores int8 variants against the fp32 model; "
                          "incompatible with --qat-w8a8")
@@ -247,6 +255,7 @@ def main():
         raise SystemExit("--keep is incompatible with a multi-value --train-limit "
                          "(one ckpt name per arm/seed would be overwritten)")
 
+    args.top = max(train_limits) if args.page_type else None
     holdouts = [args.holdout]
     if args.lolo:
         holdouts = bench.holdout_groups
