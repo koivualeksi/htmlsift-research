@@ -1,0 +1,242 @@
+WCXB golden truth -- annotated in page (block) order
+page      : https://www.upliftdesk.com/standing-desks/
+track_id  : dev-0643   page_type: collection
+source    : vendors/wcxb/data/blocks.jsonl (blocks) + labels.jsonl (gold labels)
+reference : vendors/wcxb/data/dev/ground-truth/0643.json -> ground_truth.main_content
+labeler f1: 1.0  precision 1.0  recall 1.0  (n_pos 65)
+figure claim: gold = blurb + all 30 desks with prices; 65 of 178 blocks
+
+total blocks: 178   kept as gold: 65   dropped: 113
+priced blocks (contain '$<digit>'): total 37, of which kept 30, dropped 7
+==============================================================================
+
+[   0] drop  | Business Space Plans - Free
+[   1] drop  | - - - Desks & tables
+[   2] drop  | - Seating
+[   3] drop  | - Accessories
+[   4] drop  | - Storage
+[   5] drop  | - Space division
+[   6] drop  | - Workplace
+[   7] drop  | - Explore
+[   8] drop  | - Sale
+[   9] drop  | - - - Your browser does not support the video tag.
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  10] GOLD  | # Standing desks
+[  11] GOLD  | Improve your health, comfort, and productivity with Wirecutter's Standing Desk Pick for 9 years. Receive multiple free accessories when you purchase a height...
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  12] drop  | Sale ends 03/31/2026. While supplies last. Use coupon code **SPRING** at checkout. Coupon offer calculated on subtotal before tax and shipping. One coupon pe...
+[  13] drop  | HomeStanding Desks
+[  14] drop  | Filters
+[  15] drop  | ## Filters
+[  16] drop  | ### Desk type
+[  17] drop  | 2-leg
+[  18] drop  | L-shaped
+[  19] drop  | 4-leg
+[  20] drop  | 1-leg
+[  21] drop  | Desk converter
+[  22] drop  | ### Desktop shape
+[  23] drop  | ### Desktop width
+[  24] drop  | ### Desktop depth
+[  25] drop  | ### Desktop material
+[  26] drop  | ### Height range
+[  27] drop  | ### Frame color
+[  28] drop  | ### Adjustment type
+[  29] drop  | ### Certifications
+[  30] drop  | ### Product type
+[  31] drop  | ### Brand
+[  32] drop  | UPLIFT Desk
+[  33] drop  | ### Features
+[  34] drop  | 15-year warranty
+[  35] drop  | Ships same day
+[  36] drop  | On sale
+[  37] drop  | Assembly help available
+[  38] drop  | Best sellers
+[  39] drop  | Free returns
+[  40] drop  | +5 Free Accessories
+[  41] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  42] GOLD  | UPLIFT V3 Standing Desk
+[  43] GOLD  | $599+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  44] drop  | +5 Free Accessories
+[  45] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  46] GOLD  | UPLIFT L-Shaped Standing Desk, 3-Leg
+[  47] GOLD  | $1149+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  48] drop  | +5 Free AccessoriesNew
+[  49] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  50] GOLD  | UPLIFT Parsons Standing Desk
+[  51] GOLD  | $829+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  52] drop  | +5 Free AccessoriesNew
+[  53] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  54] GOLD  | UPLIFT Walking Desk
+[  55] GOLD  | $948+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  56] drop  | +5 Free Accessories
+[  57] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  58] GOLD  | UPLIFT Standing Desk, 4-Leg
+[  59] GOLD  | $959+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  60] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  61] GOLD  | UPLIFT V3 Curved Corner Standing Desk
+[  62] GOLD  | $989+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  63] drop  | +5 Free Accessories
+[  64] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  65] GOLD  | UPLIFT V3 Narrative Standing Desk
+[  66] GOLD  | $2889+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  67] drop  | +5 Free Accessories
+[  68] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  69] GOLD  | UPLIFT V3 Custom Laminate Standing Desk
+[  70] GOLD  | $899+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  71] drop  | +5 Free Accessories
+[  72] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  73] GOLD  | UPLIFT L-Shaped Custom Laminate Standing Desk, 3-Leg
+[  74] GOLD  | $1799+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  75] drop  | +5 Free Accessories
+[  76] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  77] GOLD  | UPLIFT Custom Laminate Standing Desk, 4-Leg
+[  78] GOLD  | $1429+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  79] drop  | +5 Free Accessories
+[  80] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  81] GOLD  | UPLIFT V3 Custom Laminate Standing Desk, 24" Deep Desktop
+[  82] GOLD  | $799+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  83] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  84] GOLD  | UPLIFT V3 120-Degree Standing Desk
+[  85] GOLD  | $979+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  86] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  87] GOLD  | UPLIFT V3 Custom Solid Wood Standing Desk
+[  88] GOLD  | $1989+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  89] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  90] GOLD  | UPLIFT L-Shaped Custom Solid Wood Standing Desk, 3-Leg
+[  91] GOLD  | $3599+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  92] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  93] GOLD  | UPLIFT Custom Solid Wood Standing Desk, 4-Leg
+[  94] GOLD  | $2449+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  95] drop  | +5 Free Accessories
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  96] GOLD  | UPLIFT Height Adjustable Craft Table
+[  97] GOLD  | $1539+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[  98] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[  99] GOLD  | UPLIFT Pneumatic Standing Desk
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 100] drop  | $599+
+[ 101] drop  | Save $100Clearance
+[ 102] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 103] GOLD  | UPLIFT Clearance Standing Desk
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 104] drop  | $599
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 105] GOLD  | $499+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 106] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 107] GOLD  | UPLIFT Height Adjustable Bistro Table - Rectangular
+[ 108] GOLD  | $449+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 109] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 110] GOLD  | UPLIFT Wall Mounted Standing Desk
+[ 111] GOLD  | $419+
+[ 112] GOLD  | UPLIFT Height Adjustable Bistro Table - Round
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 113] drop  | $449+
+[ 114] drop  | +5 Free Accessories
+[ 115] drop  | + More
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 116] GOLD  | UPLIFT V3 Height Adjustable Conference Table, 30" Wide
+[ 117] GOLD  | $659+
+[ 118] GOLD  | UPLIFT Conference Table, Ping-Pong Size
+[ 119] GOLD  | $1489+
+[ 120] GOLD  | UPLIFT Conference Table, 42" Wide
+[ 121] GOLD  | $1199+
+[ 122] GOLD  | E7 Electric Standing Desk Converter
+[ 123] GOLD  | $619+
+[ 124] GOLD  | ATX Standing Desk Converter
+[ 125] GOLD  | $319+
+[ 126] GOLD  | Lady Bird Standing Desk Converter
+[ 127] GOLD  | $199+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 128] drop  | Save $20
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 129] GOLD  | Riser or Clamp Standing Desk Converter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 130] drop  | $269
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 131] GOLD  | $249+
+[ 132] GOLD  | E3 Compact Standing Desk Converter
+[ 133] GOLD  | $149+
+[ 134] GOLD  | UPLIFT Wall Mounted Standing Desk Frame
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 135] drop  | $319+
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv GOLD START vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[ 136] GOLD  | UPLIFT V3 2-Leg Standing Desk Frame
+[ 137] GOLD  | $469+
+[ 138] GOLD  | UPLIFT 3-Leg Standing Desk Frame
+[ 139] GOLD  | $719+
+[ 140] GOLD  | UPLIFT 4-Leg Standing Desk Frame
+[ 141] GOLD  | $919+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOLD END ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[ 142] drop  | ### Sign up for our newsletter
+[ 143] drop  | Receive product updates, special offers, ergo tips, and inspiration from our team.
+[ 144] drop  | ### Shop
+[ 145] drop  | BestsellersNew arrivalsDesksTablesDesktop & framesAccessoriesStorageOffice seatingLounge seatingSpace divisionAcousticsGift certificatesSaleCollegiate Collec...
+[ 146] drop  | ### Workplace
+[ 147] drop  | UPLIFT for teamsFree space planningQuantity discountsCase studies
+[ 148] drop  | ### Visit a Showroom
+[ 149] drop  | Austin showroomChicago showroom
+[ 150] drop  | ### Why UPLIFT Desk
+[ 151] drop  | Our storyStanding desk benefitsErgonomicsSustainability & environmentUPLIFT Desk blogDesk donation programAwards & recognitionVideo galleryCustomer reviewsAf...
+[ 152] drop  | ### Support
+[ 153] drop  | FAQContact usShippingReturnsWarrantyFinancingHSA/FSA
+[ 154] drop  | ### Resources
+[ 155] drop  | Assembly guidesTroubleshootingDesktop careReplacement partsProduct comparisonsDesktop lookbookErgonomic calculatorUPLIFT Desk app3D files
+[ 156] drop  | We're here to help:
+[ 157] drop  | Mon-Fri: 8am-6pm Central
+[ 158] drop  | Sat: 9am-6pm Central
+[ 159] drop  | Live Chat
+[ 160] drop  | Call
+[ 161] drop  | 800-349-3839
+[ 162] drop  | Email
+[ 163] drop  | hello@upliftdesk.com
+[ 164] drop  | Fill out
+[ 165] drop  | Contact Form
+[ 166] drop  | - - - - - - © 2026 All Rights Reserved
+[ 167] drop  | •
+[ 168] drop  | Patents
+[ 169] drop  | •
+[ 170] drop  | Privacy Policy
+[ 171] drop  | •
+[ 172] drop  | Terms of Service
+[ 173] drop  | •
+[ 174] drop  | Accessibility Statement
+[ 175] drop  | •
+[ 176] drop  | Your Privacy Choices
+[ 177] drop  | - - - - - - © 2026 All Rights ReservedPatentsPrivacy PolicyTerms of ServiceAccessibility StatementYour Privacy Choices

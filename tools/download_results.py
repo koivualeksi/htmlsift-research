@@ -42,8 +42,11 @@ def _epochs(r):
 def group_key(r):
     """The reader's cell identity: the writer's arm key -- which already separates cap,
     train_limit and holdout -- plus the epoch budget, which no key carries and which no
-    cell may average over. Derived from record_key so the two cannot drift."""
-    return record_key(r) + (_epochs(r),)
+    cell may average over. Derived from record_key so the two cannot drift. A WCXB
+    page-type ladder also carries its page_type: each type runs on its own shard, so the
+    writer never needs it, but one cell may never average two types' rungs."""
+    pt = (r["page_type"],) if "page_type" in r else ()
+    return record_key(r) + pt + (_epochs(r),)
 
 
 def _warn_test_cell_clashes(records):
@@ -147,12 +150,15 @@ def render(records, caption):
     sections = defaultdict(list)
     for g in collapse(records):
         r = g[0]
-        sections["ladder" if "train_limit" in r else
+        sections["typeladder" if "page_type" in r else
+                 "ladder" if "train_limit" in r else
                  "holdout" if "holdout" in r else "full"].append(g)
     out = [caption, "", "Regenerate: `python tools/download_results.py`", ""]
     for name, title, extra, head in (
             ("full", "", [], []),
             ("ladder", "Training-set size", [lambda r: r["train_limit"]], ["pages"]),
+            ("typeladder", "Training-set size by page type",
+             [lambda r: r["page_type"], lambda r: r["train_limit"]], ["type", "pages"]),
             ("holdout", "Held-out language", [lambda r: r["holdout"]], ["holdout"])):
         cells = sections.get(name)
         if not cells:
@@ -268,7 +274,9 @@ LEDGERS = [
      "the arms re-run with --export-test, and its seed count is its own.", render),
     (["wcxb/finetune_results.jsonl"], "results/wcxb-finetune.md",
      "WCXB fine-tune -- word-F1 by their evaluate.py. WCXB carves no val fold, so the val "
-     "columns are dev1497 (train == val == dev) and the test table is test511.", render),
+     "columns are dev1497 (train == val == dev) and the test table is test511. The page-type "
+     "ladder is the exception: its val is that type's dev left after the top rung, and its "
+     "test is that type's test511 pages.", render),
     (["wcxb/finetune_qat_results.jsonl"], "results/wcxb-finetune-qat.md",
      "WCXB fine-tune W8A8-QAT -- word-F1 by their evaluate.py, val columns dev1497 (WCXB "
      "carves no val fold), test table test511.", render),

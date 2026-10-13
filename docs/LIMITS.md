@@ -160,6 +160,33 @@ entry eats the same split. `track_id` namespaces the collision.
 fixpoints — the best word-F1 block selection found, a lower bound on the exact
 knapsack optimum, not a proven maximum.
 
+**Duplicates inflate the article ladder.** 79 of the 257 article test pages have a
+byte-identical twin among the article dev pages, and a bigger rung holds more of the
+twins: 6 at 50 pages, 11 at 100, 20 at 150, 25 at 200, 28 at 250, 48 at 500. A twin the
+model trained on scores close to perfect, so the larger rungs read high. The gain from 50
+to 150 pages (2.25 pt) is far larger than the twins can explain; the 0.46 pt from 150 to
+500 is not, so it should not be read as real learning. The `wcxb-311m-10` reference row
+trained on all 79 twins. Service has 3 test pages with a dev twin and forum 1, none of
+them inside a rung.
+
+**Service and forum ladders are small.** Their test sets are 59 and 51 pages and their
+val sets, which only pick the best of 4 epochs, are 14 and 7 pages. Differences under a
+few points at this n are not decision-grade.
+
+**Service does not learn from more service pages.** Labels are not the bottleneck: the
+dev label ceiling for service is .995 and the test oracle .992. Yet test F1 moves from
+0.8128 to 0.8246 between 50 and 150 pages, stays under the zero-shot WMB model (0.8274),
+and structural features do not change it. Our reading of the worst service test pages
+is that the reference keeps contact blocks, staff lists and menu grids on some pages and
+drops comparable sections on others, so one more page adds a conflicting example. That
+reading is from inspecting pages, not from a measurement.
+
+**The small rungs may be undertrained.** Warmup is a fixed 200 steps and the epoch count
+is 4 at every rung, so a 50-page rung spends most of its training warming up, and many
+rungs pick their last epoch as best. Equal-step training would likely raise the
+low end, which would move the article plateau earlier, not later. The WMB train-limit
+ladder has the same setup.
+
 ## DAnIEL
 
 **A third annotation policy.** DAnIEL's gold is `<p>`-segmented news paragraphs,

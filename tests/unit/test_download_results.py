@@ -66,6 +66,13 @@ def test_ladder_does_not_overwrite_the_full_pool():
     assert sorted(r["best_val"] for g in groups for r in g) == [0.88, 0.90]
 
 
+def test_page_type_rungs_of_one_size_are_distinct_cells():
+    # three type ladders share train_limit 50 on one board; a cell may not merge them
+    groups = collapse([rec(train_limit=50, page_type=t, best_val=v)
+                       for t, v in (("article", 0.94), ("service", 0.81), ("forum", 0.84))])
+    assert sorted(r["best_val"] for g in groups for r in g) == [0.81, 0.84, 0.94]
+
+
 # ---- render ----
 
 def test_ladder_and_holdout_render_as_separate_tables():
@@ -74,6 +81,13 @@ def test_ladder_and_holdout_render_as_separate_tables():
                   rec(best_val=0.85, holdout="Chinese")], "cap")
     assert "## Training-set size" in out and "## Held-out language" in out
     assert out.index("## Training-set size") < out.index("## Held-out language")
+
+
+def test_page_type_ladder_renders_apart_from_the_plain_ladder():
+    out = render([rec(best_val=0.88, train_limit=2000),
+                  rec(best_val=0.81, train_limit=50, page_type="service")], "cap")
+    assert "## Training-set size by page type" in out
+    assert "| service | 50 |" in out
 
 
 def test_epoch_column_appears_only_when_curves_exist():

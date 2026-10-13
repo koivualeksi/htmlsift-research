@@ -107,6 +107,26 @@ no `--keep` (keeping a checkpoint across multiple limits raises):
 `train_limit` is part of the ledger key, so a rung never collides with the full-pool
 run of the same arm, and `download_results.py` renders the ladder as its own table.
 
+On WCXB the ladder runs one page type at a time with `--page-type`. The type's dev
+pages are shuffled once with seed 20260815, each rung is a prefix of that order, and
+val is whatever follows the top rung, so the top rung has to leave at least one page
+(article 792, service 164, forum 107 usable dev pages). Test is that type's test511
+pages, so this one does take `--export-test`. Run each type on its own shard, because
+the ledger key has no page type:
+
+    python trainers/finetune.py --benchmark wcxb --page-type article \
+        --train-limit 50,100,150,200,250,500 --models 311m --layers 10 --feats none \
+        --seeds 3 --export-test --push --shard wcxbtl-article
+    python trainers/finetune.py --benchmark wcxb --page-type service \
+        --train-limit 50,100,150 --models 311m --layers 10 --feats none \
+        --seeds 3 --export-test --push --shard wcxbtl-service
+    python trainers/finetune.py --benchmark wcxb --page-type forum \
+        --train-limit 50,100 --models 311m --layers 10 --feats none \
+        --seeds 3 --export-test --push --shard wcxbtl-forum
+
+The features comparison in `CLAIMS.md` is the service and forum runs again with
+`--feats ABC` on shards `wcxbtl-service-fabc` and `wcxbtl-forum-fabc`.
+
 ## WMB evaluation
 
 The board metric is ROUGE-5 F1 against `convert_main_content` (their

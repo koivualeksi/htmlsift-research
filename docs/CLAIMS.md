@@ -159,6 +159,57 @@ row is the same arm on the full split at the same epoch budget: 0.8966±0.0035 e
 | 2000 | 0.8824±0.0016 | 0.8887±0.0029 |
 | 4000 | 0.8868±0.0044 | 0.8972±0.0017 |
 
+### Data efficiency by page type, WCXB test511, 311m-10, 4 epochs, 3 seeds
+
+One page type at a time, trained from the base encoder on nested prefixes of a fixed
+shuffle of that type's dev pages (`--page-type`). Val is the type's dev left after the
+top rung, the same pages for every rung; test is the type's own test511 pages at
+threshold 0.5, best-epoch. The two reference rows are the per-type cells of
+`results/generalization.md`: `wmb-311m-10` zero-shot, and `wcxb-311m-10` trained on all
+1,497 dev pages of every type.
+
+    python trainers/finetune.py --benchmark wcxb --page-type article \
+        --train-limit 50,100,150,200,250,500 --models 311m --layers 10 --feats none \
+        --seeds 3 --export-test --push
+    python tools/download_results.py            # -> results/wcxb-finetune.md
+
+**Article, n=257** (val is 292 pages):
+
+| pages | val | test F1 |
+|---|---|---|
+| 50 | 0.9117±0.0025 | 0.9401±0.0007 |
+| 100 | 0.9429±0.0017 | 0.9554±0.0011 |
+| 150 | 0.9492±0.0009 | 0.9626±0.0014 |
+| 200 | 0.9503±0.0011 | 0.9627±0.0009 |
+| 250 | 0.9513±0.0058 | 0.9641±0.0007 |
+| 500 | 0.9619±0.0006 | 0.9672±0.0026 |
+| zero-shot `wmb-311m-10` | | 0.9342±0.0010 |
+| `wcxb-311m-10`, all dev | | 0.9723±0.0008 |
+
+50 article pages already beat the WMB-trained model on WCXB articles (0.9401 against
+0.9342). The curve flattens at 150: from 50 to 150 it gains 2.25 pt, from 150 to 500 it
+gains 0.46 pt, and the 79 article test pages with a byte-identical dev twin inflate the
+larger rungs (`LIMITS.md`).
+
+**Service, n=59, and forum, n=51**, text-only (`--feats none`) against structural
+features (`--feats ABC`), test F1:
+
+| type | pages | none | ABC |
+|---|---|---|---|
+| service | 50 | 0.8128±0.0141 | 0.8158±0.0087 |
+| service | 100 | 0.8190±0.0035 | 0.8134±0.0107 |
+| service | 150 | 0.8246±0.0021 | 0.8270±0.0100 |
+| service, zero-shot `wmb-311m-10` | | 0.8274±0.0076 | |
+| service, `wcxb-311m-10` all dev | | 0.8561±0.0068 | |
+| forum | 50 | 0.8438±0.0074 | 0.8343±0.0264 |
+| forum | 100 | 0.8778±0.0046 | 0.8829±0.0078 |
+| forum, zero-shot `wmb-311m-10` | | 0.8668±0.0147 | |
+| forum, `wcxb-311m-10` all dev | | 0.8601±0.0053 | |
+
+Service stays flat and never passes the zero-shot model; forum gains 3.4 pt from 50 to
+100 pages. Every features-minus-text difference is inside the seed spread. At these n
+both curves show a shape, not a decision-grade number.
+
 ### DAnIEL leave-one-language-out — ROUGE-L F1, 311m-10, 4 epochs
 
 Train on four languages, score the fifth, so n is that language's page count and the
