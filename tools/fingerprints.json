@@ -1,0 +1,14 @@
+[
+  {
+    "htmlsift": "0.2.1",
+    "source": "git+https://github.com/koivualeksi/htmlsift@1b6334743ea4c9a88f57508675e54c4b3a34a089",
+    "lxml": "6.1.1",
+    "libxml2": "2.14.6",
+    "boards": {
+      "wmb": "a7c4eb1dac7f8029",
+      "daniel": "1fc0b037512b327a",
+      "wcxb": "5cf222b3a200471b"
+    },
+    "total": "db019ee6a659e194"
+  }
+]
