@@ -18,7 +18,7 @@ page and re-applies it each epoch.
 from dataclasses import dataclass
 from pathlib import Path
 
-from core import render as cr
+from htmlsift.core import render as cr
 from vendors.shared.upstream import load
 from vendors.wmb.adapter.sanitize import sanitize_tree
 

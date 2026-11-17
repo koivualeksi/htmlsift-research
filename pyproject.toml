@@ -18,6 +18,7 @@ namespaces = true
 
 [project.optional-dependencies]
 repro = [
+    "htmlsift==0.2.1",               # the inference path: render, features, prep_page, band
     "huggingface-hub==1.12.2",
     "lxml==6.1.1",
     "html2text==2025.4.15",

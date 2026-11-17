@@ -11,9 +11,9 @@ import torch
 
 from bench.speed.competitors import Output
 from bench.speed.frontend import build_feats_fn, render_blocks
-from core.constants import THRESHOLD
+from htmlsift.extractor import THRESHOLD
 from core.loader import build_infer, resolve_ckpt
-from core.prep_page import prep_page
+from core.training import train_page
 from vendors.shared.arms import WINDOW
 from vendors.wmb.adapter.serialize import Prepared, apply
 
@@ -39,7 +39,7 @@ class HtmlsiftExtractor:
         root, blocks, block_src, feats = render_blocks(html, self.feats_fn)
         if not blocks:
             return Output((time.perf_counter() - t0) * 1e3, "", "html"), 0   # empty render: scorable empty prediction
-        page = prep_page(self.tok, tid, blocks, None, WINDOW, cap=self.cap, feats=feats)
+        page = train_page(self.tok, tid, blocks, None, WINDOW, cap=self.cap, feats=feats)
         labels = [int(v > THRESHOLD) for v in self.infer_fn(page)]
         html_out = apply(Prepared(root, block_src, ""), labels, output="html")   # "" when no block clears 0.5 -- kept, scored
         ms = (time.perf_counter() - t0) * 1e3

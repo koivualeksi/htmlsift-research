@@ -15,7 +15,8 @@ import torch
 from dotenv import load_dotenv
 
 from core.loader import build_infer, resolve_ckpt
-from core.features import apply_zscore, group_columns
+from htmlsift.core.features import apply_zscore
+from core.training import group_columns
 from trainers import ledger
 from vendors.shared.arms import WINDOW
 from vendors.shared.benchmark import load_benchmark

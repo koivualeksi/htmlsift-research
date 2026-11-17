@@ -13,7 +13,7 @@ Reads data/wmb.jsonl, writes data/blocks.jsonl, one record per page:
 labels is a 0/1 list parallel to blocks. A page with no cc-select (no annotated
 main content) gets all-zero labels.
 
---feats <groups> also gathers the structural features (core.features) on the same
+--feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
 parallel to blocks.jsonl. Omit it and no feature pass runs.
 
@@ -23,8 +23,8 @@ import argparse
 import json
 from pathlib import Path
 
-from core import render as cr
-from core.features import collect_features
+from htmlsift.core import render as cr
+from htmlsift.core.features import collect_features
 from vendors.wmb.adapter.sanitize import sanitize_tree
 
 WMB = Path(__file__).resolve().parents[1]

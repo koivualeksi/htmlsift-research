@@ -14,7 +14,7 @@ methods return the per-record scalar a trainer monitors on (as in WCXB/WMB).
 import json
 from pathlib import Path
 
-from core.prep_page import prep_page
+from core.training import train_page
 from vendors.shared import bench_ops
 from vendors.daniel.adapter.eval import ISO, LANGS, score
 from vendors.shared.html_text import html_to_text
@@ -81,8 +81,8 @@ class DanielBenchmark:
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None):
         rows = self._fold_rows(fold)
         items = [(tid, blk, lab) for tid, (blk, lab, _, _) in rows.items() if blk]
-        return [prep_page(tok, tid, blk, lab, window, cap=cap,
-                          feats=(feats[tid] if feats else None))
+        return [train_page(tok, tid, blk, lab, window, cap=cap,
+                           feats=(feats[tid] if feats else None))
                 for tid, blk, lab in items[:limit]]
 
     def _fold_blocks(self, fold):

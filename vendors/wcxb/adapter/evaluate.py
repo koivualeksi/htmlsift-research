@@ -23,7 +23,7 @@ import argparse
 import json
 from pathlib import Path
 
-from core.constants import THRESHOLD
+from htmlsift.extractor import THRESHOLD
 from vendors.wcxb.adapter.labels import (
     join_selected,
     label_page,

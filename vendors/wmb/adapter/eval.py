@@ -29,7 +29,7 @@ import argparse
 import json
 from pathlib import Path
 
-from core.constants import THRESHOLD
+from htmlsift.extractor import THRESHOLD
 from vendors.wmb.adapter import serialize
 from vendors.shared.upstream import load
 

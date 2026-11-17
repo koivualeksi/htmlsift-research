@@ -15,7 +15,7 @@ from itertools import groupby
 import torch
 from transformers import AutoTokenizer
 
-from core.features import feature_dim
+from htmlsift.core.features import feature_dim
 from core.model import build_encoder, build_head, infer_page
 from core.quant import emb_int8_fakequant, patch_qat_w8a8, ptq_dynamic
 from trainers.train import train

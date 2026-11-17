@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel
 
-from core.prep_page import window_starts
+from htmlsift.core.prep_page import window_starts
 
 
 def build_encoder(model_name, n_layers, dtype=torch.float32, device="cpu",

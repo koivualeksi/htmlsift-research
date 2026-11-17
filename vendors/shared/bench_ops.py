@@ -8,8 +8,8 @@ import json
 
 import numpy as np
 
-from core.features import apply_zscore, group_columns, zscore_stats
-from core.prep_page import prep_page
+from htmlsift.core.features import apply_zscore
+from core.training import group_columns, train_page, zscore_stats
 
 
 def raw_features(feats_path):
@@ -44,8 +44,8 @@ def export_probs(fold_blocks, fold, tok, infer_fn, out_path, window, cap=0, feat
     with open(out_path, "w", encoding="utf-8") as f:
         for tid, blocks in list(fold_blocks(fold).items())[:limit]:
             if blocks:
-                page = prep_page(tok, tid, blocks, None, window, cap=cap,
-                                 feats=(feats[tid] if feats else None))
+                page = train_page(tok, tid, blocks, None, window, cap=cap,
+                                  feats=(feats[tid] if feats else None))
                 probs = [round(float(x), 6) for x in infer_fn(page)]
             else:
                 probs = []

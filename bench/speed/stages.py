@@ -22,7 +22,7 @@ import torch
 
 from bench.speed.frontend import build_feats_fn, render_blocks
 from core.loader import build_infer, resolve_ckpt
-from core.prep_page import prep_page
+from core.training import train_page
 from vendors.shared.arms import WINDOW
 from vendors.wmb.adapter import eval as wmb_eval
 
@@ -41,7 +41,7 @@ def main():
     ap.add_argument("--threads", type=int, default=None, help="torch CPU threads (cpu only)")
     ap.add_argument("--warmup", type=int, default=5, help="untimed pages first (first-call overhead)")
     ap.add_argument("--band", action="store_true",
-                    help="chunked band attention (core.band, bit-identical, speed-only; encoder arms)")
+                    help="chunked band attention (htmlsift.core.band, bit-identical, speed-only; encoder arms)")
     args = ap.parse_args()
 
     dev = torch.device(args.device)
@@ -68,7 +68,7 @@ def main():
         if not blocks:
             return None
         t1 = time.perf_counter()
-        page = prep_page(tok, tid, blocks, None, WINDOW, cap=cap, feats=feats)
+        page = train_page(tok, tid, blocks, None, WINDOW, cap=cap, feats=feats)
         if cuda: torch.cuda.synchronize()
         t2 = time.perf_counter()
         infer_fn(page)
