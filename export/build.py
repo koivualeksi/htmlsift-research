@@ -14,7 +14,7 @@ import onnx
 import torch
 from onnx import TensorProto, helper, numpy_helper
 
-from core.features import feature_dim
+from htmlsift.core.features import feature_dim
 from core.model import build_head, build_table_embedder
 from export.paths import mini_paths
 

@@ -13,7 +13,8 @@ import argparse
 import torch
 from transformers import AutoTokenizer
 
-from core.features import apply_zscore, zscore_stats
+from htmlsift.core.features import apply_zscore
+from core.training import zscore_stats
 from trainers.frozen_screen import fit_head
 from core.model import build_table_embedder, pool_table_pages
 from trainers import ledger

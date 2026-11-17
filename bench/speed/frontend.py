@@ -8,8 +8,8 @@ of bench/speed.
 `gpu_throughput` take blocks (+feats) and ignore the rest. Everything after the render --
 prep, inference, serialize, batching, timing -- is caller-specific and stays there.
 """
-from core.features import apply_zscore, collect_features, group_columns
-from core.render import parse, render_tree
+from htmlsift.core.features import apply_zscore, collect_features
+from htmlsift.core.render import parse, render_tree
 from vendors.wmb.adapter.sanitize import sanitize_tree
 
 

@@ -35,7 +35,7 @@ from pathlib import Path
 import jieba
 from rouge_score import rouge_scorer
 
-from core.constants import THRESHOLD
+from htmlsift.extractor import THRESHOLD
 from vendors.shared.labeling import join_selected
 
 DATA = Path(__file__).resolve().parents[1] / "data"

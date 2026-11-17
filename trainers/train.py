@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from core.constants import THRESHOLD
+from htmlsift.extractor import THRESHOLD
 from core.model import cat_feats, encode_window, infer_page, pool
 
 

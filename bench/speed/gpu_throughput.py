@@ -27,7 +27,7 @@ from transformers import AutoTokenizer
 from core.loader import resolve_ckpt
 from bench.speed.frontend import render_blocks       # inference render: html -> (root, blocks, src, feats)
 from core.model import build_encoder, build_head, pool, pool_page
-from core.prep_page import prep_page
+from core.training import train_page
 from vendors.shared.arms import WINDOW
 from vendors.wmb.adapter import eval as wmb_eval
 
@@ -97,7 +97,7 @@ def main():
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--band", action="store_true",
-                    help="chunked band attention on the sliding layers (core.band; bit-identical, "
+                    help="chunked band attention on the sliding layers (htmlsift.core.band; bit-identical, "
                          "targets the long windowed pages that dominate sustained throughput)")
     ap.add_argument("--compile", action="store_true",
                     help="torch.compile the encoder with dynamic shapes")
@@ -110,8 +110,8 @@ def main():
     tok = AutoTokenizer.from_pretrained(ck["model"])
     enc, head = build_encoder_head(ck, dev)
     if args.band:
-        import core.band
-        core.band.enable(enc)                                  # bit-identical (tests/gate/test_band)
+        import htmlsift.core.band
+        htmlsift.core.band.enable(enc)                                  # bit-identical (tests/gate/test_band)
         print("band: chunked band attention enabled", flush=True)
     if args.compile:
         enc = torch.compile(enc, dynamic=True)
@@ -134,7 +134,7 @@ def main():
     render_ms = (time.perf_counter() - t) * 1e3
     rendered = [(tid, b) for tid, b in rendered if b]
     t = time.perf_counter()
-    pages = [prep_page(tok, tid, b, None, WINDOW, cap=cap) for tid, b in rendered]
+    pages = [train_page(tok, tid, b, None, WINDOW, cap=cap) for tid, b in rendered]
     prep_ms = (time.perf_counter() - t) * 1e3
 
     long_ = [i for i, p in enumerate(pages) if len(p["ids"]) > WINDOW]

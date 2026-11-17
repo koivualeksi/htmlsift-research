@@ -17,7 +17,7 @@ storage/compute, faithful because a real int8 op is exact given its quantised
 inputs -- so these produce admissible F1/size fields, never a speedup on their
 own. Speed is measured separately and is host-scoped (root CLAUDE.md section 7).
 
-Compose with band: quantize FIRST, then core.band.enable() (core/band.py).
+Compose with band: quantize FIRST, then htmlsift.core.band.enable().
 """
 import torch
 import torch.nn as nn

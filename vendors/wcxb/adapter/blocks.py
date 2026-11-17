@@ -16,7 +16,7 @@ core bug, and raises.
 Reads data/wcxb.jsonl, writes data/blocks.jsonl, one record per page:
     {track_id, blocks}
 
---feats <groups> also gathers the structural features (core.features) on the same
+--feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
 parallel to blocks.jsonl -- the same file and format WMB's blocks.py --feats
 produces. Omit it and no feature pass runs.
@@ -27,8 +27,8 @@ import argparse
 import json
 from pathlib import Path
 
-from core import render as cr
-from core.features import collect_features
+from htmlsift.core import render as cr
+from htmlsift.core.features import collect_features
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 COMBINED = DATA / "wcxb.jsonl"

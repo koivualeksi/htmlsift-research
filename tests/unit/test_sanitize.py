@@ -9,7 +9,7 @@ the eval-visible text survive.
 """
 import pytest
 
-from core import render
+from htmlsift.core import render
 from vendors.wmb.adapter import blocks as wmb_blocks
 from vendors.wmb.adapter import sanitize
 

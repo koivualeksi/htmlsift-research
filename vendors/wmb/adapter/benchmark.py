@@ -11,8 +11,8 @@ import random
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from core.constants import THRESHOLD
-from core.prep_page import prep_page
+from htmlsift.extractor import THRESHOLD
+from core.training import train_page
 from vendors.shared import bench_ops
 from vendors.wmb.adapter import eval as wmb_eval, serialize
 
@@ -114,8 +114,8 @@ class WMBBenchmark:
         fold_set = ids if ids is not None else wmb_eval.fold_ids(fold)
         blk = wmb_eval.load_blocks(fold_set)
         items = [(tid, b) for tid, b in blk.items() if b["blocks"]]
-        return [prep_page(tok, tid, b["blocks"], b["labels"], window, cap=cap,
-                          feats=(feats[tid] if feats else None))
+        return [train_page(tok, tid, b["blocks"], b["labels"], window, cap=cap,
+                           feats=(feats[tid] if feats else None))
                 for tid, b in items[:limit]]
 
     def _fold_blocks(self, fold):

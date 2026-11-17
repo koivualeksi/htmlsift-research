@@ -11,7 +11,7 @@ hydration, so there is no display:none-until-hydration main content to recover; 
 hidden subtree here is boilerplate. Rendering with no fallback also stress-tests
 the renderer -- a page it cannot render is a core bug, and raises.
 
---feats <groups> also gathers the structural features (core.features) on the same
+--feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
 parallel to blocks.jsonl -- the same file and format WMB's and WCXB's blocks.py
 --feats produce (needed only for the table-abc arm). Omit it and no feature pass runs.
@@ -25,8 +25,8 @@ import argparse
 import json
 from pathlib import Path
 
-from core import render as cr
-from core.features import collect_features
+from htmlsift.core import render as cr
+from htmlsift.core.features import collect_features
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 COMBINED = DATA / "daniel.jsonl"

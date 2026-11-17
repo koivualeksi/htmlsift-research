@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
 from transformers import AutoTokenizer
 
-from core.features import feature_dim
+from htmlsift.core.features import feature_dim
 from core.model import (build_encoder, build_head, build_table_embedder,
                         infer_page, infer_table_page)
 from core.quant import patch_qat_w8a8
@@ -38,7 +38,7 @@ def build_infer(ck, device, band=True):
     per-block probs; the caller preps pages with tok. Dispatch is on the ckpt's kind: a
     table ckpt carries kind=="table", an encoder ckpt carries no kind key.
 
-    band switches the encoder to chunked band attention (core.band, bit-identical,
+    band switches the encoder to chunked band attention (htmlsift.core.band, bit-identical,
     speed-only) and is on by default -- it is what ships. Encoder-only, ignored on the
     table path (no attention). The A/B harness passes band= explicitly to turn it off."""
     tok = AutoTokenizer.from_pretrained(ck["model"])
@@ -60,7 +60,7 @@ def build_infer(ck, device, band=True):
     enc.load_state_dict(ck["encoder"]); enc.eval()
     head.load_state_dict(ck["head_state"]); head.eval()
     if band:
-        import core.band
-        core.band.enable(enc)                    # after any qat patch: compose, don't precede
+        import htmlsift.core.band
+        htmlsift.core.band.enable(enc)                    # after any qat patch: compose, don't precede
     autocast = device.type == "cuda"
     return tok, lambda page: infer_page(enc, head, page, device, autocast), "encoder", ck.get("cap", 0)

@@ -34,7 +34,7 @@ from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download, upload_folder
 from transformers import AutoConfig
 
-from core.features import feature_dim
+from htmlsift.core.features import feature_dim
 from core.loader import resolve_ckpt
 from core.model import build_encoder, build_head
 from export.build import build_mini
