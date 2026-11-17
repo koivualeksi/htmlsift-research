@@ -1,7 +1,7 @@
 """
 Gate: band attention is the SAME arithmetic as the dense sliding-window path,
 reordered into O(L*w) chunks -- gated on numeric identity, not a score
-(core/band.py). Three offline checks on a tiny random-weight ModernBERT, no
+(htmlsift.core.band). Three offline checks on a tiny random-weight ModernBERT, no
 backbone download (the harness stubs AutoModel; here the config builds a real
 but tiny ModernBertModel):
   (0) our band mask IS transformers' bidirectional sliding-window mask,
@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from transformers import ModernBertConfig, ModernBertModel
 from transformers.masking_utils import create_bidirectional_sliding_window_mask
 
-from core import band
+from htmlsift.core import band
 
 
 def _tiny_config():
