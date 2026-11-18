@@ -36,6 +36,24 @@ def feature_stats(raw_full, train_ids):
     return zscore_stats([raw_full[t] for t in train_ids if t in raw_full], "ABC")
 
 
+def carried_features(bench, ck):
+    """Target board's features for a ckpt trained with them, z-scored by the ckpt's
+    CARRIED (training-board) stats then sliced to the group -- a foreign board normalized
+    by the training yardstick, never its own (as bench/speed/frontend.py:build_feats_fn).
+    apply_zscore runs on the FULL layout before the slice, since ck['zscore'] indexes it.
+    Only table ckpts carry stats; the encoder keeper is text-only, so an encoder ckpt with
+    features cross-board is unsupported."""
+    group = ck.get("feats")
+    if not group:
+        return None
+    stats = ck.get("zscore")
+    if stats is None:
+        raise SystemExit("ckpt has features but no carried z-score stats "
+                         "(encoder+features cross-board unsupported; keepers are text-only)")
+    cols = group_columns(group)
+    return {tid: apply_zscore(a, stats)[:, cols] for tid, a in bench.raw_features().items()}
+
+
 def export_probs(fold_blocks, fold, tok, infer_fn, out_path, window, cap=0, feats=None, limit=None):
     """{track_id: probs} for every fold id (empties -> []), also written to out_path as
     {track_id, probs} jsonl. fold_blocks(fold) -> ordered {tid: blocks}; infer_fn(page) ->

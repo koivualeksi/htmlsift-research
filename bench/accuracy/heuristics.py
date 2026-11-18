@@ -29,7 +29,7 @@ import torch
 from dotenv import load_dotenv
 from transformers import AutoTokenizer
 
-from bench.accuracy.predict import _load_feats
+from vendors.shared.bench_ops import carried_features
 from bench.speed import competitors as ex
 from core.loader import resolve_ckpt
 from export.infer import load_mini
@@ -114,7 +114,7 @@ def main():
     tok = AutoTokenizer.from_pretrained(ck["model"])
     table_p, head_p = mini_paths(ROOT / "data" / "onnx")
     infer_fn = load_mini(table_p, head_p, args.threads)
-    feats = _load_feats(bench, ck)
+    feats = carried_features(bench, ck)
     scratch = Path(tempfile.gettempdir()) / f"heuristics_{args.board}_probs.jsonl"
     probs = bench.export_probs(args.fold, tok, infer_fn, scratch, WINDOW, 0, feats, args.limit)
 
