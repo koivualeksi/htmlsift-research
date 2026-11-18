@@ -360,7 +360,7 @@ def signals():
 
     s.footer(mt + mh + 30, "All three, without generating a token.",
              "One encoder pass (base) or one table lookup (mini) plus one recurrent sweep, then a threshold. What that costs in time is a separate measured figure (cpu_speed_accuracy.svg).",
-             "source: core/model.py, core/features.py, docs/PROTOCOL.md")
+             "source: core/model.py, htmlsift.core.features, docs/PROTOCOL.md")
     s.save("signals.svg")
 
 
@@ -442,7 +442,7 @@ def architecture():
 
     s.footer(lane_y["mini"] + lane_h + 30, "No token-by-token decode.",
              "One forward pass (or one table lookup) and one recurrent sweep per page, then a threshold.",
-             "source: core/model.py, core/features.py, export/infer.py, docs/PROTOCOL.md; 202 MB from the export build")
+             "source: core/model.py, htmlsift.core.features, export/infer.py, docs/PROTOCOL.md; 202 MB from the export build")
     s.save("architecture.svg")
 
 

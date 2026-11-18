@@ -72,5 +72,5 @@
 <rect x="40" y="547" width="10" height="10" fill="#15663c" rx="2"/>
 <text x="58" y="556" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">All three, without generating a token. </tspan><tspan fill="#565d66">One encoder pass (base) or one table lookup (mini) plus one recurrent sweep, then a threshold. What</tspan></text>
 <text x="58" y="574" font-size="12.5" fill="#565d66">that costs in time is a separate measured figure (cpu_speed_accuracy.svg).</text>
-<!-- source: core/model.py, core/features.py, docs/PROTOCOL.md -->
+<!-- source: core/model.py, htmlsift.core.features, docs/PROTOCOL.md -->
 </svg>

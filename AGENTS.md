@@ -27,7 +27,7 @@ function.
 | `vendors/<board>/data/` | corpus landing site. Gitignored, created by the adapter, never committed. |
 | `vendors/<board>/README.md` | provenance: repo, path, commit, licence, and the sha256 of every acquired file. |
 | `vendors/shared/` | board-agnostic data-prep and sweep config used by more than one board and never run at inference (labeling primitives, the arm matrix). |
-| `core/` | board-agnostic inference primitives only: encoder, heads, pooling, render, prep, features, quant, band, the keeper loader. Nothing names a benchmark; nothing trains. |
+| `core/` | board-agnostic model primitives only: encoder, heads, pooling, quant, the keeper loader, and the training-only page helpers (`training.py`). Render, prep, features and band come from the `htmlsift` package. Nothing names a benchmark; nothing trains. |
 | `trainers/` | board-agnostic entry points and their machinery: the training spine, the result ledger transport, and one file per mode (`finetune`, `frozen`, `features_only`, `embedding_table`). Runs training, never inference. |
 | `bench/` | offline harnesses that consume the library layer and produce writeup numbers. `accuracy/` is cross-board F1 through the `Benchmark` seam; `speed/` is the WMB speed spine (CPU compare, GPU throughput, per-stage latency). |
 | `export/` | the shipped `mini` artifact's lifecycle: graph build, the torch-free onnxruntime forward, and the parity gate that reproduces the torch mini bit-for-bit. |
@@ -43,7 +43,8 @@ until its invariant passes on this repo's own run.
 
 | module | invariant |
 |---|---|
-| render | the html2text scorer reproduces `convert_main_content` from stored `main_html` byte-identically, 7,809/7,809. Model input and labels render through `core/render.py` (lxml). |
+| render | the html2text scorer reproduces `convert_main_content` from stored `main_html` byte-identically, 7,809/7,809. Model input and labels render through `htmlsift.core.render` (lxml). |
+| model input | `tools/fingerprint.py` on the pinned `htmlsift` matches its entry in `tools/fingerprints.json`. |
 | pruner | vendored `extract_main_html` is byte-identical to upstream; composed with the scorer it reproduces the reference markdown byte-identically on the fixture. |
 | corpus | no board `track_id` in the training pool; pool = 7,809 − 529 = 7,280, asserted. |
 | labels | DOM-provenance labels for every page, 0 fallbacks, no matcher; harvested before sanitization strips the selection marker. |
@@ -56,6 +57,20 @@ until its invariant passes on this repo's own run.
 
 Drift anywhere in the html2text config, the mean-pooling, the window boundaries, the
 0.5 threshold, or the DOM serializer silently decouples the writeup from the artifact.
+
+## Where changes go
+
+The `htmlsift` package is the single source of the inference path: render, features,
+prep_page, band and the forwards. This repo imports it at a pinned version and keeps no
+copy. Before a package change that touches its `core/` is merged, and before every
+package release, run `tools/fingerprint.py` against it (install the branch from GitHub).
+
+- Fingerprint unchanged (an output-only or speed-only change): package only. The
+  current bundle stays.
+- Fingerprint changed (the model input changed): a new package version and a bundle
+  retrained on it, released together. Record the new fingerprint here.
+- New weights on the same inputs: this repo builds the bundle; the package pins its
+  SHA.
 
 ## Conventions
 
