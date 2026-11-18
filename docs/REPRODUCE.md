@@ -60,7 +60,7 @@ stage prints its own gate result and stops the chain on failure. The `repopulate
 stage is the render gate: the `html2text==2025.4.15` scorer reproduces
 `convert_main_content` from each stored `main_html` byte-for-byte, 7,809/7,809 (the
 7,280-page train pool plus the 529 shared with the board). Labels are DOM provenance
-by construction — `core.render`'s per-line source maps each rendered line to its
+by construction — `htmlsift.core.render`'s per-line source maps each rendered line to its
 elements — so every page is labeled exactly, with no matcher and no fallback. The
 final self-check asserts all 7,825 records are present:
 

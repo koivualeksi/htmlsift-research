@@ -21,20 +21,21 @@ Board scope is the filename prefix; fixtures live in `fixtures/<source>/`.
 
 | file | locks | §4 |
 |---|---|---|
-| `test_render.py` | `render_hidden` toggle, hidden-subtree-but-tail, `line_src` provenance, empty input | render, labels |
 | `test_sanitize.py` | cc-select harvested before sanitize (leakage guard), residue removal, layer-2 render-neutral, layer-1 drop, notranslate kept | sanitize, labels |
 | `test_html2text_state.py` | fresh `HTML2TextWrapper` per page; reuse leaks list state | render |
 | `test_rouge.py` | vendored `calc_rouge_n_score` (n=5) and `word_f1` / `tokenize` | eval |
-| `test_features.py` | `feature_dim`, train-fold z-scoring, constant-column std floor | features |
+| `test_training.py` | `train_page` labels and window samples, `group_columns`, train-fold z-scoring, constant-column std floor | features |
 | `test_model.py` | `build_encoder` fp32 + N-layer truncation, head `d_in`, `stitch_bounds` ownership | model |
 
 ### gate -- `tests/gate/` (fixtures in `tests/fixtures/`)
 
 | file | locks | §4 |
 |---|---|---|
-| `test_render_features.py` | render blocks **and** feature vectors byte-identical | render |
 | `test_pruner.py` | `extract_main_html` + scorer end-to-end markdown byte-identical | pruner |
 | `test_split.py` | `domain_of` eTLD+1 grouping key | split |
+
+The renderer and feature tests (`render_hidden`, `line_src` provenance, render blocks and
+feature vectors on an authored page) live with the code, in the `htmlsift` package.
 
 ## Corpus-scale gates live in the pipeline
 
@@ -50,3 +51,4 @@ not duplicated as tests:
 | domain split 545 domains / 732 pages, zero straddle | `wmb/split.py` |
 | labels 7825, no fallback | `wmb/blocks.py` |
 | oracle ceilings (WMB test/val, WCXB test/dev) | `wmb/eval.py`, `wcxb/evaluate.py`, `wcxb/labels.py` |
+| model input unchanged for the pinned `htmlsift` (all three boards) | `tools/fingerprint.py` |

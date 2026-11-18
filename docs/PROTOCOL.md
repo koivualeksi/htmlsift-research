@@ -37,14 +37,14 @@ board and the 529 pages it shares with the corpus stay out of training: the pool
 7,809 minus 529, i.e. 7,280 (6,548 train + 732 val), and "no 545 `track_id` in the
 pool" is an assertion in the split, not a comment.
 
-**Rendering.** `core/render.py` (lxml), `render_hidden=False` (the default). WMB's
+**Rendering.** `htmlsift.core.render` (lxml), `render_hidden=False` (the default). WMB's
 reference is built by a pruner that also skips `display:none`, so the model input is
 rendered under the same visibility rule as the reference. The renderer, the flag and
 the serializer must be identical across blocks, inference and eval-prediction
 assembly, or labels do not transfer.
 
 **Labeling.** DOM provenance by construction, with no matcher and no marker injection.
-`core.render_tree`'s `line_src` maps each rendered line to the DOM elements that
+`htmlsift.core.render.render_tree`'s `line_src` maps each rendered line to the DOM elements that
 produced it, and a line is positive iff its elements fall in the main set. The
 `cc-select` annotation is harvested **before** sanitization strips it; inverting that
 order is silent label leakage. Every page labels exactly: 7,825/7,825, 0 fallbacks.
@@ -70,7 +70,7 @@ affect the score; labeling is pure subset selection.
 test = eval board (511), never labeled or trained on. No custom val fold — the
 reporting basis is epoch-mean at a fixed 0.5 threshold, which needs no carved val.
 
-**Rendering.** `core/render.py` (lxml), `render_hidden=True` for WCXB. WCXB's
+**Rendering.** `htmlsift.core.render` (lxml), `render_hidden=True` for WCXB. WCXB's
 reference is captured from a hydrated DOM, so content shipped
 `display:none`-until-hydration is main content here; WMB keeps the default
 `render_hidden=False` because its reference is built by a pruner that also skips
@@ -95,7 +95,7 @@ and the board number is not de-contaminated. See `LIMITS.md`.
 
 Metric ROUGE-L against the `<p>`-derived gold, per language (el / en / pl / ru / zh),
 macro-mean. Eval-only, never trained on except the leave-one-language-out probe
-(`LIMITS.md`). Rendering is `core/render.py` with `render_hidden=False`. Labels are the
+(`LIMITS.md`). Rendering is `htmlsift.core.render` with `render_hidden=False`. Labels are the
 word-F1-optimal block selection (align + hill-climb) built on the shared labeling
 primitives (`vendors/shared/`), scored to a frozen selection ceiling 0.9870. It carries
 the Chinese claim WMB cannot support (`LIMITS.md`).
@@ -103,8 +103,8 @@ the Chinese claim WMB cannot support (`LIMITS.md`).
 ## Features (table-embedding arm, board-agnostic)
 
 Structural columns concatenated at the BiGRU head input for the table-embedding
-arm. The manifest -- column order and group map -- is `core/features.py`;
-computed post-hoc from `core.render_tree`'s `line_src` (the DOM elements behind
+arm. The manifest -- column order and group map -- is `htmlsift.core.features`;
+computed post-hoc from `htmlsift.core.render.render_tree`'s `line_src` (the DOM elements behind
 each block), so no second parse and no renderer change. Booleans for presence;
 the two scalars z-scored on train-fold stats. Gathered on the same render by
 `vendors/wmb/adapter/blocks.py --feats <groups>` (e.g. `--feats ABC`) into

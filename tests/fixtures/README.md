@@ -7,4 +7,4 @@ blocks / feature vectors / labels it is expected to produce, never a copied
 corpus page. Whole-fold reproduction reads the real corpus and lives in
 `tests/full`, not here.
 
-Layout: one subdirectory per source — `core/`, `wmb/`, `wcxb/`, `daniel/`.
+Layout: one subdirectory per source — `wmb/`, `wcxb/`, `daniel/`.
