@@ -25,6 +25,7 @@ Board scope is the filename prefix; fixtures live in `fixtures/<source>/`.
 | `test_html2text_state.py` | fresh `HTML2TextWrapper` per page; reuse leaks list state | render |
 | `test_rouge.py` | vendored `calc_rouge_n_score` (n=5) and `word_f1` / `tokenize` | eval |
 | `test_training.py` | `train_page` labels and window samples, `group_columns`, train-fold z-scoring, constant-column std floor | features |
+| `test_custom_blocks.py` | custom render-match keeps only an exact re-render, drift drops never realigns, malformed records raise | labels |
 | `test_model.py` | `build_encoder` fp32 + N-layer truncation, head `d_in`, `stitch_bounds` ownership | model |
 
 ### gate -- `tests/gate/` (fixtures in `tests/fixtures/`)

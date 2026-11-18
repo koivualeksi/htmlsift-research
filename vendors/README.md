@@ -2,6 +2,10 @@
 
 One directory per benchmark. Each holds three things.
 
+`custom/` is the exception: annotated extra training pages from a private dataset, no
+`upstream/`, never scored. It reproduces only with read access, and no published number
+depends on it.
+
 | | |
 |---|---|
 | `upstream/` | their code, vendored verbatim. Diff it against the commit named in that board's `README.md` and the diff must come back empty. Their licence, their headers, no edits. |

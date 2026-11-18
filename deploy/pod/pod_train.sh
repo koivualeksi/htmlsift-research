@@ -129,6 +129,14 @@ assert bad == 0, f"{bad} pages diverge -- Linux build inconsistent, do NOT run t
 PY
 ;; esac
 
+# Custom pages: acquire at the pinned revision, then the render-match gate. The gate
+# drops (and counts) any page this render disagrees with; it raises on a libxml2 that
+# differs from the one the pages were labelled under.
+case " ${SWEEP_ARGS:-} " in *" --extra custom "*)
+    timeout "$MAX_RUNTIME" "$PYBIN" -m vendors.custom.adapter.acquire
+    timeout "$MAX_RUNTIME" "$PYBIN" -m vendors.custom.adapter.blocks
+;; esac
+
 # Trainer run. RUN_MODE (from launch.py) is the entry point -- trainers/<mode>.py.
 # SWEEP_ARGS carries the axes AND --push: a real run streams to $HF_RESULTS_DATASET and
 # resumes on restart; a smoke omits --push and leaves only its log. --device defaults to cuda.

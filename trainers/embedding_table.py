@@ -5,6 +5,10 @@ model="<m>-table"/"<m>-table-int8", layers=0; --keep checkpoints the run's singl
 + config + this board's z-score stats) for cross-board inference. Val-only, to
 table_results.jsonl, unless --export-test reloads each kept ckpt and scores val + test.
 
+--extra custom adds vendors/custom's pages to the train fold only, repeated by each
+--extra-repeat factor (an arm axis; 0 is the same run without them). The factor rides in
+the model tag ("+custom5"), so ledger keys and ckpt names stay distinct per arm.
+
     python trainers/embedding_table.py --benchmark wmb --models 97m --emb fp32 \
         --heads xgboost,bigru --feats none,ABC --seeds 1 --device cpu --limit 20 --epochs 1
 """
@@ -26,9 +30,10 @@ from vendors.shared import bench_ops
 from vendors.shared.arms import MODELS, WINDOW
 
 
-def _tag(model, emb, hidden):
+def _tag(model, emb, hidden, extra=None, rep=None):
     return (f"{model}-table" + ("-int8" if emb == "int8" else "")
-            + (f"-h{hidden}" if hidden != 256 else ""))
+            + (f"-h{hidden}" if hidden != 256 else "")
+            + (f"+{extra}{rep}" if extra else ""))
 
 
 def _akey(tag, head, g, seed, tl):
@@ -86,11 +91,22 @@ def main():
     ap.add_argument("--train-limit", default=None,
                     help="subsample training pool to N pages (or a comma list N1,N2,... run in "
                          "sequence) for the data-efficiency ladder; per-N structural z-score refit")
+    ap.add_argument("--extra", choices=["custom"], default=None,
+                    help="add vendors/<extra>'s pages to the train fold only (never val/test)")
+    ap.add_argument("--extra-repeat", default="1",
+                    help="comma list of repeat factors for the --extra pages, one arm each; "
+                         "0 is the same run without them")
     ap.add_argument("--export-test", action="store_true",
                     help="reload each kept ckpt and score val + test into its record (needs --keep)")
     args = ap.parse_args()
     if args.export_test and not args.keep:
         raise SystemExit("--export-test scores the kept ckpt: add --keep")
+    if args.extra and args.train_limit is not None:
+        raise SystemExit("--extra with --train-limit is unsupported (the z-score refit "
+                         "would have to decide whether extra pages count)")
+    reps = [int(x) for x in args.extra_repeat.split(",")] if args.extra else [None]
+    if args.extra:
+        from vendors.custom.adapter import extra as extra_src
 
     heads = args.heads.split(",")
     groups = parse_feats(args.feats)
@@ -117,16 +133,22 @@ def main():
         val_p = ctx.bench.build_pages(tok, "val", WINDOW, limit=args.limit)
         ytr = [p["y"] for p in train_p]
         score_val = ctx.bench.build_val_scorer(val_p, args.eval_workers)
+        ext_p = extra_src.build_pages(tok, WINDOW, args.limit) if args.extra else []
+        clash = {p["tid"] for p in ext_p} & {p["tid"] for p in train_p + val_p}
+        if clash:
+            raise SystemExit(f"{len(clash)} --extra track_ids collide with {ctx.bench.name}")
         for emb in embs:
-            tag = _tag(model, emb, args.hidden)
-            if ctx.led.all_done(_akey(tag, head, g, seed, tl)
-                                for tl in train_limits for g in groups
+            tags = {rep: _tag(model, emb, args.hidden, args.extra, rep) for rep in reps}
+            if ctx.led.all_done(_akey(tags[rep], head, g, seed, tl)
+                                for rep in reps for tl in train_limits for g in groups
                                 for head in heads for seed in range(args.seeds)):
-                print(f"[skip {tag}: all arms done]", flush=True)
+                print(f"[skip {model} {emb}: all arms done]", flush=True)
                 continue
             embedder = build_table_embedder(hf, int8=(emb == "int8"), device=ctx.dev)
             etr = pool_table_pages(embedder, train_p, ctx.dev)
             eva = pool_table_pages(embedder, val_p, ctx.dev)
+            eext = pool_table_pages(embedder, ext_p, ctx.dev) if ext_p else []
+            yext = [p["y"] for p in ext_p]
             for tl in train_limits:
                 keep = None
                 if tl is not None:
@@ -141,25 +163,36 @@ def main():
                         sub = {p["tid"] for p in train_p_s}
                         st = zscore_stats([raw[t] for t in sub if t in raw], g)
                         z = {t: apply_zscore(a, st) for t, a in raw.items()}
-                    for head in heads:
-                        for seed in range(args.seeds):
-                            if ctx.led.is_done(_akey(tag, head, g, seed, tl)):
-                                continue
-                            print(f"[table {tag} {head} {g or 'none'} tl={tl} s{seed}]", flush=True)
-                            best, hd = fit_head(head, raw, z, train_p_s, val_p, etr_s, eva, ytr_s,
-                                                score_val, ctx.dev, hidden=args.hidden,
-                                                epochs=args.epochs, seed=seed,
-                                                batch_size=args.batch_size, head_lr=args.head_lr)
-                            rec = _record(tag, head, g, seed, best, tl)
-                            if hd is not None and args.keep:
-                                ck = _save(ctx, hf, emb, tag, head, g, seed, hd)
-                                if args.export_test:
-                                    _export_test(ctx, ck, rec)
-                            ctx.led.append(rec)
-            del embedder, etr, eva
+                    if g and ext_p:                       # host board's stats, never refit
+                        xr, xz = extra_src.load_features(ctx.bench.feature_stats(), g)
+                        raw, z = {**raw, **xr}, {**z, **xz}
+                    for rep in reps:
+                        tag, n = tags[rep], rep or 0
+                        tp, et, yt = train_p_s + ext_p * n, etr_s + eext * n, ytr_s + yext * n
+                        for head in heads:
+                            for seed in range(args.seeds):
+                                if ctx.led.is_done(_akey(tag, head, g, seed, tl)):
+                                    continue
+                                print(f"[table {tag} {head} {g or 'none'} tl={tl} s{seed}: "
+                                      f"{len(tp)} train pages]", flush=True)
+                                best, hd = fit_head(head, raw, z, tp, val_p, et, eva, yt,
+                                                    score_val, ctx.dev, hidden=args.hidden,
+                                                    epochs=args.epochs, seed=seed,
+                                                    batch_size=args.batch_size,
+                                                    head_lr=args.head_lr)
+                                rec = _record(tag, head, g, seed, best, tl)
+                                if args.extra:
+                                    rec.update(extra=args.extra, extra_repeat=n,
+                                               extra_pages=len(ext_p))
+                                if hd is not None and args.keep:
+                                    ck = _save(ctx, hf, emb, tag, head, g, seed, hd)
+                                    if args.export_test:
+                                        _export_test(ctx, ck, rec)
+                                ctx.led.append(rec)
+            del embedder, etr, eva, eext
             if ctx.dev.type == "cuda":
                 torch.cuda.empty_cache()
-            ctx.led.merge_push(f"table {tag}")
+            ctx.led.merge_push(f"table {model} {emb}")
 
 
 if __name__ == "__main__":
