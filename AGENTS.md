@@ -26,6 +26,7 @@ function.
 | `vendors/<board>/adapter/` | our code for that board: acquire, resolve, clean, label, benchmark. Fits their data and format to this repo. |
 | `vendors/<board>/data/` | corpus landing site. Gitignored, created by the adapter, never committed. |
 | `vendors/<board>/README.md` | provenance: repo, path, commit, licence, and the sha256 of every acquired file. |
+| `vendors/custom/` | extra training pages, not a board: no val, test or metric of its own; enters a host board's train fold only. Private source (page HTML is not redistributable); its `README.md` records the pin. |
 | `vendors/shared/` | board-agnostic data-prep and sweep config used by more than one board and never run at inference (labeling primitives, the arm matrix). |
 | `core/` | board-agnostic model primitives only: encoder, heads, pooling, quant, the keeper loader, and the training-only page helpers (`training.py`). Render, prep, features and band come from the `htmlsift` package. Nothing names a benchmark; nothing trains. |
 | `trainers/` | board-agnostic entry points and their machinery: the training spine, the result ledger transport, and one file per mode (`finetune`, `frozen`, `features_only`, `embedding_table`). Runs training, never inference. |
@@ -78,7 +79,9 @@ package release, run `tools/fingerprint.py` against it (install the branch from 
   the claim that ROUGE and `extract_main_html` are vendored rather than reimplemented
   cannot be checked by anyone.
 - **Acquisition always starts from the published source.** A new user has no local
-  copy, and that new user is the only audience this repo has.
+  copy, and that new user is the only audience this repo has. The one exception is
+  `vendors/custom/`, a private dataset: an optional training arm, never needed to
+  reproduce a published number.
 - **Read results down a column, never across a row.** The benchmarks encode different
   labelling policies, so cross-board numbers are policy comparisons, not model rankings.
   No model is trained on a board it is scored against.

@@ -15,9 +15,8 @@ import torch
 from dotenv import load_dotenv
 
 from core.loader import build_infer, resolve_ckpt
-from htmlsift.core.features import apply_zscore
-from core.training import group_columns
 from trainers import ledger
+from vendors.shared import bench_ops
 from vendors.shared.arms import WINDOW
 from vendors.shared.benchmark import load_benchmark
 
@@ -25,29 +24,11 @@ BOARDS = ["wmb", "wcxb", "daniel"]
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _load_feats(bench, ck):
-    """Target board's features for a ckpt trained with them, z-scored by the ckpt's
-    CARRIED (training-board) stats then sliced to the group -- a foreign board normalized
-    by the training yardstick, never its own (as bench/speed/frontend.py:build_feats_fn).
-    apply_zscore runs on the FULL layout before the slice, since ck['zscore'] indexes it.
-    Only table ckpts carry stats; the encoder keeper is text-only, so an encoder ckpt with
-    features cross-board is unsupported."""
-    group = ck.get("feats")
-    if not group:
-        return None
-    stats = ck.get("zscore")
-    if stats is None:
-        raise SystemExit("ckpt has features but no carried z-score stats "
-                         "(encoder+features cross-board unsupported; keepers are text-only)")
-    cols = group_columns(group)
-    return {tid: apply_zscore(a, stats)[:, cols] for tid, a in bench.raw_features().items()}
-
-
 def _run_board(ck, tok, infer_fn, cap, board, out, fold, limit):
     """One keeper over one board: export probs, score, print. Returns the score dict
     (piece 4 records it)."""
     bench = load_benchmark(board)
-    feats = _load_feats(bench, ck)
+    feats = bench_ops.carried_features(bench, ck)
     out.parent.mkdir(parents=True, exist_ok=True)
     probs = bench.export_probs(fold, tok, infer_fn, out, WINDOW, cap, feats, limit)
     s = bench.score_fold(probs, fold, 0.5)
