@@ -159,9 +159,13 @@ python bench/speed/cpu_compare.py
 ```
 
 Nothing here needs a rented machine, but the author ran the sweeps on RunPod.
-`deploy/pod/launch.py` provisions a pod, runs a stage, and pushes results to a Hugging Face
-dataset, and `tools/download_results.py` pulls them back into `results/*.md`. The full run
-order, pinned versions, and smoke commands are in [`docs/REPRODUCE.md`](docs/REPRODUCE.md).
+`deploy/pod/launch.py` uploads a code snapshot to a private Hugging Face dataset and
+provisions a pod with no attached storage. The pod builds each board from its published
+source, runs one stage, pushes its results (a trainer run requires `--push`) and its logs
+to that dataset, and deletes itself. `--queue HOURS` waits for a GPU instead of failing on
+a stock-out. `tools/pod_logs.py` reads the logs back, and `tools/download_results.py` pulls
+results into `results/*.md`. The full run order, pinned versions, and smoke commands are in
+[`docs/REPRODUCE.md`](docs/REPRODUCE.md).
 
 ## How it works
 

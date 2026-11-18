@@ -31,8 +31,8 @@ function.
 | `trainers/` | board-agnostic entry points and their machinery: the training spine, the result ledger transport, and one file per mode (`finetune`, `frozen`, `features_only`, `embedding_table`). Runs training, never inference. |
 | `bench/` | offline harnesses that consume the library layer and produce writeup numbers. `accuracy/` is cross-board F1 through the `Benchmark` seam; `speed/` is the WMB speed spine (CPU compare, GPU throughput, per-stage latency). |
 | `export/` | the shipped `mini` artifact's lifecycle: graph build, the torch-free onnxruntime forward, and the parity gate that reproduces the torch mini bit-for-bit. |
-| `tools/` | laptop-side data and results transport: raw board inputs up to storage, result ledgers down into `results/*.md`. Run by hand, never at inference. |
-| `deploy/` | how the pinned stack is materialised to run: `deploy/pod/` (metered provisioning) and `deploy/docker/` (local images). Never imported by the reproduction pipeline. |
+| `tools/` | laptop-side results transport: result ledgers down into `results/*.md`, pod logs back from the results dataset. Run by hand, never at inference. |
+| `deploy/` | how the pinned stack is materialised to run: `deploy/pod/` (metered provisioning; pods mount no volume and build each board from its published source) and `deploy/docker/` (local images). Never imported by the reproduction pipeline. |
 | `results/` | rendered result tables the writeup and README cite. Committed; raw artifacts are not. |
 | `tests/` | the gate tests below, plus unit tests. |
 

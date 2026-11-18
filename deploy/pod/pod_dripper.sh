@@ -4,21 +4,35 @@
 # vLLM + torch==2.9.0 + CUDA arrive pre-matched -- we do NOT build a torch venv here (that is
 # pod_bench.sh, torch 2.11, which collides with vLLM). We add only mineru-html (the Dripper
 # API) and .[repro] (the torch-free WMB scorer) into the image's python, then run the harness.
-# Dripper is WMB-only (§8), so this mounts just data/wmb.
+# Dripper is WMB-only (§8) and reads raw HTML, so this builds only WMB's raw pages and folds
+# from the published source -- no render. No network volume: the code snapshot comes from
+# $HF_RESULTS_DATASET (code/) and the logs go back to it (logs/$RUN_NAME/) on exit.
 #
 # ALWAYS self-terminates via the EXIT trap, even on failure: a pod that can't clean up
 # restarts and bills forever (archive, 2026-08-18).
 #
 # Env from launch.py: RUN_NAME, CODE_SNAPSHOT, RUN_MODE, SWEEP_ARGS, MAX_RUNTIME, HF_TOKEN,
-#   RUNPOD_TERMINATE_API_KEY; RUNPOD_POD_ID from RunPod; optional PUBLIC_KEY for the ssh hatch.
+#   HF_RESULTS_DATASET, RUNPOD_TERMINATE_API_KEY; RUNPOD_POD_ID from RunPod; optional PUBLIC_KEY for the ssh hatch.
 set -euo pipefail
 
-VOL=/workspace
-OUT="$VOL/outputs/$RUN_NAME"
+export OUT=/root/out
 mkdir -p "$OUT"
-date -u +'entrypoint started %Y-%m-%dT%H:%M:%SZ' > "$OUT/STARTED"
 exec > >(tee -a "$OUT/bootstrap.log") 2>&1
 START_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Logs leave through HF's commit API with curl alone: the image's own python is not a safe
+# place to depend on (its pip and python3 can be different interpreters).
+push_logs() {
+    local nd=/tmp/logs.ndjson f
+    printf '{"key":"header","value":{"summary":"pod logs %s"}}\n' "$RUN_NAME" > "$nd"
+    for f in "$OUT"/*; do
+        printf '{"key":"file","value":{"path":"logs/%s/%s","encoding":"base64","content":"%s"}}\n' \
+            "$RUN_NAME" "$(basename "$f")" "$(base64 -w0 "$f")" >> "$nd"
+    done
+    curl -sS --max-time 120 -X POST -H "Authorization: Bearer $HF_TOKEN" \
+        -H "Content-Type: application/x-ndjson" --data-binary @"$nd" \
+        "https://huggingface.co/api/datasets/$HF_RESULTS_DATASET/commit/main" -o /dev/null -w 'log push: HTTP %{http_code}\n'
+}
 
 cleanup() {
     status=$?
@@ -27,11 +41,12 @@ cleanup() {
         "${RUN_NAME:-}" "${SWEEP_ARGS:-}" "${CODE_SNAPSHOT:-}" "$status" "${START_TS:-}" \
         "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
         "$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 || echo unknown)" \
-        > "$OUT/run_meta.json" || true
+        > "$OUT/run_meta.json"
+    push_logs || echo "WARN: log push failed"
     echo "exit status $status -- terminating pod ${RUNPOD_POD_ID}..."
     for i in 1 2 3; do
         code=$(curl -s -o /tmp/term.txt -w '%{http_code}' -X DELETE \
-            "https://rest.runpod.io/v1/pods/${RUNPOD_POD_ID}" \
+            "https://api.runpod.io/v2/pods/${RUNPOD_POD_ID}" \
             -H "Authorization: Bearer ${RUNPOD_TERMINATE_API_KEY}") || code=000
         echo "terminate attempt ${i}: HTTP ${code}"
         case "$code" in 2??) break ;; esac
@@ -53,20 +68,11 @@ if [ -n "${PUBLIC_KEY:-}" ]; then
 fi
 
 echo "=== $RUN_NAME -- code $CODE_SNAPSHOT ==="
-test -f "$VOL/code/$CODE_SNAPSHOT" || { echo "ERROR: code snapshot missing -- launch.py uploads it"; exit 1; }
 mkdir -p /root/repo
-tar xzf "$VOL/code/$CODE_SNAPSHOT" -C /root/repo
-
-# Dripper is WMB-only: mount data/wmb (raw pages + gold for the scorer). Unlike pod_bench, no
-# blocks.jsonl is needed -- Dripper reads raw HTML, not our lxml render.
-test -d "$VOL/data/wmb" || { echo "ERROR: no data/wmb on the volume -- upload_data.py --board wmb first"; exit 1; }
-ln -sfn "$VOL/data/wmb" /root/repo/vendors/wmb/data
-echo "wmb data mounted"
-
-# Dripper weights cache on the volume (survive pod death). The vllm image ships hf_transfer,
-# so leave HF_HUB_ENABLE_HF_TRANSFER as the image sets it (unlike the uv-venv pods).
-export HF_HOME="$VOL/hf"
-mkdir -p "$HF_HOME"
+curl -fsSL -H "Authorization: Bearer $HF_TOKEN" -o /root/code.tar.gz     "https://huggingface.co/datasets/$HF_RESULTS_DATASET/resolve/main/code/$CODE_SNAPSHOT"
+tar xzf /root/code.tar.gz -C /root/repo
+# The vllm image ships hf_transfer, so leave HF_HUB_ENABLE_HF_TRANSFER as the image sets it
+# (unlike the uv-venv pods).
 
 # Route B: install into the IMAGE's python (vLLM + torch 2.9 already present). mineru-html
 # (imports as mineru_html) without its [vllm] extra never touches the vLLM/torch/CUDA stack.
@@ -77,12 +83,16 @@ mkdir -p "$HF_HOME"
 cd /root/repo
 PYBIN=$(command -v python3)
 pip install -q --no-cache-dir mineru-html==1.1.2
-pip install -q --no-cache-dir html2text==2025.4.15 rouge_score==0.1.2 jieba==0.42.1
+pip install -q --no-cache-dir html2text==2025.4.15 rouge_score==0.1.2 jieba==0.42.1 tldextract==5.3.2
 pip install -q --no-cache-dir -e . --no-deps
 "$PYBIN" -c "import torch, vllm, mineru_html; from mineru_html import MinerUHTMLConfig, MinerUHTMLGeneric, create_vllm_backend; from vendors.wmb.adapter.benchmark import WMBBenchmark; assert torch.cuda.is_available(), 'no CUDA'; print('torch', torch.__version__, '| vllm', vllm.__version__, '|', torch.cuda.get_device_name(0))"
 
+# WMB raw pages + folds from the published source: every prepare.py stage but the render
+# (acquire -> collapse -> repopulate -> split), which Dripper does not read.
+timeout "$MAX_RUNTIME" "$PYBIN" -c "from vendors.wmb.adapter.prepare import STAGES; [print('===', n, '===', flush=True) or run() for n, run in STAGES if n != 'blocks']"
+
 # The harness. RUN_MODE = bench/speed/gpu_dripper.py; SWEEP_ARGS carries its args (--device cuda [--fold]).
-# dripper.py prints the report to the pod log (retrieved via tools/upload_data.py --stage logs),
+# dripper.py prints the report to the pod log (retrieved via tools/pod_logs.py),
 # like pod_bench.sh's speed run.
 # shellcheck disable=SC2086 -- SWEEP_ARGS is intentionally word-split.
 timeout "$MAX_RUNTIME" "$PYBIN" -u "$RUN_MODE" ${SWEEP_ARGS:-} 2>&1 | tee "$OUT/run.log"

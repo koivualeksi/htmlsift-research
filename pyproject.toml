@@ -37,10 +37,11 @@ train = [
     "xgboost==3.4.1",
     "scikit-learn==1.7.2",   # xgb.XGBClassifier (trainers/xgb.py) needs it
 ]
-# Operator-only: driving sweeps onto RunPod (tools/upload_data.py, deploy/pod/launch.py).
-# Never a reproduction dep -- a stranger reproducing a number never touches RunPod.
+# Operator-only: driving sweeps onto RunPod (deploy/pod/launch.py, tools/pod_logs.py), which
+# move code and logs through the private HF results dataset. Never a reproduction dep -- a
+# stranger reproducing a number never touches RunPod.
 runpod = [
-    "boto3==1.43.73",
+    "huggingface-hub==1.12.2",
 ]
 test = [
     "pytest==8.4.1",
