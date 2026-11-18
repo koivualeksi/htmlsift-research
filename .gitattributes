@@ -1,0 +1,2 @@
+# launch.py sends these to the pod as raw bytes; CRLF breaks bash there.
+*.sh text eol=lf

@@ -32,6 +32,18 @@ and are reference, not run steps.
   local GPU is sufficient -- nothing here requires RunPod. On a pod or a newer
   card, install the matching `torch` from the pytorch cu128 index first.
 
+- Metered GPU runs (operator only) need `pip install -e ".[runpod]"`, plus
+  `RUNPOD_API_KEY`, `HF_TOKEN` and a private `HF_RESULTS_DATASET` in `.env` (and a
+  private `HF_MODELS_REPO` when a run keeps ckpts); `launch.py` refuses a public repo.
+  Pods mount no volume: the code snapshot travels through the dataset under `code/`,
+  each pod rebuilds its boards from the published source on its own Linux render
+  (the WMB serialize gate runs before training), and on exit pushes its logs under
+  `logs/<run>/`. A trainer run must carry `--push`; a `--smoke` must not.
+
+      python deploy/pod/launch.py --trainer finetune --smoke              # tiny end-to-end pod
+      python deploy/pod/launch.py --trainer finetune --smoke --queue 12   # wait up to 12 h for a GPU
+      python tools/pod_logs.py --run <name>                               # its logs, after exit
+
 ## WMB training data
 
     python vendors/wmb/adapter/prepare.py
@@ -314,10 +326,11 @@ comparison holds only on the same card type — the published rows are all RTX 4
     python deploy/pod/launch.py --dripper --gpu "<card>" --name dripper-v11 --args "--device cuda"
 
 Both harnesses print their report and write it to `results/` on the pod; nothing is pushed.
-Pull the pod logs off the volume and copy the tables into `results/throughput-wmb.md`
-(one row per arm; the writer merges rows) and `results/dripper-wmb.md`:
+Pull the pod logs (each pod pushes them to the results dataset on exit) and copy the
+tables into `results/throughput-wmb.md` (one row per arm; the writer merges rows) and
+`results/dripper-wmb.md`:
 
-    python tools/upload_data.py --stage logs --run thr311      # likewise thr311b, thr97q, dripper-v11
+    python tools/pod_logs.py --run thr311      # likewise thr311b, thr97q, dripper-v11
 
 Speed rows are one run of the seed-0 keeper; the F1 beside them is the 3-seed predict ledger
 (`results/generalization.md`). Pods are metered and human-launched (§2).
