@@ -118,11 +118,13 @@ hyperparameters).
 backbone's frozen token-embedding table per line and trains only the head:
 
 ```bash
-python trainers/embedding_table.py --benchmark wmb --models 311m --emb int8 --feats ABC --seeds 3 --keep
+python trainers/embedding_table.py --benchmark wmb --models 311m --emb fp32 --feats ABC --seeds 3 --keep --export-test
 ```
 
 `--emb` picks the table variant (`fp32`, `int8`, or both) and replaces `--layers` here. The
-other grid flags work as above. This arm is the published `mini`.
+other grid flags work as above. This arm is the published `mini`: trained on the fp32 table
+and shipped with the table quantized to int8; `--export-test` scores the kept checkpoint both
+ways and records the int8 score as `test_int8_f1`.
 
 **The frozen screen.** No fine-tuning: encode once per layer and train only the head. This
 is the layer screen behind *Cut the encoder in half*, val-only, one record per (model,

@@ -108,6 +108,11 @@ Test is spent once on the chosen keeper, not on every arm: re-run the keeper wit
 `--export-test` to write `data/runs/wmb/probs/<arm>_<fold>_s<seed>.jsonl`, scored through
 the eval gate below and folded into that arm's ledger row as `test_f1`.
 
+The embedding-table trainer takes `--export-test` too (requires `--keep`): it reloads each
+kept checkpoint through `core.loader.build_infer`, the same path `bench/accuracy/predict.py
+--ckpt` uses, and folds val and test F1 into the arm's row. An fp32-table arm is also scored
+with an int8 table (`*_int8_f1`), the shipped mini's numerics.
+
 `--train-limit` takes a comma list and runs the rungs sequentially in one process,
 stratified nested prefixes of the training pool matched to val's level distribution.
 It is the data-efficiency ladder in `CLAIMS.md`; val-only, so no `--export-test` and
