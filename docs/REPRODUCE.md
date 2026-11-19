@@ -28,9 +28,9 @@ and are reference, not run steps.
 
       pip install -e ".[repro,train]"
 
-  `torch==2.11.0`, `transformers==5.15.0`, `numpy==2.2.6`, `xgboost==3.4.1`. A
-  local GPU is sufficient -- nothing here requires RunPod. On a pod or a newer
-  card, install the matching `torch` from the pytorch cu128 index first.
+  `torch==2.11.0`, `transformers==5.15.0`, `numpy==2.2.6`. A local GPU is
+  sufficient -- nothing here requires RunPod. On a pod or a newer card, install
+  the matching `torch` from the pytorch cu128 index first.
 
 - Metered GPU runs (operator only) need `pip install -e ".[runpod]"`, plus
   `RUNPOD_API_KEY`, `HF_TOKEN` and a private `HF_RESULTS_DATASET` in `.env` (and a

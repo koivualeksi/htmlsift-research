@@ -10,7 +10,7 @@ table_results.jsonl, unless --export-test reloads each kept ckpt and scores val 
 the model tag ("+custom5"), so ledger keys and ckpt names stay distinct per arm.
 
     python trainers/embedding_table.py --benchmark wmb --models 97m --emb fp32 \
-        --heads xgboost,bigru --feats none,ABC --seeds 1 --device cpu --limit 20 --epochs 1
+        --heads bigru --feats none,ABC --seeds 1 --device cpu --limit 20 --epochs 1
 """
 import argparse
 
@@ -21,7 +21,7 @@ from htmlsift.core.features import apply_zscore
 from htmlsift.extractor import THRESHOLD
 from core.loader import build_infer
 from core.training import zscore_stats
-from trainers.frozen_screen import fit_head
+from trainers.heads import fit_torch_head
 from core.model import build_table_embedder, pool_table_pages
 from trainers import ledger
 from trainers._args import base_parser, head_parser, parse_feats
@@ -175,16 +175,16 @@ def main():
                                     continue
                                 print(f"[table {tag} {head} {g or 'none'} tl={tl} s{seed}: "
                                       f"{len(tp)} train pages]", flush=True)
-                                best, hd = fit_head(head, raw, z, tp, val_p, et, eva, yt,
-                                                    score_val, ctx.dev, hidden=args.hidden,
-                                                    epochs=args.epochs, seed=seed,
-                                                    batch_size=args.batch_size,
-                                                    head_lr=args.head_lr)
+                                best, hd = fit_torch_head(head, args.hidden, z, tp, val_p,
+                                                          et, eva, yt, score_val, ctx.dev,
+                                                          epochs=args.epochs, seed=seed,
+                                                          batch_size=args.batch_size,
+                                                          head_lr=args.head_lr)
                                 rec = _record(tag, head, g, seed, best, tl)
                                 if args.extra:
                                     rec.update(extra=args.extra, extra_repeat=n,
                                                extra_pages=len(ext_p))
-                                if hd is not None and args.keep:
+                                if args.keep:
                                     ck = _save(ctx, hf, emb, tag, head, g, seed, hd)
                                     if args.export_test:
                                         _export_test(ctx, ck, rec)

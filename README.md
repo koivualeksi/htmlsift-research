@@ -79,9 +79,10 @@ python vendors/daniel/adapter/prepare.py
 
 ### Train
 
-There are three entry points, and all need `[repro,train]`. The encoder models (`base` and
+There are two entry points, and both need `[repro,train]`. The encoder models (`base` and
 the lite arm) fine-tune through `finetune.py`. The encoder-free `mini` trains through
-`embedding_table.py`. The frozen screen behind the depth choice runs through `frozen.py`.
+`embedding_table.py`. The frozen screen behind the depth choice is archived at tag
+`ablations-v1`.
 
 **Encoder models.** One command builds the arms from its flags:
 
@@ -128,9 +129,10 @@ ways and records the int8 score as `test_int8_f1`.
 
 **The frozen screen.** No fine-tuning: encode once per layer and train only the head. This
 is the layer screen behind *Cut the encoder in half*, val-only, one record per (model,
-layer, head, feats, seed):
+layer, head, feats, seed). Its trainer is archived at tag `ablations-v1`:
 
 ```bash
+git checkout ablations-v1
 python trainers/frozen.py --benchmark wmb --models 311m --layers all --heads bigru --feats ABC --seeds 1
 ```
 

@@ -12,7 +12,7 @@ Placement: European data centres only, Nordic first, read from RunPod's catalog;
 one unpinned pass per GPU across all of them, since the catalog has listed stock that a
 create then refused.
 
-    python deploy/pod/launch.py --trainer frozen --print-payload   # dry run: nothing uploaded
+    python deploy/pod/launch.py --trainer finetune --print-payload # dry run: nothing uploaded
     python deploy/pod/launch.py --trainer finetune --smoke         # tiny end-to-end pod (no push)
     python deploy/pod/launch.py --trainer finetune --smoke --queue 12   # wait up to 12 h for a GPU
     python deploy/pod/launch.py --queue-status <id>                # waiting / deployed / expired
@@ -249,8 +249,7 @@ def launch(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--trainer", choices=["finetune", "frozen", "features_only",
-                                          "embedding_table"],
+    ap.add_argument("--trainer", choices=["finetune", "embedding_table"],
                     help="which trainer to run (trainers/<name>.py)")
     ap.add_argument("--args", help="the trainer's sweep args, passed through verbatim "
                                    "(omit to use the trainer's own defaults; see its --help)")
