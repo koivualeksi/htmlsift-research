@@ -4,7 +4,8 @@ where a smoke run lives and stays. The id is fresh per run and nothing is dedupl
 the same config run twice is two runs, told apart by what run.yaml records.
 
 A run's run.yaml is written at start (ended and result null) and rewritten at finish;
-only a finished run counts for resume or is pushed.
+only a finished run counts for resume or is pushed. A kept checkpoint is saved into the
+folder as ckpt.pt and ships in the same commit as the rest of the run.
 """
 import importlib.metadata
 import os
@@ -37,8 +38,9 @@ def _read(path):
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
-def _write(path, run):
-    Path(path).write_text(yaml.safe_dump(run, sort_keys=False, allow_unicode=True),
+def write(folder, run):
+    """run -> folder/run.yaml, the one serialization every run.yaml goes through."""
+    (Path(folder) / "run.yaml").write_text(yaml.safe_dump(run, sort_keys=False, allow_unicode=True),
                           encoding="utf-8")
 
 
@@ -79,19 +81,15 @@ def host():
     return {"gpu": gpu, "pod": os.environ.get("RUNPOD_POD_ID")}
 
 
-def preflight(keep=False):
+def preflight():
     """Everything a non-smoke run needs to land, checked before any compute is spent:
-    the results dataset (private, writable), the models repo when ckpts are kept, and
-    provenance. launch.py runs it on the laptop before creating a pod."""
+    the results dataset (private, writable) and provenance. launch.py runs it on the
+    laptop before creating a pod."""
     api = HfApi()
-    repos = {"HF_RESULTS_DATASET": "dataset"}
-    if keep:
-        repos["HF_MODELS_REPO"] = "model"
-    for var, kind in repos.items():
-        repo = _repo(var)
-        api.auth_check(repo, repo_type=kind, write=True)
-        if not api.repo_info(repo, repo_type=kind).private:
-            raise RuntimeError(f"{var}={repo} is public; run records stay private")
+    repo = _repo("HF_RESULTS_DATASET")
+    api.auth_check(repo, repo_type="dataset", write=True)
+    if not api.repo_info(repo, repo_type="dataset").private:
+        raise RuntimeError(f"HF_RESULTS_DATASET={repo} is public; run records stay private")
     git_provenance()
 
 
@@ -102,7 +100,7 @@ def start(experiment, launch, config, *, kind="train", note="", smoke=False, roo
     run_id = new_id()
     folder = base / run_id
     folder.mkdir(parents=True, exist_ok=False)          # an id collision must not overwrite
-    _write(folder / "run.yaml", {
+    write(folder, {
         "id": run_id, "experiment": experiment, "launch": launch, "kind": kind,
         "note": note, "config": config, "provenance": provenance(), "host": host(),
         "started": _now(), "ended": None, "result": None})
@@ -114,7 +112,7 @@ def finish(folder, result):
     if run["ended"] is not None:
         raise RuntimeError(f"run {run['id']} already finished")
     run.update(ended=_now(), result=result)
-    _write(Path(folder) / "run.yaml", run)
+    write(folder, run)
 
 
 def push(run_id, root=None):
@@ -126,13 +124,6 @@ def push(run_id, root=None):
     HfApi().upload_folder(repo_id=_repo("HF_RESULTS_DATASET"), repo_type="dataset",
                           folder_path=folder, path_in_repo=f"runs/{run_id}",
                           commit_message=f"run {run_id}")
-
-
-def push_ckpt(run_id, path):
-    """A kept ckpt goes to the models repo as runs/<id>.pt, not into the run folder."""
-    HfApi().upload_file(repo_id=_repo("HF_MODELS_REPO"), repo_type="model",
-                        path_or_fileobj=str(path), path_in_repo=f"runs/{run_id}.pt",
-                        commit_message=f"ckpt {run_id}")
 
 
 def _local(root=None):

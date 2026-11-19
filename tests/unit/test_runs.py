@@ -150,8 +150,6 @@ def test_preflight(env, monkeypatch):
     monkeypatch.setattr(runs, "HfApi", Api)
     runs.preflight()
     assert calls == [("me/results", {"repo_type": "dataset", "write": True})]
-    with pytest.raises(RuntimeError, match="HF_MODELS_REPO"):
-        runs.preflight(keep=True)
     Info.private = False
     with pytest.raises(RuntimeError, match="public"):
         runs.preflight()
