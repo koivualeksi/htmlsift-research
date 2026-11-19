@@ -11,16 +11,10 @@ name: {name}
 recipe: table
 board: wmb
 extra: custom
+model: 97m
 sweep:
-  model: [97m]
-  emb: [lowrank128]
-  head: [bigru]
-  feats: [AB]
   extra_repeat: [0, 1, 5]
 seeds: 3
-train: {{epochs: 4, batch_size: 8, head_lr: 2.0e-3}}
-export_test: true
-keep: true
 note: ""
 """
 
@@ -32,9 +26,7 @@ def write(tmp_path, text, name="wmb-mini"):
 
 
 def table(**kw):
-    base = dict(name="x", recipe="table", board="wmb",
-                sweep={"model": ["97m"], "emb": ["fp32"], "head": ["bigru"]}, seeds=1)
-    return S.Spec(**{**base, **kw})
+    return S.Spec(**{**dict(name="x", recipe="table", board="wmb", seeds=1), **kw})
 
 
 def test_load_and_expand(tmp_path):
@@ -42,23 +34,36 @@ def test_load_and_expand(tmp_path):
     assert len(runs) == 9
     assert [(r["extra_repeat"], r["seed"]) for r in runs] == \
         [(x, s) for x in (0, 1, 5) for s in range(3)]          # seeds innermost
-    assert runs[0] == {"recipe": "table", "board": "wmb", "extra": "custom",
-                       "model": "97m", "head": "bigru", "feats": "AB", "emb": "lowrank128",
-                       "train_limit": None, "extra_repeat": 0, "seed": 0,
-                       "epochs": 4, "hidden": 256, "batch_size": 8, "head_lr": 2.0e-3,
-                       "export_test": True, "keep": True}
+    assert runs[0] == {"recipe": "table", "board": "wmb",
+                       "model": "97m", "emb": "fp32", "head": "bigru", "feats": "ABC",
+                       "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
+                       "train_limit": None, "extra": "custom", "extra_repeat": 0,
+                       "export_test": True, "keep": True, "seed": 0}
 
 
-def test_unswept_axes_and_train_take_defaults():
-    (run,) = S.expand(S.Spec(name="x", recipe="finetune", board="wmb",
-                             sweep={"model": ["97m"], "head": ["bigru"]}, seeds=1))
-    assert (run["layers"], run["cap"], run["feats"], run["holdout"]) == ("full", 0, None, None)
-    assert (run["epochs"], run["qat_w8a8"]) == (4, False)
+@pytest.mark.parametrize("recipe", ["finetune", "table"])
+def test_empty_spec_is_the_shipped_config(recipe):
+    runs = S.expand(S.Spec(name="x", recipe=recipe, board="wmb"))
+    assert [r["seed"] for r in runs] == [0, 1, 2]
+    assert {k: v for k, v in runs[0].items() if k not in ("recipe", "board", "seed")} \
+        == S.DEFAULTS[recipe]
+
+
+def test_shipped_defaults():
+    ft, tb = S.DEFAULTS["finetune"], S.DEFAULTS["table"]
+    assert (ft["model"], ft["layers"], ft["head"], ft["feats"]) == ("311m", 10, "bigru", None)
+    assert (tb["model"], tb["emb"], tb["head"], tb["feats"]) == ("311m", "fp32", "bigru", "ABC")
+
+
+def test_sweep_crosses_in_yaml_order():
+    runs = S.expand(table(sweep={"model": ["97m", "311m"], "feats": [None, "AB"]}))
+    assert [(r["model"], r["feats"]) for r in runs] == \
+        [("97m", None), ("97m", "AB"), ("311m", None), ("311m", "AB")]
 
 
 def test_extra_repeat_defaults_to_one_only_with_extra():
     assert S.expand(table())[0]["extra_repeat"] is None
-    assert S.expand(table(extra="custom"))[0]["extra_repeat"] == 1
+    assert S.expand(table(fixed={"extra": "custom"}))[0]["extra_repeat"] == 1
 
 
 def test_name_must_match_stem(tmp_path):
@@ -69,26 +74,29 @@ def test_name_must_match_stem(tmp_path):
 
 
 def test_unknown_top_level_key(tmp_path):
-    with pytest.raises(ValueError, match="unknown key"):
+    with pytest.raises(ValueError, match="has no key"):
         S.load(write(tmp_path, TABLE + "sedes: 3\n"))
 
 
 @pytest.mark.parametrize("kw, msg", [
     (dict(recipe="frozen"), "unknown recipe"),
-    (dict(sweep={"model": ["97m"], "emb": ["fp32"], "head": ["bigru"], "models": ["x"]}),
-     "no axis"),
-    (dict(sweep={"model": ["97m"], "head": ["bigru"]}), "must sweep"),
-    (dict(sweep={"model": "97m", "emb": ["fp32"], "head": ["bigru"]}), "non-empty list"),
-    (dict(sweep={"model": [], "emb": ["fp32"], "head": ["bigru"]}), "non-empty list"),
-    (dict(sweep={"model": ["97m", "97m"], "emb": ["fp32"], "head": ["bigru"]}), "repeats"),
-    (dict(train={"lr": 1e-3}), "no train key"),
+    (dict(fixed={"layers": 10}), "has no key"),                 # finetune-only key
+    (dict(sweep={"models": ["x"]}), "has no sweep key"),
+    (dict(fixed={"model": "97m"}, sweep={"model": ["311m"]}), "both fixed and swept"),
+    (dict(sweep={"model": "97m"}), "non-empty list"),
+    (dict(sweep={"model": []}), "non-empty list"),
+    (dict(sweep={"model": ["97m", "97m"]}), "repeats"),
     (dict(seeds=0), "positive int"),
     (dict(seeds=True), "positive int"),
-    (dict(extra="other"), "unknown extra"),
-    (dict(sweep={"model": ["97m"], "emb": ["fp32"], "head": ["bigru"],
-                 "extra_repeat": [1]}), "needs an extra"),
-    (dict(export_test=True), "set keep"),
+    (dict(fixed={"extra": "other"}), "unknown extra"),
+    (dict(sweep={"extra_repeat": [1]}), "needs an extra"),
+    (dict(fixed={"keep": False}), "set keep"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):
         table(**kw)
+
+
+def test_finetune_rejects_table_key():
+    with pytest.raises(ValueError, match="has no key"):
+        S.Spec(name="x", recipe="finetune", board="wmb", fixed={"emb": "fp32"})
