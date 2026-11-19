@@ -4,7 +4,7 @@ Board-agnostic model — encoder, heads, pooling, quant, the keeper loader, and 
 training-only page helpers. Render, prep, features and band are imported from the
 `htmlsift` package (htmlsift.core), never copied here. Nothing here names a benchmark; each
 board wires its data and its val metric in through `vendors/<board>/adapter`. The
-training spine (the loop, the frozen screen, the XGB head) lives in `trainers/`.
+training spine (the loop, frozen-head training) lives in `trainers/`.
 
 ## The model
 
@@ -61,5 +61,5 @@ From htmlsift.core: render (provenance renderer), prep_page (tokenize, block mem
 windowing, cap), features (structural columns), band (chunked band attention; bit-identical,
 speed-only).
 
-The training spine is `trainers/` (`train.py` the loop, `frozen_screen.py` the frozen
-screen, `xgb.py` the XGB head), not here — it consumes these primitives, never inference.
+The training spine is `trainers/` (`train.py` the loop, `heads.py` frozen-head training),
+not here — it consumes these primitives, never inference.

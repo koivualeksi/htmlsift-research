@@ -1,27 +1,13 @@
 """
-Frozen screen: run the encoder once per layer, then train light heads on the
-cached block embeddings. This is the cheap front of the funnel -- the archive's
-"screen every depth frozen, then fine-tune the promising ones". The expensive
-encoder forward is shared across every head and feature set at a layer; only the
-head trains, so a whole layers x heads array costs one forward per layer plus a
-pile of near-free head fits. No encoder weights move, so nothing is cached to
-disk or across environments: embeddings live in RAM for one layer and are
-discarded (root CLAUDE.md -- no persisted cache, no provenance to guard).
+Head training on frozen, pre-pooled block inputs: the table trainer pools the backbone's
+token-embedding table once per page, then only the head trains. Inputs live in RAM for
+one arm and are discarded -- no persisted cache, no provenance to guard.
 """
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from core.model import build_head, pool_page
-from trainers.xgb import fit_xgb_head
-
-
-def pool_pages(encoder, pages, dev, autocast):
-    """Frozen pooled block embeddings per page, as CPU float32 arrays [n_blocks,
-    H] for head training. One encoder forward per page (model.pool_page); the
-    encoder must already be frozen and in eval()."""
-    return [pool_page(encoder, p, dev, autocast).float().cpu().numpy()
-            for p in pages]
+from core.model import build_head
 
 
 def _batches(xs, order, batch_size, max_len, max_tokens=1 << 30):
@@ -129,8 +115,8 @@ def fit_torch_head(head_kind, hidden, z, train_pages, val_pages, etr, eva, train
                    score_val, dev, *, epochs=4, seed=0, batch_size=64, head_lr=1e-3):
     """Build a per-block head and train it on the cached embeddings, concatenating the
     z-scored features z ({track_id: [n, F]}, or None for text-only) onto each page's
-    embedding. The shared torch path for the frozen family; returns (best {val, epoch},
-    head) -- head carries the best-epoch weights, for the table trainer's --keep."""
+    embedding. Returns (best {val, epoch}, head) -- head carries the best-epoch weights,
+    for the table trainer's --keep."""
     def cat(pages, emb):
         return [np.concatenate([e, z[p["tid"]]], 1) if z is not None else e
                 for p, e in zip(pages, emb)]
@@ -139,18 +125,3 @@ def fit_torch_head(head_kind, hidden, z, train_pages, val_pages, etr, eva, train
     best = train_head_frozen(head, tx, train_y, vx, val_pages, score_val, dev,
                              epochs=epochs, seed=seed, batch_size=batch_size, head_lr=head_lr)
     return best, head
-
-
-def fit_head(head_kind, raw, z, train_pages, val_pages, etr, eva, train_y,
-             score_val, dev, *, hidden, epochs, seed, batch_size, head_lr, use_emb=True):
-    """Dispatch to the xgb or torch fitter on the cached embeddings. Returns
-    (best {val, epoch}, head): head is None for xgboost (no torch module), else the
-    trained head carrying best-epoch weights (for --keep). use_emb is the xgb-only
-    'append the block's own embedding' flag -- the torch path takes features-only
-    through zero-width etr/eva, so it needs no such flag."""
-    if head_kind == "xgboost":
-        return fit_xgb_head(raw, train_pages, val_pages, etr, eva, train_y,
-                            score_val, seed, use_emb=use_emb), None
-    return fit_torch_head(head_kind, hidden, z, train_pages, val_pages, etr, eva,
-                          train_y, score_val, dev, epochs=epochs, seed=seed,
-                          batch_size=batch_size, head_lr=head_lr)

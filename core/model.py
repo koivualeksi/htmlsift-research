@@ -204,8 +204,8 @@ def pool_page(encoder, page, dev, autocast):
     most-interior-token ownership -- each page token is taken from the window
     whose centre is nearest -- then the whole page is pooled. The page carries
     its own window/stride, so this cannot diverge from how the page was sampled
-    for training. Shared by infer_page and the frozen screen so the stitch lives
-    once."""
+    for training. Shared by infer_page and the GPU throughput bench so the stitch
+    lives once."""
     window, stride = page["window"], page.get("stride")
     ids = torch.from_numpy(page["ids"]).to(dev)
     n = len(ids)
@@ -281,7 +281,7 @@ def pool_table_page(embedder, page, dev):
 @torch.no_grad()
 def pool_table_pages(embedder, pages, dev):
     """Frozen pooled block embeddings per page for head training, as CPU float32
-    [n_blocks, H] -- the table-embedder analogue of frozen.pool_pages."""
+    [n_blocks, H]."""
     return [pool_table_page(embedder, p, dev).float().cpu().numpy() for p in pages]
 
 

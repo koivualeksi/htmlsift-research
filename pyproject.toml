@@ -34,8 +34,6 @@ train = [
     "torch==2.11.0",
     "transformers==5.15.0",
     "numpy==2.2.6",
-    "xgboost==3.4.1",
-    "scikit-learn==1.7.2",   # xgb.XGBClassifier (trainers/xgb.py) needs it
 ]
 # Operator-only: driving sweeps onto RunPod (deploy/pod/launch.py, tools/pod_logs.py), which
 # move code and logs through the private HF results dataset. Never a reproduction dep -- a

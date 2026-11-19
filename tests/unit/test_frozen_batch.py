@@ -1,12 +1,12 @@
 """The batched frozen-head forward must be per-block identical to the unbatched
 per-page forward -- packed GRU and masked attention make padding a no-op. That
-identity is the correctness guarantee behind trainers.frozen_screen's batching: only the
+identity is the correctness guarantee behind the batching in trainers.heads: only the
 TRAINING numbers move (mini-batch gradient vs per-page SGD); the forward must not.
 """
 import numpy as np
 import torch
 
-from trainers.frozen_screen import _batches, _forward
+from trainers.heads import _batches, _forward
 from core.model import build_head
 
 DEV = torch.device("cpu")
@@ -53,7 +53,7 @@ def test_batched_forward_matches_per_page():
 def test_train_head_frozen_runs():
     # the full batched training path (warmup + grad-clip + masked BCE + val) runs
     # and returns a best {val, epoch} for every head kind.
-    from trainers.frozen_screen import train_head_frozen
+    from trainers.heads import train_head_frozen
     torch.manual_seed(0)
     d = 16
     rng = np.random.default_rng(2)
@@ -72,12 +72,12 @@ def test_train_head_frozen_runs():
 
 
 def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
-    # §4 cache invariant: the frozen screen holds pooled embeddings in RAM and writes
+    # §4 cache invariant: frozen-head training holds pooled embeddings in RAM and writes
     # no embedding cache to disk. Run the head-training path (where the embeddings flow)
     # in an isolated cwd and assert it creates no file -- a guard so a future "cache the
     # embeddings" optimization can't silently reintroduce persisted, provenance-crossing
     # state (root CLAUDE.md §4 cache row).
-    from trainers.frozen_screen import train_head_frozen
+    from trainers.heads import train_head_frozen
     monkeypatch.chdir(tmp_path)
     torch.manual_seed(0)
     d = 16

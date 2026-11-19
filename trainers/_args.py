@@ -1,6 +1,6 @@
 """Shared trainer CLI. base_parser() holds the run-grid and ledger args every trainer
-accepts; head_parser() adds the head-training hyperparameters the frozen-head trainers
-(frozen, features_only, embedding_table) share. Each trainer builds its parser as
+accepts; head_parser() adds the head-training hyperparameters of the frozen-head trainer
+(embedding_table). Each trainer builds its parser as
 argparse.ArgumentParser(parents=[base_parser(), ...]) and adds only its mode-unique flags
 (--layers, --caps, --emb, ...). parse_feats normalizes the shared --feats string.
 """
@@ -34,8 +34,8 @@ def base_parser():
 
 
 def head_parser():
-    """Head-training hyperparameters shared by the frozen-head trainers (frozen,
-    features_only, embedding_table); added as a second parent alongside base_parser."""
+    """Head-training hyperparameters of the frozen-head trainer (embedding_table);
+    added as a second parent alongside base_parser."""
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--batch-size", type=int, default=8, help="head-training batch size (pages per step)")
     ap.add_argument("--head-lr", type=float, default=2e-3, help="head learning rate")
