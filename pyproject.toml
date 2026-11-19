@@ -25,6 +25,9 @@ repro = [
     "tldextract==5.3.2",
     "jieba==0.42.1",
     "rouge_score==0.1.2",
+    "PyYAML==6.0.3",                 # sweep specs and run.yaml (trainers/spec.py, runs.py)
+    "pandas==3.1.1",                 # runs.load: run.yamls as a DataFrame
+    "tzdata==2026.6",                # Helsinki run ids; Windows has no system tz database
 ]
 # GPU training + model eval: the torch stack. A local GPU is all you need --
 # `pip install .[repro,train]` and the trainers work, no RunPod involved. On a pod or a
