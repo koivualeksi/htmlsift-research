@@ -116,6 +116,15 @@ run folder and, with `export_test`, reloads it through `core.loader.build_infer`
 path `bench/accuracy/predict.py --ckpt` uses. An fp32-table run is also scored with an
 int8 table (`*_int8_f1`), the shipped mini's numerics.
 
+`keep: true` saves any run's checkpoint as `ckpt.pt` in its run folder, pushed with the
+run. A kept run becomes a keeper, the checkpoint `bench/` and `tools/release.py` load from
+the model repo as `<board>/ckpt/<arm>_s<seed>.pt`, only when promoted by hand:
+
+    python tools/promote.py <run-id> --dry-run     # source and target
+    python tools/promote.py <run-id>               # --replace to overwrite a keeper
+
+Shipping it in the package is then an edit of the keeper constants in `tools/release.py`.
+
 `train_limit` trains on stratified nested prefixes of the training pool matched to val's
 level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
 

@@ -21,6 +21,15 @@ from vendors.shared import bench_ops
 from vendors.shared.arms import MODELS, WINDOW
 
 
+def name(cfg):
+    """The keeper name tools/promote.py gives a kept run: <board>/ckpt/<name>_s<seed>.pt.
+    The shipped mini is 311m-table-bigru-fABC."""
+    return (f"{cfg['model']}-table" + ("-int8" if cfg["emb"] == "int8" else "")
+            + (f"-h{cfg['hidden']}" if cfg["hidden"] != 256 else "")
+            + (f"+{cfg['extra']}{cfg['extra_repeat']}" if cfg["extra"] else "")
+            + f"-{cfg['head']}-f{cfg['feats'] or 'none'}")
+
+
 def _extra_src(cfg):
     if cfg["extra"] == "custom":
         from vendors.custom.adapter import extra

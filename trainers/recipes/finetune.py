@@ -24,6 +24,11 @@ def _arm(cfg):
     return arm
 
 
+def name(cfg):
+    """The keeper name tools/promote.py gives a kept run: <board>/ckpt/<name>_s<seed>.pt."""
+    return _arm(cfg)["name"]
+
+
 def build_model(arm, dev):
     """One arm's fresh encoder+head on dev; dims from the encoder config plus any
     structural feature columns concatenated at the head input. fp32 (build_encoder
