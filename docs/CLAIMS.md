@@ -181,10 +181,6 @@ rather than reading it here:
     python bench/accuracy/predict.py --model wmb-311m-10 --boards wmb,wcxb,daniel --push
     python tools/render_tables.py               # -> results/generalization.md
 
-`predict.py` still appends to the old ledger, which the renderer does not read: the table
-renders from that ledger's rows as converted to run folders, so a new predict run does
-not reach it yet.
-
 Headline, test folds, 3 seeds: `wmb-311m-10` scores WMB 0.9311±0.0027, WCXB
 0.8633±0.0016, DAnIEL macro 0.9175±0.0027. Trained the other way round, `wcxb-311m-10`
 scores WCXB 0.9209±0.0007, WMB 0.8479±0.0107, DAnIEL 0.8826±0.0027 — a WMB-trained

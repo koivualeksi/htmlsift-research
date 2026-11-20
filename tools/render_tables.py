@@ -9,20 +9,21 @@ rule, §6).
 
 The tables below are the legacy ledgers, converted to run folders with their source file
 and line in run.yaml's legacy block. They select by that file and keep the ledgers' rule:
-the latest record per cell wins.
+the latest record per cell wins. The generalization matrix also takes the eval runs
+bench/accuracy/predict.py writes.
 """
 
 import json
 import statistics
 import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
 
 from trainers import runs
-from trainers.ledger import record_key
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,10 +44,13 @@ def _epochs(r):
 
 
 def group_key(r):
-    """The reader's cell identity: the writer's arm key -- which already separates cap,
-    train_limit and holdout -- plus the epoch budget, which no key carries and which no
-    cell may average over. Derived from record_key so the two cannot drift."""
-    return record_key(r) + (_epochs(r),)
+    """The ledger cell identity: the arm (cap included; seed at index 5, which collapse
+    pools over), then train_limit and holdout where present, then the epoch budget, which
+    no ledger key carried and which no cell may average over."""
+    return ((r["model"], r["layers"], r["head"], r["feats"] or "none", r.get("cap", 0),
+             r["seed"])
+            + tuple(r[k] for k in ("train_limit", "holdout") if k in r)
+            + (_epochs(r),))
 
 
 def _warn_test_cell_clashes(records):
@@ -256,12 +260,13 @@ def render_matrix(records, caption):
     return "\n".join(out)
 
 
-def legacy_record(folder):
-    """A converted run folder -> (file, line, the ledger record it was converted from);
-    None for a run that was never a ledger line."""
+def record(folder):
+    """A run folder -> (order, run, record): the record is the flat dict the renderers
+    read, config and result merged with the curves as per-epoch lists. A converted run
+    rebuilds exactly the ledger line it came from and orders by that (file, line), the old
+    loader's order; any other run takes its end time, in UTC like the ledger ts, and
+    orders after every legacy run."""
     run = yaml.safe_load((folder / "run.yaml").read_text(encoding="utf-8"))
-    if "legacy" not in run:
-        return None
     curves = folder / "curves.jsonl"
     rows = [json.loads(l) for l in curves.read_text(encoding="utf-8").splitlines()] \
         if curves.exists() else []
@@ -271,22 +276,32 @@ def legacy_record(folder):
                         ("loss_by_epoch", "loss")):
         if rows and short in rows[0]:
             rec[long] = [r[short] for r in rows]
-    rec["ts"] = run["legacy"]["ts"]
-    return run["legacy"]["file"], run["legacy"]["line"], rec
+    if "legacy" in run:
+        rec["ts"] = run["legacy"]["ts"]
+        return (0, run["legacy"]["file"], run["legacy"]["line"]), run, rec
+    rec["ts"] = datetime.fromisoformat(run["ended"]).astimezone(timezone.utc).isoformat()
+    return (1, rec["ts"], 0), run, rec
 
 
 def from_ledgers(paths, exclude=()):
     """Selects the runs converted from any shard of `paths`, the old loader's rule: a base
     like wmb/finetune_results.jsonl matches itself and finetune_results.<shard>.jsonl."""
-    bases = [p[:-len(".jsonl")] + "." for p in paths]
-    return lambda file: ((file in paths or file.startswith(tuple(bases)))
-                         and not file.startswith(tuple(exclude)))
+    bases = tuple(p[:-len(".jsonl")] + "." for p in paths)
+    def selects(run):
+        file = run.get("legacy", {}).get("file", "")
+        return (file in paths or file.startswith(bases)) and not file.startswith(tuple(exclude))
+    return selects
+
+
+def from_experiment(name, also=None):
+    return lambda run: run["experiment"] == name or (also is not None and also(run))
 
 
 # (output file, caption, selection, renderer). The wcxbtl shards came after
 # wcxb-finetune.md was rendered and group by page_type, which the legacy cell key lacks,
-# so they stay out of it.
-LEGACY = [
+# so they stay out of it. The generalization matrix takes the converted ledger and every
+# eval run bench/accuracy/predict.py has pushed since; a rerun cell's latest run wins.
+TABLES = [
     ("results/wmb-frozen.md",
      "WMB frozen screen -- val732 ROUGE-5 F1, best-epoch val.",
      from_ledgers(["wmb/frozen_results.jsonl", "wmb/feature_results.jsonl",
@@ -324,16 +339,16 @@ LEGACY = [
      "board's OWN metric (WMB ROUGE-5 / WCXB word-F1 / DAnIEL ROUGE-L macro) -- comparable "
      "down a column, never across a row. **Bold** = in-domain (the model's training board), "
      "a reproduction, not a zero-shot number.",
-     from_ledgers(["generalization_results.jsonl"]), render_matrix),
+     from_experiment("generalization", also=from_ledgers(["generalization_results.jsonl"])),
+     render_matrix),
 ]
 
 
 def main():
     load_dotenv()
-    # (file, line) is the order the ledger loader read them in, which latest-ts ties keep
-    legacy = sorted(r for r in map(legacy_record, runs.fetch("curves.jsonl")) if r)
-    for out, caption, selects, renderer in LEGACY:
-        recs = [rec for file, _, rec in legacy if selects(file)]
+    loaded = sorted((record(f) for f in runs.fetch("curves.jsonl")), key=lambda x: x[0])
+    for out, caption, selects, renderer in TABLES:
+        recs = [rec for _, run, rec in loaded if selects(run)]
         if not recs:
             raise SystemExit(f"{out}: no runs selected")
         (ROOT / out).write_text(renderer(recs, caption) + "\n", encoding="utf-8")

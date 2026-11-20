@@ -1,7 +1,7 @@
-"""Unit: the results reader's cell identity. The writer (trainers.ledger.record_key)
-separates train_limit and holdout; the reader adds the epoch budget, which no key
-carries. A cell that merges any of those averages two populations and reports the
-wrong one -- the failure that put a train_limit=4000 run in the full-pool table.
+"""Unit: the results reader's cell identity. A cell separates the arm, train_limit,
+holdout and the epoch budget. A cell that merges any of those averages two populations
+and reports the wrong one -- the failure that put a train_limit=4000 run in the
+full-pool table.
 No HF transport: render() is pure over authored records, and the legacy loader is read
 from a run folder written here.
 """
@@ -10,8 +10,8 @@ import json
 import pytest
 import yaml
 
-from tools.render_tables import (_epochs, collapse, from_ledgers, group_key, legacy_record,
-                                 render, render_matrix)
+from tools.render_tables import (_epochs, collapse, from_experiment, from_ledgers, group_key,
+                                 record, render, render_matrix)
 
 FROZEN = {"model": "311m", "layers": 12, "head": "bigru", "feats": "ABC",
           "seed": 0, "ts": "2026-01-01", "best_val": 0.89, "frozen": True}
@@ -27,7 +27,14 @@ def exported(seed=0, f1=0.93, test_n=544, **extra):
     return rec(seed=seed, test_f1=f1, test_prec=0.93, test_rec=0.96, test_n=test_n, **extra)
 
 
-# ---- group_key separates what record_key separates, plus the epoch budget ----
+# ---- group_key separates the arm, train_limit, holdout and the epoch budget ----
+
+def test_arm_fields_and_seed_are_the_key_head():
+    assert group_key(rec(seed=2))[:6] == ("311m", 10, "bigru", "none", 0, 2)
+
+
+def test_different_holdouts_are_distinct_cells():
+    assert len({group_key(rec(holdout=h)) for h in ("Greek", "Polish", "Chinese")}) == 3
 
 def test_train_limit_is_a_distinct_cell():
     assert group_key(rec()) != group_key(rec(train_limit=2000))
@@ -172,16 +179,20 @@ def test_matrix_population_is_per_board():
     assert "0.9300" in out
 
 
-# ---- the legacy loader ----
+# ---- the run loader ----
 
-def converted(tmp_path, curves=None, legacy=True):
-    run = {"id": "2026-09-06T1718-f3ff", "experiment": "legacy-wmb-finetune",
+LEGACY = {"repo": "htmlsift-runs", "file": "wmb/finetune_results.jsonl", "line": 4,
+          "ts": "2026-09-06T14:18:46+00:00"}
+
+
+def folder(tmp_path, curves=None, legacy=LEGACY, experiment="legacy-wmb-finetune",
+           ended="2026-09-06T17:18:46+03:00"):
+    run = {"id": "2026-09-06T1718-f3ff", "experiment": experiment, "ended": ended,
            "config": {"recipe": "finetune", "board": "wmb", "model": "311m", "layers": 10,
                       "head": "bigru", "feats": None, "cap": 0, "seed": 0},
            "result": {"best_val": 0.9, "best_epoch": 2, "ckpt": "ckpt.pt"}}
     if legacy:
-        run["legacy"] = {"repo": "htmlsift-runs", "file": "wmb/finetune_results.jsonl",
-                         "line": 4, "ts": "2026-09-06T14:18:46+00:00"}
+        run["legacy"] = legacy
     (tmp_path / "run.yaml").write_text(yaml.safe_dump(run), encoding="utf-8")
     if curves:
         (tmp_path / "curves.jsonl").write_text(
@@ -189,33 +200,49 @@ def converted(tmp_path, curves=None, legacy=True):
     return tmp_path
 
 
-def test_legacy_record_rebuilds_the_ledger_line(tmp_path):
-    folder = converted(tmp_path, curves=[{"epoch": 1, "val": 0.8, "loss": 0.5},
-                                         {"epoch": 2, "val": 0.9, "loss": 0.4}])
-    file, line, rec = legacy_record(folder)
-    assert (file, line) == ("wmb/finetune_results.jsonl", 4)
+def test_a_converted_run_rebuilds_its_ledger_line(tmp_path):
+    order, _, rec = record(folder(tmp_path, curves=[{"epoch": 1, "val": 0.8, "loss": 0.5},
+                                                    {"epoch": 2, "val": 0.9, "loss": 0.4}]))
+    assert order == (0, "wmb/finetune_results.jsonl", 4)
     assert rec == {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "cap": 0,
                    "seed": 0, "best_val": 0.9, "best_epoch": 2,
                    "val_by_epoch": [0.8, 0.9], "loss_by_epoch": [0.5, 0.4],
                    "ts": "2026-09-06T14:18:46+00:00"}
 
 
-def test_legacy_record_without_curves_has_no_epoch_lists(tmp_path):
-    _, _, rec = legacy_record(converted(tmp_path))
+def test_a_run_without_curves_has_no_epoch_lists(tmp_path):
+    _, _, rec = record(folder(tmp_path))
     assert "val_by_epoch" not in rec and _epochs(rec) is None
 
 
-def test_a_new_run_is_not_a_legacy_record(tmp_path):
-    assert legacy_record(converted(tmp_path, legacy=False)) is None
+def test_a_new_run_takes_its_end_in_utc_and_orders_after_legacy(tmp_path):
+    order, _, rec = record(folder(tmp_path, legacy=None, experiment="generalization"))
+    assert rec["ts"] == "2026-09-06T14:18:46+00:00"
+    assert order > (0, "z", 10**9)
+
+
+def run(file=None, experiment="x"):
+    return {"experiment": experiment, **({"legacy": {"file": file}} if file else {})}
 
 
 def test_ledger_selection_takes_shards_but_not_a_sibling_ledger():
     sel = from_ledgers(["wmb/finetune_results.jsonl"])
-    assert sel("wmb/finetune_results.jsonl") and sel("wmb/finetune_results.tl311.jsonl")
-    assert not sel("wmb/finetune_qat_results.jsonl")
+    assert sel(run("wmb/finetune_results.jsonl")) and sel(run("wmb/finetune_results.tl311.jsonl"))
+    assert not sel(run("wmb/finetune_qat_results.jsonl"))
 
 
 def test_ledger_selection_excludes_by_prefix():
     sel = from_ledgers(["wcxb/finetune_results.jsonl"], exclude=["wcxb/finetune_results.wcxbtl-"])
-    assert sel("wcxb/finetune_results.wcxb311.jsonl")
-    assert not sel("wcxb/finetune_results.wcxbtl-forum-fabc.jsonl")
+    assert sel(run("wcxb/finetune_results.wcxb311.jsonl"))
+    assert not sel(run("wcxb/finetune_results.wcxbtl-forum-fabc.jsonl"))
+
+
+def test_ledger_selection_never_takes_a_new_run():
+    assert not from_ledgers(["wmb/finetune_results.jsonl"])(run())
+
+
+def test_experiment_selection_adds_the_converted_ledger():
+    sel = from_experiment("generalization", also=from_ledgers(["generalization_results.jsonl"]))
+    assert sel(run(experiment="generalization"))
+    assert sel(run("generalization_results.311m.jsonl"))
+    assert not sel(run(experiment="wmb-base"))
