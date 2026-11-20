@@ -129,31 +129,6 @@ def test_record_key_different_limits_are_distinct():
     assert k_none != k_500
 
 
-# ---- finetune _key with train_limit ----
-
-def test_finetune_key_without_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    k = _key(arm, seed=0)
-    assert k == arm_key("97m", 6, "bigru", None, 0, 0)
-
-
-def test_finetune_key_with_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    k = _key(arm, seed=0, train_limit=250)
-    assert k == arm_key("97m", 6, "bigru", None, 0, 0) + (250,)
-
-
-def test_finetune_key_none_limit_equals_no_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    assert _key(arm, seed=0, train_limit=None) == _key(arm, seed=0)
-
-
 # ---- ledger dedup: records with and without train_limit coexist ----
 
 def test_ledger_dedup_separates_limited_and_unlimited(tmp_path):

@@ -1,9 +1,6 @@
-"""Unit: LOLO CLI wiring -- holdout validation, ledger key separation, benchmark
-name resolution, and the finetune _key integration. No corpus; the benchmark's
-fold logic is already covered by its own ceiling gates."""
+"""Unit: LOLO wiring -- ledger key separation and benchmark name resolution. No
+corpus; the benchmark's fold logic is already covered by its own ceiling gates."""
 import json
-
-import pytest
 
 from trainers import ledger
 from trainers.ledger import arm_key, record_key
@@ -34,23 +31,6 @@ def test_record_key_different_holdouts_are_distinct():
 def test_record_key_holdout_vs_no_holdout_distinct():
     base = {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "seed": 0}
     assert record_key(base) != record_key({**base, "holdout": "Chinese"})
-
-
-# ---- finetune _key with holdout ----
-
-def test_finetune_key_with_holdout():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-311m-multilingual-r2",
-           "layers": 10, "head": "bigru", "feats": None, "cap": 0}
-    k = _key(arm, seed=0, holdout="Chinese")
-    assert k == arm_key("311m", 10, "bigru", None, 0, 0) + ("Chinese",)
-
-
-def test_finetune_key_none_holdout_equals_no_holdout():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-311m-multilingual-r2",
-           "layers": 10, "head": "bigru", "feats": None, "cap": 0}
-    assert _key(arm, seed=0, holdout=None) == _key(arm, seed=0)
 
 
 # ---- ledger dedup with holdout ----
@@ -93,24 +73,3 @@ def test_load_benchmark_daniel_holdout_all_five():
         names.add(b.name)
     assert names == {"daniel-el", "daniel-pl", "daniel-ru", "daniel-en", "daniel-zh"}
 
-
-# ---- CLI validation (smoke) ----
-
-def test_holdout_rejects_non_daniel():
-    """--holdout on a non-daniel benchmark is an error."""
-    from unittest.mock import patch
-    with patch("sys.argv", ["finetune", "--benchmark", "wmb", "--holdout", "Chinese",
-                            "--device", "cpu"]):
-        with pytest.raises(SystemExit):
-            from trainers.finetune import main
-            main()
-
-
-def test_daniel_without_holdout_rejects():
-    """--benchmark daniel without --holdout is an error (no train fold)."""
-    from unittest.mock import patch
-    with patch("sys.argv", ["finetune", "--benchmark", "daniel",
-                            "--device", "cpu"]):
-        with pytest.raises(SystemExit):
-            from trainers.finetune import main
-            main()

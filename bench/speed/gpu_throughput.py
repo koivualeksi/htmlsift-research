@@ -74,7 +74,7 @@ def encode_batch(enc, ids_list, dev, autocast):
 
 def batches(pages, order, batch, max_tokens):
     """Length-sorted `order` -> batches of <= `batch` pages, capped so pages x padded-len
-    (B x T) <= max_tokens. Same guard as trainers.heads._batches, at the token-id level."""
+    (B x T) <= max_tokens. Same guard as trainers.loop._batches, at the token-id level."""
     i = 0
     while i < len(order):
         idx = [order[i]]; i += 1

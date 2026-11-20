@@ -33,7 +33,7 @@ def _rank(order, v):
 
 def _epochs(r):
     """Epoch budget, or None for a record with no per-epoch curves (the frozen, table
-    and feature ledgers keep only best_val). trainers.train never stops early, so
+    and feature ledgers keep only best_val). The finetune loop never stops early, so
     len(val_by_epoch) is the budget that was configured."""
     ve = r.get("val_by_epoch")
     return len(ve) if ve else None
