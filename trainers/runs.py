@@ -130,10 +130,15 @@ def _local(root=None):
     return [_read(p) for p in sorted(Path(root or LOCAL).glob("*/run.yaml"))]
 
 
-def _remote():
+def fetch(*files):
+    """Local copies of every pushed run folder, each holding only run.yaml and `files`."""
     snap = snapshot_download(_repo("HF_RESULTS_DATASET"), repo_type="dataset",
-                             allow_patterns="runs/*/run.yaml")
-    return [_read(p) for p in sorted(Path(snap).glob("runs/*/run.yaml"))]
+                             allow_patterns=[f"runs/*/{f}" for f in ("run.yaml", *files)])
+    return [p.parent for p in sorted(Path(snap).glob("runs/*/run.yaml"))]
+
+
+def _remote():
+    return [_read(f / "run.yaml") for f in fetch()]
 
 
 def push_pending(root=None):

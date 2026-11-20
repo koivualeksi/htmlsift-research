@@ -273,9 +273,10 @@ Run a keeper checkpoint over every board, each scored by that board's own metric
 
     python bench/accuracy/predict.py --model wmb-311m-10 --boards wmb,wcxb,daniel --push
 
-Rows land in `generalization_results.jsonl` at the dataset root. Records carry `n`;
-a run that did not cover a whole board is a smoke and `download_results.py` refuses
-to render the ledger until it is removed.
+Rows land in `generalization_results.jsonl` at the dataset root, a ledger
+`tools/render_tables.py` does not read: `results/generalization.md` renders from that
+ledger's earlier rows, converted to run folders. Records carry `n`; a run that did not
+cover a whole board is a smoke, and the renderer refuses a table that holds one.
 
 ## CPU speed comparison (§7)
 
@@ -334,12 +335,14 @@ Speed rows are one run of the seed-0 keeper; the F1 beside them is the 3-seed pr
 
 ## Results tables
 
-Every ledger on the HF dataset renders to `results/`:
+The run folders on the HF dataset render to `results/`:
 
-    python tools/download_results.py
+    python tools/render_tables.py
 
-Eight files: the WMB frozen screen, WMB fine-tune and its QAT ledger, the three WCXB
-ledgers, the DAnIEL LOLO holdouts, and the generalization matrix. Val tables render
+Eight files, each from the old result ledgers converted to run folders (run.yaml's
+`legacy` block names the source line, and the latest record per cell wins, as it did):
+the WMB frozen screen, WMB fine-tune and its QAT ledger, the three WCXB ledgers, the
+DAnIEL LOLO holdouts, and the generalization matrix. Val tables render
 once per basis — epoch-mean (the §6 selection basis) and best-epoch (what the kept
 checkpoint realizes) — with the epoch budget as a row dimension, since neither basis
 is comparable across budgets. Full-pool runs, the train-limit ladder and the LOLO

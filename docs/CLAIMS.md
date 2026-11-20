@@ -74,7 +74,7 @@ Selection is val-only. The test fold is spent on the arms re-run with `--export-
 (`REPRODUCE.md`), which is why its seed count is its own and is stated per row. Every
 number below is this repo's own run. The full sweeps regenerate into `results/`:
 
-    python tools/download_results.py
+    python tools/render_tables.py
 
 ### WMB test545 — ROUGE-5 F1 vs `convert_main_content`, n=544
 
@@ -179,7 +179,11 @@ metric. Comparable down a column, never across a row. The matrix is large; regen
 rather than reading it here:
 
     python bench/accuracy/predict.py --model wmb-311m-10 --boards wmb,wcxb,daniel --push
-    python tools/download_results.py            # -> results/generalization.md
+    python tools/render_tables.py               # -> results/generalization.md
+
+`predict.py` still appends to the old ledger, which the renderer does not read: the table
+renders from that ledger's rows as converted to run folders, so a new predict run does
+not reach it yet.
 
 Headline, test folds, 3 seeds: `wmb-311m-10` scores WMB 0.9311±0.0027, WCXB
 0.8633±0.0016, DAnIEL macro 0.9175±0.0027. Trained the other way round, `wcxb-311m-10`

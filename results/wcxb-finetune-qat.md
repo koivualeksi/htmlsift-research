@@ -1,6 +1,6 @@
 WCXB fine-tune W8A8-QAT -- word-F1 by their evaluate.py, val columns dev1497 (WCXB carves no val fold), test table test511.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 ## val (epoch-mean)
 

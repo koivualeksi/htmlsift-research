@@ -170,8 +170,8 @@ Nothing here needs a rented machine, but the author ran the sweeps on RunPod.
 provisions a pod with no attached storage. The pod builds each board from its published
 source, runs one experiment spec (`launch.py --spec experiments/<name>.yaml`), pushes each
 run folder and its logs to that dataset, and deletes itself. `--queue HOURS` waits for a GPU instead of failing on
-a stock-out. `tools/pod_logs.py` reads the logs back, and `tools/download_results.py` pulls
-results into `results/*.md`. The full run order, pinned versions, and smoke commands are in
+a stock-out. `tools/pod_logs.py` reads the logs back, and `tools/render_tables.py` renders
+run folders into `results/*.md`. The full run order, pinned versions, and smoke commands are in
 [`docs/REPRODUCE.md`](docs/REPRODUCE.md).
 
 ## How it works

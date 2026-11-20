@@ -2,11 +2,16 @@
 separates train_limit and holdout; the reader adds the epoch budget, which no key
 carries. A cell that merges any of those averages two populations and reports the
 wrong one -- the failure that put a train_limit=4000 run in the full-pool table.
-No HF transport: render() is pure over authored records.
+No HF transport: render() is pure over authored records, and the legacy loader is read
+from a run folder written here.
 """
-import pytest
+import json
 
-from tools.download_results import _epochs, collapse, group_key, render, render_matrix
+import pytest
+import yaml
+
+from tools.render_tables import (_epochs, collapse, from_ledgers, group_key, legacy_record,
+                                 render, render_matrix)
 
 FROZEN = {"model": "311m", "layers": 12, "head": "bigru", "feats": "ABC",
           "seed": 0, "ts": "2026-01-01", "best_val": 0.89, "frozen": True}
@@ -165,3 +170,52 @@ def test_matrix_population_is_per_board():
     # wcxb's 511 is full for wcxb, not a short wmb run
     out = render_matrix([gen(board="wmb", n=544), gen(board="wcxb", n=511)], "cap")
     assert "0.9300" in out
+
+
+# ---- the legacy loader ----
+
+def converted(tmp_path, curves=None, legacy=True):
+    run = {"id": "2026-09-06T1718-f3ff", "experiment": "legacy-wmb-finetune",
+           "config": {"recipe": "finetune", "board": "wmb", "model": "311m", "layers": 10,
+                      "head": "bigru", "feats": None, "cap": 0, "seed": 0},
+           "result": {"best_val": 0.9, "best_epoch": 2, "ckpt": "ckpt.pt"}}
+    if legacy:
+        run["legacy"] = {"repo": "htmlsift-runs", "file": "wmb/finetune_results.jsonl",
+                         "line": 4, "ts": "2026-09-06T14:18:46+00:00"}
+    (tmp_path / "run.yaml").write_text(yaml.safe_dump(run), encoding="utf-8")
+    if curves:
+        (tmp_path / "curves.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in curves), encoding="utf-8")
+    return tmp_path
+
+
+def test_legacy_record_rebuilds_the_ledger_line(tmp_path):
+    folder = converted(tmp_path, curves=[{"epoch": 1, "val": 0.8, "loss": 0.5},
+                                         {"epoch": 2, "val": 0.9, "loss": 0.4}])
+    file, line, rec = legacy_record(folder)
+    assert (file, line) == ("wmb/finetune_results.jsonl", 4)
+    assert rec == {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "cap": 0,
+                   "seed": 0, "best_val": 0.9, "best_epoch": 2,
+                   "val_by_epoch": [0.8, 0.9], "loss_by_epoch": [0.5, 0.4],
+                   "ts": "2026-09-06T14:18:46+00:00"}
+
+
+def test_legacy_record_without_curves_has_no_epoch_lists(tmp_path):
+    _, _, rec = legacy_record(converted(tmp_path))
+    assert "val_by_epoch" not in rec and _epochs(rec) is None
+
+
+def test_a_new_run_is_not_a_legacy_record(tmp_path):
+    assert legacy_record(converted(tmp_path, legacy=False)) is None
+
+
+def test_ledger_selection_takes_shards_but_not_a_sibling_ledger():
+    sel = from_ledgers(["wmb/finetune_results.jsonl"])
+    assert sel("wmb/finetune_results.jsonl") and sel("wmb/finetune_results.tl311.jsonl")
+    assert not sel("wmb/finetune_qat_results.jsonl")
+
+
+def test_ledger_selection_excludes_by_prefix():
+    sel = from_ledgers(["wcxb/finetune_results.jsonl"], exclude=["wcxb/finetune_results.wcxbtl-"])
+    assert sel("wcxb/finetune_results.wcxb311.jsonl")
+    assert not sel("wcxb/finetune_results.wcxbtl-forum-fabc.jsonl")

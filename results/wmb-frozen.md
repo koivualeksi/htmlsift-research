@@ -1,6 +1,6 @@
 WMB frozen screen -- val732 ROUGE-5 F1, best-epoch val.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 ### 311m
 
