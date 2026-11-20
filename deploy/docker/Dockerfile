@@ -35,7 +35,7 @@ COPY export export
 # CPU torch from the cpu index (PyPI's default wheel pulls CUDA on Linux); a separate layer so
 # a rebuild that only touches the line below reuses this ~200 MB download. torch==2.11.0+cpu
 # then satisfies the [train] `torch==2.11.0` pin (PEP 440 ignores the local +cpu label), exactly
-# as pod_train.sh relies on.
+# as pod.sh relies on.
 RUN pip install --no-cache-dir torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
 # The model stack the numbers were validated under: [train] (transformers) + the scorer ([repro])
 # + the third-party extractors ([bench]). -e so imports resolve to /repo and the mounted

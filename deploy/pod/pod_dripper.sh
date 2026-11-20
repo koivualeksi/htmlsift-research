@@ -2,7 +2,7 @@
 # Pod-side bootstrap for the Dripper GPU comparison (bench/speed/gpu_dripper.py). Route B: the pod
 # boots from vLLM's OWN image (vllm/vllm-openai @ the 0.11.1 tag, set by deploy/pod/launch.py), so
 # vLLM + torch==2.9.0 + CUDA arrive pre-matched -- we do NOT build a torch venv here (that is
-# pod_bench.sh, torch 2.11, which collides with vLLM). We add only mineru-html (the Dripper
+# pod.sh, torch 2.11, which collides with vLLM). We add only mineru-html (the Dripper
 # API) and .[repro] (the torch-free WMB scorer) into the image's python, then run the harness.
 # Dripper is WMB-only (§8) and reads raw HTML, so this builds only WMB's raw pages and folds
 # from the published source -- no render. No network volume: the code snapshot comes from
@@ -93,7 +93,7 @@ timeout "$MAX_RUNTIME" "$PYBIN" -c "from vendors.wmb.adapter.prepare import STAG
 
 # The harness. RUN_MODE = bench/speed/gpu_dripper.py; SWEEP_ARGS carries its args (--device cuda [--fold]).
 # dripper.py prints the report to the pod log (retrieved via tools/pod_logs.py),
-# like pod_bench.sh's speed run.
+# like a speed run through pod.sh.
 # shellcheck disable=SC2086 -- SWEEP_ARGS is intentionally word-split.
 timeout "$MAX_RUNTIME" "$PYBIN" -u "$RUN_MODE" ${SWEEP_ARGS:-} 2>&1 | tee "$OUT/run.log"
 

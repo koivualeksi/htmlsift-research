@@ -121,6 +121,13 @@ def test_board_checks_fail_before_any_run(env, board, extra, msg):
     assert env.trained == [] and not (env.tmp / "local").exists()
 
 
+def test_check_runs_the_checks_and_trains_nothing(env):
+    train.main([spec(env), "--check"])
+    assert env.trained == [] and not (env.tmp / "local").exists()
+    with pytest.raises(ValueError, match="set holdout"):
+        train.main([spec(env, board="daniel"), "--check"])
+
+
 def test_unknown_holdout_fails_before_any_run(env):
     cfg = {"recipe": "finetune", "board": "daniel", "holdout": "Klingon",
            "train_limit": None, "seed": 0}

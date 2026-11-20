@@ -34,15 +34,18 @@ and are reference, not run steps.
 
 - Metered GPU runs (operator only) need `pip install -e ".[runpod]"`, plus
   `RUNPOD_API_KEY`, `HF_TOKEN` and a private `HF_RESULTS_DATASET` in `.env` (and a
-  private `HF_MODELS_REPO` when a run keeps ckpts); `launch.py` refuses a public repo.
-  Pods mount no volume: the code snapshot travels through the dataset under `code/`,
-  each pod rebuilds its boards from the published source on its own Linux render
-  (the WMB serialize gate runs before training), and on exit pushes its logs under
-  `logs/<run>/`. A trainer run must carry `--push`; a `--smoke` must not.
+  private `HF_MODELS_REPO` for a bench run); `launch.py` refuses a public repo. A pod
+  runs one spec: `launch.py` loads and expands it on the laptop, so a bad spec fails
+  before anything is paid for, and takes the boards to build from its configs. Pods
+  mount no volume: the code snapshot travels through the dataset under `code/`, each
+  pod rebuilds its boards from the published source on its own Linux render (the WMB
+  serialize gate runs before training), pushes every run folder as the run ends, and on
+  exit pushes its logs under `logs/<spec>-<launch>/`. A restarted container resumes its
+  launch, skipping the runs already pushed.
 
-      python deploy/pod/launch.py --trainer finetune --smoke              # tiny end-to-end pod
-      python deploy/pod/launch.py --trainer finetune --smoke --queue 12   # wait up to 12 h for a GPU
-      python tools/pod_logs.py --run <name>                               # its logs, after exit
+      python deploy/pod/launch.py --spec experiments/wmb-lite.yaml --smoke   # 1-epoch pod check
+      python deploy/pod/launch.py --spec experiments/wmb-mini.yaml --queue 12   # wait for a GPU
+      python tools/pod_logs.py --run <name>                                  # its logs, after exit
 
 ## WMB training data
 

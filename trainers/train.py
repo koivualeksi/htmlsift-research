@@ -4,6 +4,7 @@ out, each pushed to the HF results dataset when it finishes.
     python -m trainers.train experiments/wmb-mini.yaml
     python -m trainers.train experiments/wmb-mini.yaml --smoke        # 20 pages, 1 epoch
     python -m trainers.train <dir>/run.yaml                           # rerun one run
+    python -m trainers.train experiments/wmb-mini.yaml --check        # checks only
 
 A smoke runs seed 0 of each config, lives under data/runs/smoke/ and is never pushed or
 resumed. $LAUNCH resumes a launch (a restarted pod): its finished configs are skipped.
@@ -90,6 +91,8 @@ def main(argv=None):
     ap.add_argument("path", help="experiments/<name>.yaml, or a run's run.yaml")
     ap.add_argument("--smoke", nargs="?", type=int, const=20, default=None,
                     help="N pages per fold (default 20), 1 epoch, seed 0, never pushed")
+    ap.add_argument("--check", action="store_true",
+                    help="load, expand and run every check, then exit without training")
     args = ap.parse_args(argv)
 
     experiment, note, configs, from_spec = load(args.path)
@@ -99,6 +102,9 @@ def main(argv=None):
             configs = [c for c in configs if c["seed"] == 0]
         configs = [{**c, "epochs": 1, "smoke": args.smoke} for c in configs]
     check_boards(configs)
+    if args.check:
+        print(f"{experiment}: {len(configs)} runs, all checks pass", flush=True)
+        return
 
     launch = os.environ.get("LAUNCH") or runs.new_id()
     done = []

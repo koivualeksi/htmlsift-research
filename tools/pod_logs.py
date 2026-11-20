@@ -9,11 +9,13 @@ run_meta.json). No --run lists the runs; --run <name> dumps its files.
 import argparse
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 from dotenv import load_dotenv
 from huggingface_hub import HfApi, hf_hub_download
 
-from deploy.pod._runpod import env_or_die
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # run as a script, not -m
+from deploy.pod._runpod import env_or_die  # noqa: E402 -- needs the repo root on the path
 
 
 def main():
