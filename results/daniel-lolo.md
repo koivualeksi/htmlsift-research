@@ -1,6 +1,6 @@
 DAnIEL leave-one-language-out -- ROUGE-L F1, our reimplementation of the SIGIR 2025 metric (LIMITS.md). The result is the test table: train on four languages, score the fifth, so n is that language's page count. The val columns are the four training languages and are in-domain, not a board number.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 ## Held-out language -- val (epoch-mean)
 

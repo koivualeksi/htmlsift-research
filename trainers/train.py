@@ -1,115 +1,125 @@
-"""
-Board-agnostic training loop: fine-tune an encoder+head on prepared pages,
-selecting the checkpoint by a caller-supplied val score. One arm, one seed --
-the sweep that chains arms x seeds and aggregates their numbers lives in the
-board adapter, not here.
-"""
+"""Training entry point: a sweep spec or one run's run.yaml in, one run folder per config
+out, each pushed to the HF results dataset when it finishes.
 
-import numpy as np
+    python -m trainers.train experiments/wmb-mini.yaml
+    python -m trainers.train experiments/wmb-mini.yaml --smoke        # 20 pages, 1 epoch
+    python -m trainers.train <dir>/run.yaml                           # rerun one run
+    python -m trainers.train experiments/wmb-mini.yaml --check        # checks only
+
+A smoke runs seed 0 of each config, lives under data/runs/smoke/ and is never pushed or
+resumed. $LAUNCH resumes a launch (a restarted pod): its finished configs are skipped.
+"""
+import argparse
+import json
+import os
+import sys
+import traceback
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+
 import torch
-import torch.nn as nn
+import yaml
 
-from htmlsift.extractor import THRESHOLD
-from core.model import cat_feats, encode_window, infer_page, pool
+from trainers import runs, spec
+from trainers.recipes import Ctx, finetune, table
+from vendors.shared.benchmark import load_benchmark
 
-
-def _eval(encoder, head, val_pages, score_val, dev, autocast):
-    """Inference over val -> board-agnostic block P/R/F1 (at 0.5) plus the
-    board's selection scalar from score_val(val_pages, probs)."""
-    encoder.eval(), head.eval()
-    probs = [infer_page(encoder, head, p, dev, autocast) for p in val_pages]
-    tp = fp = fn = 0
-    for p, pr in zip(val_pages, probs):
-        pred, y = pr > THRESHOLD, p["y"] > 0.5
-        tp += int((pred & y).sum())
-        fp += int((pred & ~y).sum())
-        fn += int((~pred & y).sum())
-    prec, rec = tp / max(tp + fp, 1), tp / max(tp + fn, 1)
-    return {"block_p": prec, "block_r": rec,
-            "block_f1": 2 * prec * rec / max(prec + rec, 1e-9),
-            "val": score_val(val_pages, probs)}
+RECIPES = {"finetune": finetune, "table": table}
+PROBS = runs.ROOT / "data" / "probs"
 
 
-def train(encoder, head, train_pages, val_pages, score_val, dev, *,
-          epochs=4, enc_lr=2e-5, head_lr=1e-3, wd=0.01, warmup=200,
-          grad_clip=1.0, seed=0, out_path=None, meta=None):
-    """Fine-tune encoder+head on train_pages, selecting on
-    score_val(val_pages, probs) (higher is better). Leaves encoder+head holding
-    the best-val weights and returns a summary dict. A checkpoint is written only
-    when out_path is given -- the sweep sets it for keeper arms alone, since these
-    are large. One seed; the caller runs the 3-seed system."""
-    torch.manual_seed(seed)
-    autocast = dev.type == "cuda"
+def load(path):
+    """(experiment, note, configs, from_spec) from a spec or a run.yaml (has config:)."""
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    if "config" in data:
+        spec.check(data["config"])
+        return data["experiment"], data["note"], [data["config"]], False
+    s = spec.load(path)
+    return s.name, s.note, spec.expand(s), True
 
-    samples = [(pi, si) for pi, p in enumerate(train_pages)
-               for si in range(len(p["samples"]))]
-    pos = sum(float(p["y"][lo:hi].sum())
-              for p in train_pages for _, _, lo, hi in p["samples"])
-    tot = sum(hi - lo for p in train_pages for _, _, lo, hi in p["samples"])
-    pos_weight = torch.tensor((tot - pos) / max(pos, 1.0), device=dev)
-    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
-    no_decay = ("bias", "norm")
-    named_enc = list(encoder.named_parameters())
-    opt = torch.optim.AdamW([
-        {"params": [p for n, p in named_enc
-                    if not any(k in n.lower() for k in no_decay)],
-         "lr": enc_lr, "weight_decay": wd},
-        {"params": [p for n, p in named_enc
-                    if any(k in n.lower() for k in no_decay)],
-         "lr": enc_lr, "weight_decay": 0.0},
-        {"params": list(head.parameters()), "lr": head_lr, "weight_decay": 0.0},
-    ])
-    total_steps = len(samples) * epochs
-    sched = torch.optim.lr_scheduler.LambdaLR(
-        opt, lambda step: min((step + 1) / max(warmup, 1),
-                              max(0.0, 1 - step / total_steps)))
-    print(f"train: {len(samples)} samples over {len(train_pages)} pages, "
-          f"pos_weight {float(pos_weight):.2f}, {total_steps} steps", flush=True)
+def check_boards(configs):
+    """Board capabilities every config needs, checked before any compute."""
+    boards = {}
+    for cfg in configs:
+        b = boards.setdefault(cfg["board"], load_benchmark(cfg["board"]))
+        h = cfg.get("holdout")
+        if h is not None and h not in b.holdout_groups:
+            raise ValueError(f"{b.name} has no holdout {h!r}; one of {b.holdout_groups}")
+        if b.holdout_groups and h is None:
+            raise ValueError(f"{b.name} trains leave-one-out: set holdout, one of "
+                             f"{b.holdout_groups}")
+        if cfg["train_limit"] is not None and not b.supports_train_limit:
+            raise ValueError(f"train_limit not supported for {b.name}")
 
-    rng = np.random.default_rng(seed)
-    best, best_state, history = {"val": -1.0, "epoch": 0}, None, []
-    for epoch in range(1, epochs + 1):
-        encoder.train(), head.train()
-        rng.shuffle(samples)
-        total_loss = 0.0
-        for pi, si in samples:
-            p = train_pages[pi]
-            s, e, b_lo, b_hi = p["samples"][si]
-            opt.zero_grad()
-            hidden = encode_window(
-                encoder, torch.from_numpy(p["ids"][s:e]).to(dev), autocast)
-            x = pool(hidden, p["members"], b_lo, b_hi, s)
-            x = cat_feats(x, p.get("feats"), b_lo, b_hi)
-            y = torch.from_numpy(p["y"][b_lo:b_hi]).to(dev)
-            loss = loss_fn(head(x[None])[0], y)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                list(encoder.parameters()) + list(head.parameters()), grad_clip)
-            opt.step()
-            sched.step()
-            total_loss += float(loss.detach())
 
-        m = _eval(encoder, head, val_pages, score_val, dev, autocast)
-        m["loss"] = total_loss / len(samples)
-        history.append(m)
-        star = ""
-        if m["val"] > best["val"]:
-            best = {"val": m["val"], "epoch": epoch}
-            best_state = (
-                {k: v.cpu().clone() for k, v in encoder.state_dict().items()},
-                {k: v.cpu().clone() for k, v in head.state_dict().items()})
-            star = "  *"
-        print(f"epoch {epoch}: loss {m['loss']:.4f}  block P {m['block_p']:.4f} "
-              f"R {m['block_r']:.4f} F1 {m['block_f1']:.4f}  val {m['val']:.4f}"
-              f"{star}", flush=True)
+class _Tee:
+    def __init__(self, *streams):
+        self.streams = streams
 
-    encoder.load_state_dict(best_state[0])
-    head.load_state_dict(best_state[1])
-    if out_path is not None:
-        torch.save({**(meta or {}), "epoch": best["epoch"], "val": best["val"],
-                    "encoder": best_state[0], "head_state": best_state[1]}, out_path)
-        print(f"saved best (epoch {best['epoch']}, val {best['val']:.4f}) -> "
-              f"{out_path}", flush=True)
-    return {"best_val": best["val"], "best_epoch": best["epoch"],
-            "history": history}
+    def write(self, s):
+        for st in self.streams:
+            st.write(s)
+        return len(s)
+
+    def flush(self):
+        for st in self.streams:
+            st.flush()
+
+
+def run_one(experiment, launch, note, cfg, ctx, smoke):
+    folder = runs.start(experiment, launch, cfg, note=note, smoke=smoke)
+    ctx.folder, ctx.probs = folder, PROBS / folder.name
+    print(f"== run {folder.name}: {json.dumps(cfg)}", flush=True)
+    with open(folder / "log.txt", "w", encoding="utf-8") as log, \
+            redirect_stdout(_Tee(sys.stdout, log)), redirect_stderr(_Tee(sys.stderr, log)):
+        try:
+            result, curves = RECIPES[cfg["recipe"]].run(cfg, ctx)
+        except Exception:
+            traceback.print_exc()
+            raise
+    (folder / "curves.jsonl").write_text(
+        "".join(json.dumps(c) + "\n" for c in curves), encoding="utf-8")
+    runs.finish(folder, result)
+    if not smoke:
+        runs.push(folder.name)
+    print(f"== done {folder.name}: {json.dumps(result)}", flush=True)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("path", help="experiments/<name>.yaml, or a run's run.yaml")
+    ap.add_argument("--smoke", nargs="?", type=int, const=20, default=None,
+                    help="N pages per fold (default 20), 1 epoch, seed 0, never pushed")
+    ap.add_argument("--check", action="store_true",
+                    help="load, expand and run every check, then exit without training")
+    args = ap.parse_args(argv)
+
+    experiment, note, configs, from_spec = load(args.path)
+    smoke = args.smoke is not None
+    if smoke:
+        if from_spec:
+            configs = [c for c in configs if c["seed"] == 0]
+        configs = [{**c, "epochs": 1, "smoke": args.smoke} for c in configs]
+    check_boards(configs)
+    if args.check:
+        print(f"{experiment}: {len(configs)} runs, all checks pass", flush=True)
+        return
+
+    launch = os.environ.get("LAUNCH") or runs.new_id()
+    done = []
+    if not smoke:
+        runs.preflight()
+        done = runs.done(launch)
+    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    workers = os.cpu_count() if sys.platform == "linux" else 1
+    todo = [c for c in configs if c not in done]
+    print(f"launch {launch}: {experiment}, {len(todo)} of {len(configs)} runs to do on {dev}"
+          + (" (smoke)" if smoke else ""), flush=True)
+    ctx = Ctx(dev=dev, folder=None, probs=None, limit=args.smoke, eval_workers=workers)
+    for cfg in todo:
+        run_one(experiment, launch, note, cfg, ctx, smoke)
+
+
+if __name__ == "__main__":
+    main()

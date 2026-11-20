@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Pod-side bootstrap for one trainer run. deploy/pod/launch.py delivers this base64-encoded
-# in ENTRYPOINT_SCRIPT; the pod's start command decodes and runs it. No network volume:
-# the code snapshot comes from $HF_RESULTS_DATASET (code/), the board in BOARDS is built
-# here from its published source on this pod's Linux render, and the logs go back to the
-# dataset (logs/$RUN_NAME/) on exit. Results leave only through the trainer's --push.
+# Pod-side bootstrap for one run of ENTRY: a training spec (-m trainers.train) or a bench
+# harness. deploy/pod/launch.py delivers this base64-encoded in ENTRYPOINT_SCRIPT; the
+# pod's start command decodes and runs it. No network volume: the code snapshot comes from
+# $HF_RESULTS_DATASET (code/), every board in BOARDS is built here from its published
+# source on this pod's Linux render, and the logs go back to the dataset (logs/$RUN_NAME/)
+# on exit. Training results leave as run folders, pushed by train.py as each run ends.
 #
 # ALWAYS self-terminates via the EXIT trap, including on failure: a pod that
 # can't clean up restarts and bills forever (archive, 2026-08-18).
 #
-# Env from launch.py: RUN_NAME, CODE_SNAPSHOT, RUN_MODE, SWEEP_ARGS, MAX_RUNTIME, BOARDS,
-#   HF_TOKEN, HF_RESULTS_DATASET, RUNPOD_TERMINATE_API_KEY; HF_MODELS_REPO when the
-#   sweep carries --keep; RUNPOD_POD_ID from RunPod; optional PUBLIC_KEY for the ssh
-#   debug hatch.
+# Env from launch.py: RUN_NAME, CODE_SNAPSHOT, ENTRY, MAX_RUNTIME, BOARDS, HF_TOKEN,
+#   HF_RESULTS_DATASET, RUNPOD_TERMINATE_API_KEY; for training also CHECK, LAUNCH, GIT_SHA,
+#   GIT_DIRTY and EXTRA (when a config trains on extra pages); for bench HF_MODELS_REPO;
+#   RUNPOD_POD_ID from RunPod; optional PUBLIC_KEY for the ssh debug hatch.
 set -euo pipefail
 
 export OUT=/root/out
@@ -36,8 +37,8 @@ push_logs() {
 cleanup() {
     status=$?
     set +e +u   # nothing may abort this before the terminate call
-    printf '{"run_name":"%s","sweep_args":"%s","code_snapshot":"%s","exit_code":%d,"started":"%s","ended":"%s","gpu":"%s"}\n' \
-        "${RUN_NAME:-}" "${SWEEP_ARGS:-}" "${CODE_SNAPSHOT:-}" "$status" "${START_TS:-}" \
+    printf '{"run_name":"%s","entry":"%s","launch":"%s","code_snapshot":"%s","exit_code":%d,"started":"%s","ended":"%s","gpu":"%s"}\n' \
+        "${RUN_NAME:-}" "${ENTRY:-}" "${LAUNCH:-}" "${CODE_SNAPSHOT:-}" "$status" "${START_TS:-}" \
         "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
         "$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 || echo unknown)" \
         > "$OUT/run_meta.json"
@@ -92,6 +93,12 @@ uv pip install -q --python "$PYBIN" --no-cache torch==2.11.0 \
 uv pip install -q --python "$PYBIN" --no-cache -e ".[repro,train]"
 "$PYBIN" -c "import sys, torch, lxml.etree as e; assert torch.cuda.is_available(), 'no CUDA'; print('python', sys.version.split()[0], '| torch', torch.__version__, torch.cuda.get_device_name(0), '| libxml2', e.LIBXML_VERSION)"
 
+# The board checks the laptop cannot run (its python has no htmlsift), before the build.
+# shellcheck disable=SC2086 -- CHECK is intentionally word-split.
+if [ -n "${CHECK:-}" ]; then
+    "$PYBIN" $CHECK
+fi
+
 # Board data from the published source: prepare.py acquires (pinned + sha256-checked) and
 # builds the board; blocks.py --feats ABC adds the structural features on the same render,
 # and labels.py re-derives labels where the board derives them from the render.
@@ -132,16 +139,15 @@ PY
 # Custom pages: acquire at the pinned revision, then the render-match gate. The gate
 # drops (and counts) any page this render disagrees with; it raises on a libxml2 that
 # differs from the one the pages were labelled under.
-case " ${SWEEP_ARGS:-} " in *" --extra custom "*)
+if [ "${EXTRA:-}" = custom ]; then
     timeout "$MAX_RUNTIME" "$PYBIN" -m vendors.custom.adapter.acquire
     timeout "$MAX_RUNTIME" "$PYBIN" -m vendors.custom.adapter.blocks
-;; esac
+fi
 
-# Trainer run. RUN_MODE (from launch.py) is the entry point -- trainers/<mode>.py.
-# SWEEP_ARGS carries the axes AND --push: a real run streams to $HF_RESULTS_DATASET and
-# resumes on restart; a smoke omits --push and leaves only its log. --device defaults to cuda.
-# shellcheck disable=SC2086 -- SWEEP_ARGS is intentionally word-split.
-timeout "$MAX_RUNTIME" "$PYBIN" -u "$RUN_MODE" ${SWEEP_ARGS:-} \
-    2>&1 | tee "$OUT/run.log"
+# The run. ENTRY is `-m trainers.train experiments/<name>.yaml [--smoke]` or a bench harness
+# with its own args. A restarted container reruns this script with the same LAUNCH, so
+# train.py skips the runs that launch already pushed.
+# shellcheck disable=SC2086 -- ENTRY is intentionally word-split.
+timeout "$MAX_RUNTIME" "$PYBIN" -u $ENTRY 2>&1 | tee "$OUT/run.log"
 
-echo "=== sweep finished cleanly ==="
+echo "=== run finished cleanly ==="

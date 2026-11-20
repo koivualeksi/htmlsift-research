@@ -5,7 +5,11 @@ table on the ckpt's kind, resolve the target Benchmark by name, hand export_prob
 infer_fn -- no per-board branching. Our-models path only; the third-party extractor
 comparison is bench/speed/ (competitors.py).
 
-    python bench/accuracy/predict.py --model wmb-311m-10                            # all boards, all seeds
+--model writes one eval run per (model, board, seed) to the run store, experiment
+`generalization`; --push ships each as it finishes. --limit makes them smoke runs, which
+stay in data/runs/smoke/ and are never pushed.
+
+    python bench/accuracy/predict.py --model wmb-311m-10 --push                     # all boards, all seeds
     python bench/accuracy/predict.py --ckpt ckpt.pt --benchmark daniel --out probs.jsonl  # one ckpt, one board
 """
 import argparse
@@ -15,7 +19,7 @@ import torch
 from dotenv import load_dotenv
 
 from core.loader import build_infer, resolve_ckpt
-from trainers import ledger
+from trainers import runs
 from vendors.shared import bench_ops
 from vendors.shared.arms import WINDOW
 from vendors.shared.benchmark import load_benchmark
@@ -25,8 +29,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _run_board(ck, tok, infer_fn, cap, board, out, fold, limit):
-    """One keeper over one board: export probs, score, print. Returns the score dict
-    (piece 4 records it)."""
+    """One keeper over one board: export probs, score, print. Returns the score dict."""
     bench = load_benchmark(board)
     feats = bench_ops.carried_features(bench, ck)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -45,10 +48,6 @@ def _run_board(ck, tok, infer_fn, cap, board, out, fold, limit):
     return s
 
 
-def _gen_key(r):
-    return (r["model"], r["eval_board"], r["seed"])
-
-
 def main():
     load_dotenv()
     ap = argparse.ArgumentParser()
@@ -62,13 +61,12 @@ def main():
     ap.add_argument("--fold", default="test")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--limit", type=int, default=None)
-    ap.add_argument("--push", nargs="?", const="", default=None,
-                    help="push the generalization ledger to $HF_RESULTS_DATASET (--model mode)")
-    ap.add_argument("--shard", default="", help="ledger shard for parallel runs (--model mode)")
+    ap.add_argument("--push", action="store_true",
+                    help="push each run to $HF_RESULTS_DATASET (--model mode)")
     ap.add_argument("--table-int8", action="store_true",
                     help="force per-row int8 on a table keeper's frozen embedding table at inference "
-                         "(numerically the shipped mini -- core.quant.emb_int8_fakequant). Ledger rows are "
-                         "tagged <model>-int8 so they never overwrite the fp32 generalization cells")
+                         "(numerically the shipped mini -- core.quant.emb_int8_fakequant). Runs are "
+                         "tagged <model>-int8 so they never land in the fp32 generalization cells")
     args = ap.parse_args()
     dev = torch.device(args.device)
 
@@ -77,18 +75,15 @@ def main():
         if len(parts) != 2 or parts[0] not in BOARDS:
             raise SystemExit(f"model id must be <board>-<arm>, board in {BOARDS}: {args.model}")
         trained_on, arm = parts
-        mid = args.model + ("-int8" if args.table_int8 else "")   # ledger identity; the ckpt still loads from arm
+        mid = args.model + ("-int8" if args.table_int8 else "")   # cell identity; the ckpt still loads from arm
         boards = args.boards.split(",")
-        led = ledger.Ledger(ROOT / "data" / "runs" / "generalization_results.jsonl",
-                            ledger.resolve_repo(args.push),
-                            ledger.sharded_path("generalization_results.jsonl", args.shard),
-                            key_fn=_gen_key)
-        led.resume()
+        smoke = args.limit is not None
+        if args.push:
+            if smoke:
+                raise SystemExit("--limit runs are smoke runs and are never pushed")
+            runs.preflight()
+        launch = runs.new_id()
         for seed in range(args.seeds):
-            if led.all_done(_gen_key({"model": mid, "eval_board": b, "seed": seed})
-                            for b in boards):
-                print(f"[skip {mid} s{seed}: all boards done]", flush=True)
-                continue
             ck = resolve_ckpt(f"{trained_on}/ckpt/{arm}_s{seed}.pt", dev)
             if args.table_int8:
                 if ck.get("kind") != "table":
@@ -96,19 +91,16 @@ def main():
                 ck["int8"] = True                       # quantize the frozen table; head weights unchanged
             tok, infer_fn, _kind, cap = build_infer(ck, dev)
             for board in boards:
-                if led.is_done(_gen_key({"model": mid, "eval_board": board, "seed": seed})):
-                    print(f"[skip {mid} {board} s{seed}: done]", flush=True)
-                    continue
+                config = {"recipe": "predict", "board": board, "model": mid,
+                          "trained_on": trained_on, "eval_board": board, "seed": seed,
+                          "fold": args.fold}
+                folder = runs.start("generalization", launch, config, kind="eval", smoke=smoke)
                 out = ROOT / "data" / "runs" / board / "probs" / f"{mid}_s{seed}.jsonl"
                 s = _run_board(ck, tok, infer_fn, cap, board, out, args.fold, args.limit)
-                rec = {"model": mid, "trained_on": trained_on, "eval_board": board,
-                       "seed": seed, "n": s["n"], "prec": s["prec"], "rec": s["rec"], "f1": s["f1"]}
-                if "by_lang" in s:
-                    rec["by_lang"] = s["by_lang"]
-                if "by_type" in s:
-                    rec["by_type"] = s["by_type"]
-                led.append(rec)
-            led.merge_push(f"benchmark {mid} s{seed}")
+                runs.finish(folder, {k: s[k] for k in ("n", "prec", "rec", "f1", "by_lang", "by_type")
+                                     if k in s})
+                if args.push:
+                    runs.push(folder.name)
     else:
         if not (args.benchmark and args.out):
             raise SystemExit("--ckpt needs --benchmark and --out")

@@ -1,13 +1,10 @@
 """Unit: train_subset stratified sampling -- nesting, distribution tracking, determinism,
-exhaustion handling, and the ledger/finetune key integration for --train-limit. Runs
-against a synthetic splits.json (no corpus needed).
+and exhaustion handling for --train-limit. Runs against a synthetic splits.json (no
+corpus needed).
 """
 import json
 
 import pytest
-
-from trainers import ledger
-from trainers.ledger import arm_key, record_key
 
 
 # ---- synthetic splits.json fixture ----
@@ -101,72 +98,3 @@ def test_distribution_tracks_val(fake_splits):
             # within 2 pages' worth of the target fraction
             assert abs(actual - val_frac[lv]) <= 2 / n, \
                 f"n={n} level={lv}: target {val_frac[lv]:.3f} actual {actual:.3f}"
-
-
-# ---- ledger record_key with train_limit ----
-
-def test_record_key_without_train_limit_unchanged():
-    r = {"model": "97m", "layers": 6, "head": "bigru", "feats": None, "seed": 0}
-    assert record_key(r) == arm_key("97m", 6, "bigru", None, 0, 0)
-
-
-def test_record_key_with_train_limit_extends_key():
-    r = {"model": "97m", "layers": 6, "head": "bigru", "feats": None, "seed": 0,
-         "train_limit": 250}
-    k = record_key(r)
-    base = arm_key("97m", 6, "bigru", None, 0, 0)
-    assert k == base + (250,)
-    assert len(k) == len(base) + 1
-
-
-def test_record_key_different_limits_are_distinct():
-    base = {"model": "97m", "layers": 6, "head": "bigru", "feats": None, "seed": 0}
-    k_none = record_key(base)
-    k_250 = record_key({**base, "train_limit": 250})
-    k_500 = record_key({**base, "train_limit": 500})
-    assert k_none != k_250
-    assert k_250 != k_500
-    assert k_none != k_500
-
-
-# ---- finetune _key with train_limit ----
-
-def test_finetune_key_without_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    k = _key(arm, seed=0)
-    assert k == arm_key("97m", 6, "bigru", None, 0, 0)
-
-
-def test_finetune_key_with_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    k = _key(arm, seed=0, train_limit=250)
-    assert k == arm_key("97m", 6, "bigru", None, 0, 0) + (250,)
-
-
-def test_finetune_key_none_limit_equals_no_limit():
-    from trainers.finetune import _key
-    arm = {"model": "ibm-granite/granite-embedding-97m-multilingual-r2",
-           "layers": 6, "head": "bigru", "feats": None, "cap": 0}
-    assert _key(arm, seed=0, train_limit=None) == _key(arm, seed=0)
-
-
-# ---- ledger dedup: records with and without train_limit coexist ----
-
-def test_ledger_dedup_separates_limited_and_unlimited(tmp_path):
-    local = tmp_path / "l.jsonl"
-    r1 = {"model": "97m", "layers": 6, "head": "bigru", "feats": None,
-          "seed": 0, "ts": "2026-01-01", "best_val": 0.8}
-    r2 = {**r1, "train_limit": 250, "best_val": 0.7}
-    # write both records, then build a ledger that reads them back
-    local.write_text(
-        json.dumps(r1) + "\n" + json.dumps(r2) + "\n", encoding="utf-8")
-    led = ledger.Ledger(local, None, "wmb/r.jsonl")
-    # no repo -> resume reads local directly into done set
-    led.done = {led.key_fn(r) for r in [r1, r2]}
-    assert led.is_done(record_key(r1))
-    assert led.is_done(record_key(r2))
-    assert record_key(r1) != record_key(r2)

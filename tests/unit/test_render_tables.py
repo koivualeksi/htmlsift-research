@@ -1,12 +1,17 @@
-"""Unit: the results reader's cell identity. The writer (trainers.ledger.record_key)
-separates train_limit and holdout; the reader adds the epoch budget, which no key
-carries. A cell that merges any of those averages two populations and reports the
-wrong one -- the failure that put a train_limit=4000 run in the full-pool table.
-No HF transport: render() is pure over authored records.
+"""Unit: the results reader's cell identity. A cell separates the arm, train_limit,
+holdout and the epoch budget. A cell that merges any of those averages two populations
+and reports the wrong one -- the failure that put a train_limit=4000 run in the
+full-pool table.
+No HF transport: render() is pure over authored records, and the legacy loader is read
+from a run folder written here.
 """
-import pytest
+import json
 
-from tools.download_results import _epochs, collapse, group_key, render, render_matrix
+import pytest
+import yaml
+
+from tools.render_tables import (_epochs, collapse, from_experiment, from_ledgers, group_key,
+                                 record, render, render_matrix, render_runs)
 
 FROZEN = {"model": "311m", "layers": 12, "head": "bigru", "feats": "ABC",
           "seed": 0, "ts": "2026-01-01", "best_val": 0.89, "frozen": True}
@@ -22,7 +27,14 @@ def exported(seed=0, f1=0.93, test_n=544, **extra):
     return rec(seed=seed, test_f1=f1, test_prec=0.93, test_rec=0.96, test_n=test_n, **extra)
 
 
-# ---- group_key separates what record_key separates, plus the epoch budget ----
+# ---- group_key separates the arm, train_limit, holdout and the epoch budget ----
+
+def test_arm_fields_and_seed_are_the_key_head():
+    assert group_key(rec(seed=2))[:6] == ("311m", 10, "bigru", "none", 0, 2)
+
+
+def test_different_holdouts_are_distinct_cells():
+    assert len({group_key(rec(holdout=h)) for h in ("Greek", "Polish", "Chinese")}) == 3
 
 def test_train_limit_is_a_distinct_cell():
     assert group_key(rec()) != group_key(rec(train_limit=2000))
@@ -165,3 +177,111 @@ def test_matrix_population_is_per_board():
     # wcxb's 511 is full for wcxb, not a short wmb run
     out = render_matrix([gen(board="wmb", n=544), gen(board="wcxb", n=511)], "cap")
     assert "0.9300" in out
+
+
+# ---- the run loader ----
+
+LEGACY = {"repo": "htmlsift-runs", "file": "wmb/finetune_results.jsonl", "line": 4,
+          "ts": "2026-09-06T14:18:46+00:00"}
+
+
+def folder(tmp_path, curves=None, legacy=LEGACY, experiment="legacy-wmb-finetune",
+           ended="2026-09-06T17:18:46+03:00"):
+    run = {"id": "2026-09-06T1718-f3ff", "experiment": experiment, "ended": ended,
+           "config": {"recipe": "finetune", "board": "wmb", "model": "311m", "layers": 10,
+                      "head": "bigru", "feats": None, "cap": 0, "seed": 0},
+           "result": {"best_val": 0.9, "best_epoch": 2, "ckpt": "ckpt.pt"}}
+    if legacy:
+        run["legacy"] = legacy
+    (tmp_path / "run.yaml").write_text(yaml.safe_dump(run), encoding="utf-8")
+    if curves:
+        (tmp_path / "curves.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in curves), encoding="utf-8")
+    return tmp_path
+
+
+def test_a_converted_run_rebuilds_its_ledger_line(tmp_path):
+    order, _, rec = record(folder(tmp_path, curves=[{"epoch": 1, "val": 0.8, "loss": 0.5},
+                                                    {"epoch": 2, "val": 0.9, "loss": 0.4}]))
+    assert order == (0, "wmb/finetune_results.jsonl", 4)
+    assert rec == {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "cap": 0,
+                   "seed": 0, "best_val": 0.9, "best_epoch": 2,
+                   "val_by_epoch": [0.8, 0.9], "loss_by_epoch": [0.5, 0.4],
+                   "ts": "2026-09-06T14:18:46+00:00"}
+
+
+def test_a_run_without_curves_has_no_epoch_lists(tmp_path):
+    _, _, rec = record(folder(tmp_path))
+    assert "val_by_epoch" not in rec and _epochs(rec) is None
+
+
+def test_a_new_run_takes_its_end_in_utc_and_orders_after_legacy(tmp_path):
+    order, _, rec = record(folder(tmp_path, legacy=None, experiment="generalization"))
+    assert rec["ts"] == "2026-09-06T14:18:46+00:00"
+    assert order > (0, "z", 10**9)
+
+
+def run(file=None, experiment="x"):
+    return {"experiment": experiment, **({"legacy": {"file": file}} if file else {})}
+
+
+def test_ledger_selection_takes_shards_but_not_a_sibling_ledger():
+    sel = from_ledgers(["wmb/finetune_results.jsonl"])
+    assert sel(run("wmb/finetune_results.jsonl")) and sel(run("wmb/finetune_results.tl311.jsonl"))
+    assert not sel(run("wmb/finetune_qat_results.jsonl"))
+
+
+def test_ledger_selection_excludes_by_prefix():
+    sel = from_ledgers(["wcxb/finetune_results.jsonl"], exclude=["wcxb/finetune_results.wcxbtl-"])
+    assert sel(run("wcxb/finetune_results.wcxb311.jsonl"))
+    assert not sel(run("wcxb/finetune_results.wcxbtl-forum-fabc.jsonl"))
+
+
+def test_ledger_selection_never_takes_a_new_run():
+    assert not from_ledgers(["wmb/finetune_results.jsonl"])(run())
+
+
+def test_experiment_selection_adds_the_converted_ledger():
+    sel = from_experiment("generalization", also=from_ledgers(["generalization_results.jsonl"]))
+    assert sel(run(experiment="generalization"))
+    assert sel(run("generalization_results.311m.jsonl"))
+    assert not sel(run(experiment="wmb-base"))
+
+
+# ---- runs from the run store ----
+
+def new(seed=0, val=0.86, test=0.90, sha="115b03b5c8", dirty=False, run_id=None, **cfg):
+    return {"id": run_id or f"2026-11-20T2138-000{seed}",
+            "config": {"recipe": "table", "board": "wmb", "hidden": 256, "seed": seed, **cfg},
+            "provenance": {"git_sha": sha, "dirty": dirty},
+            "result": {"best_val": val, "test_f1": test, "test_n": 544}}
+
+
+def test_seeds_pool_into_one_row_and_fixed_keys_are_stated_once():
+    out = render_runs([new(0, val=0.86), new(1, val=0.88)], "cap")
+    assert "| 2 | 0.8700±0.0141 | 0.9000±0.0000 |" in out
+    assert "Config: `recipe=table`, `board=wmb`, `hidden=256`" in out
+    assert "Test n: 544." in out
+
+
+def test_a_varying_key_splits_rows():
+    out = render_runs([new(0, hidden=128, val=0.80), new(0, hidden=256, val=0.86)], "cap")
+    assert "| hidden | seeds | val | test |" in out
+    assert "| 128 | 1 | 0.8000 |" in out and "| 256 | 1 | 0.8600 |" in out
+    assert "hidden=" not in out
+
+
+def test_a_rerun_adds_seeds_and_is_not_deduplicated():
+    out = render_runs([new(0, val=0.86), new(0, val=0.84, run_id="2026-11-21T0900-aaaa")], "cap")
+    assert "| 2 | 0.8500±0.0141 |" in out
+    assert "2026-11-21T0900-aaaa" in out
+
+
+def test_each_run_is_listed_with_its_commit():
+    out = render_runs([new(0), new(1, dirty=True)], "cap")
+    assert "| 2026-11-20T2138-0000 | 0 | 115b03b | 0.8600 | 0.9000 |" in out
+    assert "| 2026-11-20T2138-0001 | 1 | 115b03b+dirty |" in out
+
+
+def test_a_column_shows_only_when_a_run_carries_it():
+    assert "test int8" not in render_runs([new(0)], "cap")

@@ -15,9 +15,9 @@ most-interior-token ownership -- a trained-in property, so training samples and
 inference cannot diverge. Training is per-block BCE with `pos_weight`, AdamW
 (encoder 2e-5 / head 1e-3), warmup then linear decay, checkpoint on best val. Every
 arm runs at 3 seeds, compared on epoch means; sub-1-pt val differences are not
-decision-grade. `trainers/finetune.py --benchmark <board>` generates the ablation
-arms from the CLI axes and drives this loop; each board's data and val metric reach
-it through that board's `Benchmark` (`vendors/<board>/adapter/benchmark.py`)
+decision-grade. `python -m trainers.train experiments/<name>.yaml` expands a spec into
+runs and drives this loop; each board's data and val metric reach it through that
+board's `Benchmark` (`vendors/<board>/adapter/benchmark.py`)
 (`REPRODUCE.md`).
 
 ## WMB

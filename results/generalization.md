@@ -1,6 +1,6 @@
 Generalization matrix -- test F1 per board (mean±std, 3 seeds). Each column is that board's OWN metric (WMB ROUGE-5 / WCXB word-F1 / DAnIEL ROUGE-L macro) -- comparable down a column, never across a row. **Bold** = in-domain (the model's training board), a reproduction, not a zero-shot number.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 | model | wmb | wcxb | daniel |
 |---|---|---|---|

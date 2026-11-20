@@ -1,0 +1,8 @@
+# Encoder depth screen on WMB val: every truncation depth of the 97m encoder.
+name: wmb-depth-97m
+recipe: finetune
+board: wmb
+model: 97m
+export_test: false
+sweep:
+  layers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]

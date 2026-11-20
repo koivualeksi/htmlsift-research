@@ -1,6 +1,6 @@
 WCXB fine-tune -- word-F1 by their evaluate.py. WCXB carves no val fold, so the val columns are dev1497 (train == val == dev) and the test table is test511.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 ## val (epoch-mean)
 

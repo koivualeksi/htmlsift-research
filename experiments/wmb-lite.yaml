@@ -1,0 +1,7 @@
+# The lite model: 97m truncated to 6 layers, BiGRU head, 3 seeds. Also the CPU smoke target
+# for the finetune recipe (python -m trainers.train experiments/wmb-lite.yaml --smoke).
+name: wmb-lite
+recipe: finetune
+board: wmb
+model: 97m
+layers: 6

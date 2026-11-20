@@ -13,7 +13,7 @@ and are reference, not run steps.
 
   `-e` installs the repo as an editable namespace package: the repo root goes on
   `sys.path`, so `core/`, `vendors/` and `trainers/` import absolutely and
-  `python trainers/<mode>.py` runs against the working tree, not an installed
+  `python -m trainers.train` runs against the working tree, not an installed
   snapshot. It also resolves the pinned reproduction dependencies:
   `huggingface-hub==1.12.2`,
   `lxml==6.1.1`, `html2text==2025.4.15`, `tldextract==5.3.2`, `jieba==0.42.1`
@@ -34,15 +34,18 @@ and are reference, not run steps.
 
 - Metered GPU runs (operator only) need `pip install -e ".[runpod]"`, plus
   `RUNPOD_API_KEY`, `HF_TOKEN` and a private `HF_RESULTS_DATASET` in `.env` (and a
-  private `HF_MODELS_REPO` when a run keeps ckpts); `launch.py` refuses a public repo.
-  Pods mount no volume: the code snapshot travels through the dataset under `code/`,
-  each pod rebuilds its boards from the published source on its own Linux render
-  (the WMB serialize gate runs before training), and on exit pushes its logs under
-  `logs/<run>/`. A trainer run must carry `--push`; a `--smoke` must not.
+  private `HF_MODELS_REPO` for a bench run); `launch.py` refuses a public repo. A pod
+  runs one spec: `launch.py` loads and expands it on the laptop, so a bad spec fails
+  before anything is paid for, and takes the boards to build from its configs. Pods
+  mount no volume: the code snapshot travels through the dataset under `code/`, each
+  pod rebuilds its boards from the published source on its own Linux render (the WMB
+  serialize gate runs before training), pushes every run folder as the run ends, and on
+  exit pushes its logs under `logs/<spec>-<launch>/`. A restarted container resumes its
+  launch, skipping the runs already pushed.
 
-      python deploy/pod/launch.py --trainer finetune --smoke              # tiny end-to-end pod
-      python deploy/pod/launch.py --trainer finetune --smoke --queue 12   # wait up to 12 h for a GPU
-      python tools/pod_logs.py --run <name>                               # its logs, after exit
+      python deploy/pod/launch.py --spec experiments/wmb-lite.yaml --smoke   # 1-epoch pod check
+      python deploy/pod/launch.py --spec experiments/wmb-mini.yaml --queue 12   # wait for a GPU
+      python tools/pod_logs.py --run <name>                                  # its logs, after exit
 
 ## WMB training data
 
@@ -74,55 +77,58 @@ existing `wmb.jsonl`, run `python vendors/wmb/adapter/blocks.py`; add
 
 ## WMB model training
 
-Selection is val-only, so a training sweep records each arm's val ROUGE-5 and
-exports no test probs by default:
+Training runs an experiment: a YAML spec in `experiments/` that names only what differs
+from the shipped config (key table in `README.md`). Selection is val-only, so the depth
+screen records each run's val ROUGE-5 and scores no test:
 
-    python trainers/finetune.py --models 311m,97m --layers all --seeds 3
+    python -m trainers.train experiments/wmb-depth-311m.yaml
+    python -m trainers.train experiments/wmb-depth-97m.yaml
 
-Arms are generated from the CLI axes (`--models`, `--layers`, `--heads`, `--caps`,
-`--feats`); each arm x seed trains through `core` (encoder truncated to N layers +
-fresh final LayerNorm + head, per-block BCE, checkpoint on best val) and appends a
-val-scored row to `data/runs/wmb/finetune_results.jsonl` (`{model, layers, head,
-feats, cap, seed, best_val, best_epoch, val_by_epoch, f1_by_epoch, loss_by_epoch,
-frozen:False, ts}` -- the per-epoch arrays let the basis be best-epoch or epoch-mean,
-chosen at analysis time from one run, never re-run per basis). `--layers` takes `full` (max
-depth, the default), `all` (1..max), or a list/range like `7,11,22`. `--feats ABC`
-trains the table-embedding arm — structural columns concatenated at the head,
-z-scored on the train fold — and requires `feats.jsonl` (from `blocks.py --feats ABC`
-above). A local CPU smoke run before any GPU spend:
+The spec expands into one run per config and seed (swept keys crossed, seeds innermost).
+Each run trains through `core` (encoder truncated to N layers + fresh final LayerNorm +
+head, per-block BCE, best epoch on val) and writes `data/runs/<run_id>/`: `run.yaml`
+(resolved config, git SHA and dirty flag, `htmlsift` version, host, `result` with
+`best_val` and `best_epoch`), `curves.jsonl` (val, block F1 and loss per epoch, so the
+basis can be best-epoch or epoch-mean, chosen at analysis time) and `log.txt`. The folder
+is pushed to `runs/<run_id>/` on `$HF_RESULTS_DATASET` in one commit when the run ends;
+the run refuses to start unless that dataset is private and writable. `feats: ABC`
+trains with structural columns concatenated at the head, z-scored on the train fold, and
+requires `feats.jsonl` (from `blocks.py --feats ABC` above). A local CPU smoke before any
+GPU spend (20 pages per fold, 1 epoch, seed 0 only, kept under `data/runs/smoke/`, never
+pushed):
 
-    python trainers/finetune.py --models 97m --layers 6 --seeds 1 --device cpu --limit 20 --epochs 1
+    python -m trainers.train experiments/wmb-lite.yaml --smoke
 
-`--push` (with `$HF_RESULTS_DATASET`, or `--push <repo>`) uploads the results shard
-and resumes from it, skipping done arms; parallel pods each own a shard (auto-derived
-from the arm selection, or set with `--shard`) and `tools/download_results.py` merges
-them into `results/wmb-finetune.md`. `--seeds N` runs seeds 0..N-1; `--seed-ids 1,2` runs
-exactly those seeds, so a later batch extends an existing set without redoing seed 0
-(records pool by seed in `download_results.py`), or one arm's seeds fan across pods (pair
-with `--shard` to
-keep their push files distinct). `--qat-w8a8` trains the int8 arm into a separate
-`finetune_qat_results.*` ledger. GPU training (RunPod) is metered and launched by
-hand.
+Every run gets a fresh id; nothing is deduplicated, so running a spec again adds runs
+beside the old ones. A restarted pod passes its launch id as `$LAUNCH` and skips only that
+launch's finished runs. `python -m trainers.train <dir>/run.yaml` reruns one run.
+`qat_w8a8: true` trains the int8 encoder. GPU training (RunPod) is metered and launched
+by hand.
 
-Test is spent once on the chosen keeper, not on every arm: re-run the keeper with
-`--export-test` to write `data/runs/wmb/probs/<arm>_<fold>_s<seed>.jsonl`, scored through
-the eval gate below and folded into that arm's ledger row as `test_f1`.
+Test is spent once on the chosen keeper, not on every run: `export_test` (on by default)
+writes the val and test probs to `data/probs/<run_id>/`, scores them through the eval gate
+below and adds `test_f1` to the run's result:
 
-The embedding-table trainer takes `--export-test` too (requires `--keep`): it reloads each
-kept checkpoint through `core.loader.build_infer`, the same path `bench/accuracy/predict.py
---ckpt` uses, and folds val and test F1 into the arm's row. An fp32-table arm is also scored
-with an int8 table (`*_int8_f1`), the shipped mini's numerics.
+    python -m trainers.train experiments/wmb-base.yaml
 
-`--train-limit` takes a comma list and runs the rungs sequentially in one process,
-stratified nested prefixes of the training pool matched to val's level distribution.
-It is the data-efficiency ladder in `CLAIMS.md`; val-only, so no `--export-test` and
-no `--keep` (keeping a checkpoint across multiple limits raises):
+The `table` recipe (`experiments/wmb-mini.yaml`) keeps its checkpoint as `ckpt.pt` in the
+run folder and, with `export_test`, reloads it through `core.loader.build_infer`, the same
+path `bench/accuracy/predict.py --ckpt` uses. An fp32-table run is also scored with an
+int8 table (`*_int8_f1`), the shipped mini's numerics.
 
-    python trainers/finetune.py --models 311m --layers 10 --seeds 3 \
-        --train-limit 125,250,500,1000,2000,4000 --push
+`keep: true` saves any run's checkpoint as `ckpt.pt` in its run folder, pushed with the
+run. A kept run becomes a keeper, the checkpoint `bench/` and `tools/release.py` load from
+the model repo as `<board>/ckpt/<arm>_s<seed>.pt`, only when promoted by hand:
 
-`train_limit` is part of the ledger key, so a rung never collides with the full-pool
-run of the same arm, and `download_results.py` renders the ladder as its own table.
+    python tools/promote.py <run-id> --dry-run     # source and target
+    python tools/promote.py <run-id>               # --replace to overwrite a keeper
+
+Shipping it in the package is then an edit of the keeper constants in `tools/release.py`.
+
+`train_limit` trains on stratified nested prefixes of the training pool matched to val's
+level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
+
+    python -m trainers.train experiments/wmb-ladder.yaml
 
 ## WMB evaluation
 
@@ -178,20 +184,20 @@ against the cache. To rebuild only blocks+labels off an existing `wcxb.jsonl`:
 
 ## WCXB model training
 
-Train arms on WCXB-dev and export their test per-block probabilities:
+Train on WCXB-dev and score test:
 
-    python trainers/finetune.py --benchmark wcxb --models 311m,97m --layers all --seeds 3 --export-test
+    python -m trainers.train experiments/wcxb-depth-311m.yaml
+    python -m trainers.train experiments/wcxb-depth-97m.yaml
 
-Same `core` loop, ledger and CLI axes as WMB (`trainers/finetune.py`), fit to WCXB
-through its `Benchmark` (`vendors/wcxb/adapter/benchmark.py`): pages are built from
-`blocks.jsonl` + `labels.jsonl` (dev only), and the val monitor is word-F1 against
-`main_content` (text assembly, not a DOM re-render). There is no carved val fold —
-dev is both the train set and the selection monitor — so the honest number is the
-test board below; `--export-test` writes each arm's val+test probs to
-`data/runs/wcxb/probs/<arm>_<fold>_s<seed>.jsonl` and folds test F1 into the
-`finetune_results.jsonl` row. A local CPU smoke run before any GPU spend:
+Same recipe and run folders as WMB, fit to WCXB through its `Benchmark`
+(`vendors/wcxb/adapter/benchmark.py`): pages are built from `blocks.jsonl` +
+`labels.jsonl` (dev only), and the val monitor is word-F1 against `main_content` (text
+assembly, not a DOM re-render). There is no carved val fold -- dev is both the train set
+and the selection monitor -- so the honest number is the test board below; `export_test`
+writes each run's val+test probs to `data/probs/<run_id>/` and adds test F1 to its result.
+`train_limit` is not supported here. A local CPU smoke before any GPU spend:
 
-    python trainers/finetune.py --benchmark wcxb --models 97m --layers 6 --seeds 1 --device cpu --limit 20 --epochs 1 --export-test
+    python -m trainers.train experiments/wcxb-depth-97m.yaml --smoke
 
 ## WCXB evaluation
 
@@ -260,18 +266,13 @@ A model or baseline's text output is scored the same way (`--preds` is a
 
 ## DAnIEL leave-one-language-out
 
-The one DAnIEL run that trains. `--lolo` walks all five languages in one process:
-each holdout trains on the other four, scores the held-out language as its test fold,
-and writes to its own `daniel-<iso>/` ledger namespace. `holdout` is part of the
-ledger key. Guarded to DAnIEL, and incompatible with `--holdout` or `--keep`:
+The one DAnIEL experiment that trains. It sweeps `holdout` over the five languages: each
+run trains on the other four and scores the held-out language as its test fold. A DAnIEL
+run without `holdout` is refused before training, and the `table` recipe has no holdout:
 
-    python trainers/finetune.py --benchmark daniel --lolo \
-        --models 311m --layers 10 --seeds 3 --export-test --push
+    python -m trainers.train experiments/daniel-lolo.yaml
 
-A single language instead of all five:
-
-    python trainers/finetune.py --benchmark daniel --holdout Chinese \
-        --models 311m --layers 10 --seeds 3 --export-test
+For a single language, sweep only that one (`holdout: [Chinese]`) in a spec of its own.
 
 ## Cross-board generalization
 
@@ -281,9 +282,9 @@ Run a keeper checkpoint over every board, each scored by that board's own metric
 
     python bench/accuracy/predict.py --model wmb-311m-10 --boards wmb,wcxb,daniel --push
 
-Rows land in `generalization_results.jsonl` at the dataset root. Records carry `n`;
-a run that did not cover a whole board is a smoke and `download_results.py` refuses
-to render the ledger until it is removed.
+Each (board, seed) is one eval run in the experiment `generalization`, pushed as it
+finishes. `--limit` makes them smoke runs, kept in `data/runs/smoke/` and never pushed;
+a pushed run that did not cover a whole board still makes the renderer refuse the table.
 
 ## CPU speed comparison (§7)
 
@@ -342,12 +343,17 @@ Speed rows are one run of the seed-0 keeper; the F1 beside them is the 3-seed pr
 
 ## Results tables
 
-Every ledger on the HF dataset renders to `results/`:
+The run folders on the HF dataset render to `results/`:
 
-    python tools/download_results.py
+    python tools/render_tables.py
 
-Eight files: the WMB frozen screen, WMB fine-tune and its QAT ledger, the three WCXB
-ledgers, the DAnIEL LOLO holdouts, and the generalization matrix. Val tables render
+Eight files are the old result ledgers converted to run folders (run.yaml's `legacy`
+block names the source line, and the latest record per cell wins, as it did): the WMB
+frozen screen, WMB fine-tune and its QAT ledger, the three WCXB ledgers, the DAnIEL LOLO
+holdouts, and the generalization matrix, which also takes every eval run `predict.py` has
+pushed since. Every other file is one experiment of new runs (`results/wmb-mini.md` is
+`experiments/wmb-mini.yaml`): one row per config with its seeds pooled, nothing
+deduplicated, and every run listed by id and commit below it. Legacy val tables render
 once per basis — epoch-mean (the §6 selection basis) and best-epoch (what the kept
 checkpoint realizes) — with the epoch budget as a row dimension, since neither basis
 is comparable across budgets. Full-pool runs, the train-limit ladder and the LOLO

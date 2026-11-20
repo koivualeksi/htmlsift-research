@@ -1,0 +1,7 @@
+# Encoder depth screen on WCXB: every truncation depth of the 97m encoder, scored on test.
+name: wcxb-depth-97m
+recipe: finetune
+board: wcxb
+model: 97m
+sweep:
+  layers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]

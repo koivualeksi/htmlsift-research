@@ -1,6 +1,6 @@
 WMB fine-tune -- val732 ROUGE-5 F1 on both bases (§6); the test545 table is the arms re-run with --export-test, and its seed count is its own.
 
-Regenerate: `python tools/download_results.py`
+Regenerate: `python tools/render_tables.py`
 
 ## val (epoch-mean)
 

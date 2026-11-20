@@ -1,0 +1,4 @@
+# The shipped mini: 311m token-embedding table, BiGRU head, features ABC, 3 seeds.
+name: wmb-mini
+recipe: table
+board: wmb

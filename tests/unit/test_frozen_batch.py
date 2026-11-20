@@ -1,12 +1,12 @@
 """The batched frozen-head forward must be per-block identical to the unbatched
 per-page forward -- packed GRU and masked attention make padding a no-op. That
-identity is the correctness guarantee behind the batching in trainers.heads: only the
+identity is the correctness guarantee behind the batching in trainers.loop: only the
 TRAINING numbers move (mini-batch gradient vs per-page SGD); the forward must not.
 """
 import numpy as np
 import torch
 
-from trainers.heads import _batches, _forward
+from trainers.loop import _batches, _forward
 from core.model import build_head
 
 DEV = torch.device("cpu")
@@ -50,10 +50,10 @@ def test_batched_forward_matches_per_page():
             assert np.allclose(x, y, atol=1e-4), (kind, i, float(np.abs(x - y).max()))
 
 
-def test_train_head_frozen_runs():
+def test_train_head_runs():
     # the full batched training path (warmup + grad-clip + masked BCE + val) runs
-    # and returns a best {val, epoch} for every head kind.
-    from trainers.heads import train_head_frozen
+    # and returns the best epoch plus per-epoch history for every head kind.
+    from trainers.loop import train_head
     torch.manual_seed(0)
     d = 16
     rng = np.random.default_rng(2)
@@ -66,9 +66,10 @@ def test_train_head_frozen_runs():
         return float(np.mean([p.mean() for p in probs]))
 
     for kind in ("linear", "bigru", "transformer"):
-        best = train_head_frozen(_heads(d)[kind], train_x, train_y, val_x, val_pages,
-                                 score_val, DEV, epochs=2, seed=0, batch_size=2)
-        assert set(best) == {"val", "epoch"} and 1 <= best["epoch"] <= 2
+        s = train_head(_heads(d)[kind], train_x, train_y, val_x, val_pages,
+                       score_val, DEV, epochs=2, seed=0, batch_size=2)
+        assert set(s) == {"best_val", "best_epoch", "history"}
+        assert 1 <= s["best_epoch"] <= 2 and len(s["history"]) == 2
 
 
 def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
@@ -77,7 +78,7 @@ def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
     # in an isolated cwd and assert it creates no file -- a guard so a future "cache the
     # embeddings" optimization can't silently reintroduce persisted, provenance-crossing
     # state (root CLAUDE.md §4 cache row).
-    from trainers.heads import train_head_frozen
+    from trainers.loop import train_head
     monkeypatch.chdir(tmp_path)
     torch.manual_seed(0)
     d = 16
@@ -90,8 +91,8 @@ def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
     def score_val(pages, probs):
         return float(np.mean([p.mean() for p in probs]))
 
-    train_head_frozen(_heads(d)["bigru"], train_x, train_y, val_x, val_pages,
-                      score_val, DEV, epochs=2, seed=0, batch_size=2)
+    train_head(_heads(d)["bigru"], train_x, train_y, val_x, val_pages,
+               score_val, DEV, epochs=2, seed=0, batch_size=2)
     assert not list(tmp_path.iterdir()), [p.name for p in tmp_path.iterdir()]
 
 

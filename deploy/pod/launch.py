@@ -1,26 +1,26 @@
 """
-Spawn one RunPod GPU pod that runs a trainer or bench harness and self-terminates. No
-network volume: the code snapshot goes to $HF_RESULTS_DATASET under code/, the pod pulls
+Spawn one RunPod GPU pod that runs a training spec or a bench harness and self-terminates.
+No network volume: the code snapshot goes to $HF_RESULTS_DATASET under code/, the pod pulls
 it over HTTPS, builds each board it needs from the board's published source (the same
 prepare.py a reproducer runs, on the pod's own Linux render), runs, and pushes its logs
-back to the dataset under logs/<run>/ on exit. --trainer picks the entry point
-(trainers/<name>.py); --args is that harness's own args, passed through verbatim.
-Results leave only through --push ($HF_RESULTS_DATASET, kept ckpts to $HF_MODELS_REPO);
-the pod deletes itself on exit (entrypoint EXIT trap + MAX_RUNTIME watchdog).
+back to the dataset under logs/<run>/ on exit. --spec runs `python -m trainers.train` on
+that spec: the boards to build come from its configs, every run folder is pushed as it
+ends, and a restarted container resumes the same launch. --bench runs a harness with
+--args passed through verbatim. The pod deletes itself on exit (entrypoint EXIT trap +
+MAX_RUNTIME watchdog).
 
 Placement: European data centres only, Nordic first, read from RunPod's catalog; then
 one unpinned pass per GPU across all of them, since the catalog has listed stock that a
 create then refused.
 
-    python deploy/pod/launch.py --trainer finetune --print-payload # dry run: nothing uploaded
-    python deploy/pod/launch.py --trainer finetune --smoke         # tiny end-to-end pod (no push)
-    python deploy/pod/launch.py --trainer finetune --smoke --queue 12   # wait up to 12 h for a GPU
+    python deploy/pod/launch.py --spec experiments/wmb-mini.yaml --print-payload  # dry run
+    python deploy/pod/launch.py --spec experiments/wmb-lite.yaml --smoke     # 1-epoch pod check
+    python deploy/pod/launch.py --spec experiments/wmb-mini.yaml --queue 12  # wait for a GPU
     python deploy/pod/launch.py --queue-status <id>                # waiting / deployed / expired
-    python deploy/pod/launch.py --trainer finetune --name wmb-ft-311m \
-        --args "--models 311m --layers 9,10,11,12,13,22 --heads bigru --feats none --seeds 1 --push"
+    python deploy/pod/launch.py --bench predict --args "--model wmb-311m-10 --push"
 
 Metered -- launches a paid pod (§2: human-run). Needs RUNPOD_API_KEY, HF_TOKEN and a
-private HF_RESULTS_DATASET in .env, plus a private HF_MODELS_REPO when the run keeps ckpts.
+private HF_RESULTS_DATASET in .env, plus a private HF_MODELS_REPO for a bench run.
 """
 
 import argparse
@@ -37,6 +37,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from _runpod import ROOT, ApiError, api, env_or_die, require_private, upload_snapshot
+
+sys.path.insert(0, str(ROOT))
+from trainers import runs, spec as specs  # noqa: E402 -- needs ROOT on the path
 
 IMAGE = "runpod/pytorch:1.0.7-cu1281-torch280-ubuntu2204"
 # Dripper's pod boots vLLM's own image (route B): vLLM 0.11.1 + torch 2.9 + CUDA pre-matched,
@@ -82,6 +85,7 @@ def build_code_tar():
         tf.add(ROOT / "vendors", arcname="vendors", filter=keep)
         tf.add(ROOT / "trainers", arcname="trainers", filter=keep)
         tf.add(ROOT / "bench", arcname="bench", filter=keep)
+        tf.add(ROOT / "experiments", arcname="experiments", filter=keep)
     blob = buf.getvalue()
     return blob, f"wmb-{hashlib.sha256(blob).hexdigest()[:8]}.tar.gz"
 
@@ -98,6 +102,25 @@ def _flag(sweep, name):
     """The value after `name` in a harness's arg string, or None."""
     toks = shlex.split(sweep)
     return toks[toks.index(name) + 1] if name in toks[:-1] else None
+
+
+def train_env(path, smoke, launch, git):
+    """A training spec -> (run name, boards, pod env). The spec is loaded and expanded here,
+    so a bad spec fails on the laptop; the board checks need htmlsift and run on the pod
+    (CHECK) before the board build."""
+    path = Path(path).resolve()
+    if path.parent != ROOT / "experiments":
+        raise SystemExit(f"{path}: a pod runs specs from experiments/ (shipped in the snapshot)")
+    s = specs.load(path)
+    configs = specs.expand(s)
+    entry = f"-m trainers.train experiments/{path.name}"
+    env = {"ENTRY": entry + (" --smoke" if smoke else ""), "CHECK": entry + " --check",
+           "LAUNCH": launch, "GIT_SHA": git[0], "GIT_DIRTY": "1" if git[1] else "0"}
+    extras = {c["extra"] for c in configs if c.get("extra")}
+    if extras:
+        (env["EXTRA"],) = extras                 # one extra source exists: custom
+    name = f"{s.name}-{launch}" + ("-smoke" if smoke else "")
+    return name, ",".join(sorted({c["board"] for c in configs})), env
 
 
 def candidates(gpus):
@@ -117,6 +140,7 @@ def launch(args):
     blob, snapshot = build_code_tar()
     image, disk = IMAGE, 50                    # no volume: data, venv and caches all on disk
     sweep = args.args or ""
+    entrypoint = "pod.sh"
     common = {"RUNPOD_TERMINATE_API_KEY": env_or_die("RUNPOD_API_KEY"),
               "CODE_SNAPSHOT": snapshot,
               "HF_TOKEN": env_or_die("HF_TOKEN"),
@@ -128,11 +152,11 @@ def launch(args):
         # --benchmark in --ckpt mode); the speed harnesses are WMB-only.
         run_name = args.name or f"bench-{args.bench}"
         max_runtime = args.max_runtime or "2h"
-        entrypoint = "pod_bench.sh"
         boards = ((_flag(sweep, "--boards") or _flag(sweep, "--benchmark") or ALL_BOARDS)
                   if args.bench == "predict" else "wmb")
-        env_vars = {"RUN_MODE": (f"bench/accuracy/{args.bench}.py" if args.bench == "predict"
-                                 else f"bench/speed/{args.bench}.py"),
+        harness = (f"bench/accuracy/{args.bench}.py" if args.bench == "predict"
+                   else f"bench/speed/{args.bench}.py")
+        env_vars = {"ENTRY": f"{harness} {sweep}".strip(),
                     "HF_MODELS_REPO": env_or_die("HF_MODELS_REPO")}
     elif args.dripper:
         # Dripper (bench/speed/gpu_dripper.py) on its OWN pod: route B boots vLLM's image (vLLM + torch
@@ -143,26 +167,15 @@ def launch(args):
         image, disk = DRIPPER_IMAGE, 60
         entrypoint = "pod_dripper.sh"
         boards = "wmb"
-        env_vars = {"RUN_MODE": "bench/speed/gpu_dripper.py"}
+        env_vars = {"RUN_MODE": "bench/speed/gpu_dripper.py", "SWEEP_ARGS": sweep}
     else:
-        if args.smoke:
-            if "--push" in sweep:
-                sys.exit("--smoke never touches the results repo: drop --push from --args")
-            sweep = (sweep + " --limit 20 --epochs 1").strip()
-        elif "--push" not in shlex.split(sweep):
-            sys.exit("no volume: a trainer's results survive the pod only via --push")
-        run_name = (args.name or f"wmb-{args.trainer}") + ("-smoke" if args.smoke else "")
+        name, boards, env_vars = train_env(args.spec, args.smoke, runs.new_id(),
+                                           runs.git_provenance())
+        run_name = args.name or name
         max_runtime = args.max_runtime or ("60m" if args.smoke else "5h")
-        entrypoint = "pod_train.sh"
-        boards = _flag(sweep, "--benchmark") or "wmb"
-        env_vars = {"RUN_MODE": f"trainers/{args.trainer}.py"}
-        # A --keep run pushes keeper ckpts to the model repo (distinct from the results
-        # dataset); resolve here so the failure is at launch, not after hours of training.
-        if "--keep" in sweep:
-            env_vars["HF_MODELS_REPO"] = env_or_die("HF_MODELS_REPO")
     env_vars = {"ENTRYPOINT_SCRIPT": base64.b64encode(
                     (ROOT / "deploy" / "pod" / entrypoint).read_bytes()).decode(),
-                **common, **env_vars, "RUN_NAME": run_name, "SWEEP_ARGS": sweep,
+                **common, **env_vars, "RUN_NAME": run_name,
                 "MAX_RUNTIME": max_runtime, "BOARDS": boards.replace(",", " ")}
     pub = ssh_pubkey()
     if pub:
@@ -187,8 +200,9 @@ def launch(args):
     gpus = [args.gpu] if args.gpu else GPU_FALLBACK
     tries = candidates(gpus)
     if args.print_payload:
-        shown = {k: (v if k in ("RUN_NAME", "CODE_SNAPSHOT", "RUN_MODE", "SWEEP_ARGS", "BOARDS",
-                                "MAX_RUNTIME") else f"<{len(v)} chars>")
+        shown = {k: (v if k in ("RUN_NAME", "CODE_SNAPSHOT", "ENTRY", "CHECK", "LAUNCH",
+                                "GIT_SHA", "GIT_DIRTY", "EXTRA", "RUN_MODE", "SWEEP_ARGS",
+                                "BOARDS", "MAX_RUNTIME") else f"<{len(v)} chars>")
                  for k, v in env_vars.items()}
         print(json.dumps(dict(payload, env=shown), indent=2))
         print("\nattempt order:")
@@ -199,6 +213,8 @@ def launch(args):
         return
 
     require_private(env_or_die("HF_RESULTS_DATASET"), "dataset")
+    if args.spec:
+        runs.preflight()                         # writable results dataset, provenance
     push = _flag(sweep, "--push")                # --push <repo> overrides the results dataset
     if push and not push.startswith("--"):
         require_private(push, "dataset")
@@ -211,7 +227,8 @@ def launch(args):
     # as a malformed request. So any 400 falls through to the next attempt; a 400 on every one
     # is a request problem as likely as a stock-out, and the last detail is printed to tell.
     result, last = None, None
-    print(f"launching {run_name}: boards {boards}, watchdog {max_runtime}, \"{sweep}\"")
+    print(f"launching {run_name}: boards {boards}, watchdog {max_runtime}, "
+          f"\"{env_vars.get('ENTRY') or sweep}\"")
     for gpu, dcs in tries:
         payload["gpu"]["id"], payload["dataCenterIds"] = gpu, dcs
         try:
@@ -241,23 +258,22 @@ def launch(args):
         sys.exit(f"every attempt refused -- a stock-out or a bad request; last: {last}"
                  + ("" if args.queue else "\n  --queue <hours> waits for capacity instead"))
     pod_id = result["id"]
-    print(f"launched pod {pod_id} ({run_name}). Self-terminates on exit; results only via "
-          f"--push, logs -> {common['HF_RESULTS_DATASET']} logs/{run_name}/.")
+    print(f"launched pod {pod_id} ({run_name}). Self-terminates on exit; logs -> "
+          f"{common['HF_RESULTS_DATASET']} logs/{run_name}/.")
     print(f"  console: https://console.runpod.io/pods?id={pod_id}")
     print(f"  logs:    python tools/pod_logs.py --run {run_name}")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--trainer", choices=["finetune", "embedding_table"],
-                    help="which trainer to run (trainers/<name>.py)")
-    ap.add_argument("--args", help="the trainer's sweep args, passed through verbatim "
-                                   "(omit to use the trainer's own defaults; see its --help)")
-    ap.add_argument("--name", default=None, help="pod/run name (default wmb-<trainer>)")
+    ap.add_argument("--spec", help="experiments/<name>.yaml to train on the pod")
+    ap.add_argument("--args", help="a bench harness's own args, passed through verbatim")
+    ap.add_argument("--name", default=None,
+                    help="pod/run name (default <spec name>-<launch id>, or bench-<harness>)")
     ap.add_argument("--gpu", help="pin ONE gpu id (default: the GPU_FALLBACK order)")
     ap.add_argument("--max-runtime", help="watchdog, e.g. 5h/90m (default 5h; 60m for --smoke)")
     ap.add_argument("--smoke", action="store_true",
-                    help="tiny end-to-end pod (20 pages, 1 epoch); does NOT push results to HF")
+                    help="train the spec as a smoke (20 pages, 1 epoch, seed 0); pushes no runs")
     ap.add_argument("--bench", choices=["stages", "predict", "gpu_throughput"],
                     help="run a bench harness on the pod (bench/speed/<name>.py, or "
                          "bench/accuracy/predict.py) instead of a trainer; --args are that "
@@ -283,8 +299,10 @@ def main():
               + (f", pod {q['podId']}" if q.get("podId") else "")
               + (f", failed: {q['failureReason']}" if q.get("failureReason") else ""))
         return
-    if not args.trainer and not args.bench and not args.dripper:
-        ap.error("one of --trainer, --bench or --dripper is required")
+    if sum(map(bool, (args.spec, args.bench, args.dripper))) != 1:
+        ap.error("exactly one of --spec, --bench or --dripper is required")
+    if args.smoke and not args.spec:
+        ap.error("--smoke trains a spec")
     launch(args)
 
 
