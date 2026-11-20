@@ -20,8 +20,6 @@ from trainers.recipes import bench, cached
 from vendors.shared import bench_ops
 from vendors.shared.arms import MODELS, WINDOW
 
-EMBS = ("fp32", "int8")
-
 
 def _extra_src(cfg):
     if cfg["extra"] == "custom":
@@ -110,13 +108,6 @@ def _export_test(ctx, b, ck_path, result):
 
 
 def run(cfg, ctx):
-    if cfg["emb"] not in EMBS:
-        raise ValueError(f"unknown emb {cfg['emb']!r}; one of {EMBS}")
-    if cfg["extra"] and cfg["train_limit"] is not None:
-        raise ValueError("extra with train_limit is unsupported (the z-score refit "
-                         "would have to decide whether extra pages count)")
-    if cfg["export_test"] and not cfg["keep"]:
-        raise ValueError("export_test scores the kept ckpt: set keep")
     b = bench(ctx, cfg)
     train_p, val_p, score_val, ext_p = _pages(ctx, cfg)
     etr, eva, eext = _pooled(ctx, cfg, train_p, val_p, ext_p)

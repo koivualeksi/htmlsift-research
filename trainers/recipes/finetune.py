@@ -96,9 +96,6 @@ def _quant_eval(ctx, b, model, tok, fz, arm, result, export_test):
 
 
 def run(cfg, ctx):
-    if cfg["quant_eval"] and cfg["qat_w8a8"]:
-        raise ValueError("quant_eval scores int8 variants against the fp32 model; "
-                         "incompatible with qat_w8a8")
     arm = _arm(cfg)
     b = bench(ctx, cfg)
     tok, pages, fz = _pages(ctx, cfg, arm)

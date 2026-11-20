@@ -79,53 +79,56 @@ python vendors/daniel/adapter/prepare.py
 
 ### Train
 
-There are two entry points, and both need `[repro,train]`. The encoder models (`base` and
-the lite arm) fine-tune through `finetune.py`. The encoder-free `mini` trains through
-`embedding_table.py`. The frozen screen behind the depth choice is archived at tag
-`ablations-v1`.
-
-**Encoder models.** One command builds the arms from its flags:
+Training needs `[repro,train]`. An experiment is a YAML file in `experiments/` that names
+only what differs from the shipped config; one command runs it:
 
 ```bash
-python trainers/finetune.py --benchmark wmb --models 311m --layers 10 --seeds 3
+python -m trainers.train experiments/wmb-base.yaml           # the shipped base, 3 seeds
+python -m trainers.train experiments/wmb-mini.yaml           # the shipped mini, 3 seeds
+python -m trainers.train experiments/wmb-lite.yaml --smoke   # 20 pages, 1 epoch, seed 0
 ```
 
-| flag | what it does | default | applies to |
+A spec has a recipe (`finetune` for the encoder models, `table` for the encoder-free
+`mini`), a board (`wmb`, `wcxb`, `daniel`), `seeds` (default 3), and any config key either
+fixed at the top level or crossed as a list under `sweep:`:
+
+```yaml
+name: wmb-depth-97m        # must equal the file name
+recipe: finetune
+board: wmb
+model: 97m
+sweep:
+  layers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+```
+
+| key | what it does | default | recipe |
 |---|---|---|---|
-| `--benchmark` | target board | `wmb` | `wmb`, `wcxb`, `daniel` |
-| `--models` | encoders to sweep (comma list) | `311m,97m` | `311m` (22-layer), `97m` (12-layer) |
-| `--layers` | encoder depth: `full`, `all`, or a list/range (`7,11,22`, `1-22`) | `full` | capped per model (311m→22, 97m→12) |
-| `--feats` | structural feature groups per arm (`none`, `ABC`, ...) | `none` | all |
-| `--caps` | per-block token width cap (`N` or comma list); truncates each block before windowing | `0` (off) | all — width/speed lever |
-| `--seeds` | run seeds `0..N-1` | `3` | all |
-| `--epochs` | training epochs | `4` | all |
-| `--qat-w8a8` | quantization-aware int8 (W8A8) encoder | off | any encoder; not with `--quant-eval` |
-| `--quant-eval` | after training, score post-hoc int8 variants (PTQ-dynamic foil + encoder emb-int8) | off | not with `--qat-w8a8` |
-| `--export-test` | also export and score the test fold | off | all |
-| `--train-limit` | data-efficiency ladder: `N` or `N1,N2,...` in sequence | off | WMB only; multi-value not with `--keep` |
-| `--lolo` | DAnIEL leave-one-language-out (all five) | off | DAnIEL only; not with `--holdout`/`--keep` |
-| `--holdout` | hold out one DAnIEL language | none | DAnIEL only |
-| `--keep` | save the checkpoint | off | one arm only |
+| `model` | encoder: `311m` (22 layers) or `97m` (12) | `311m` | both |
+| `layers` | encoder depth | `10` | finetune |
+| `head` | `bigru`, `linear`, `transformer` | `bigru` | both |
+| `feats` | structural feature groups (`ABC`, ...) or null | null / `ABC` | both |
+| `cap` | per-block token width cap; 0 is off | `0` | finetune |
+| `emb` | table variant: `fp32` or `int8` | `fp32` | table |
+| `epochs`, `hidden` | training epochs, head width | `4`, `256` | both |
+| `batch_size`, `head_lr` | head-training batch (pages) and learning rate | `8`, `2e-3` | table |
+| `train_limit` | data-efficiency ladder: train on N val-matched pages | null | WMB only |
+| `holdout` | DAnIEL language left out of training | null | DAnIEL, required |
+| `qat_w8a8` | quantization-aware int8 (W8A8) encoder | false | finetune |
+| `quant_eval` | also score post-hoc int8 variants (PTQ-dynamic, emb-int8) | false | finetune |
+| `export_test` | also score the test fold | true | both |
+| `keep` | save the checkpoint into the run | false / true | both |
 
-`--push` sends the results to a Hugging Face dataset you own (`$HF_RESULTS_DATASET`, or
-`--push <repo>`). Nothing is hardcoded and no repo is created for you, so make one under your
-account first, or omit `--push` to keep results local. The author's run ledgers stay private and
-only `htmlsift-release` is public, so `tools/download_results.py` rebuilds the committed
-`results/*.md` from the author's dataset; you reproduce a number by re-running its arm, not by
-downloading. Run `finetune.py --help` for the rest (sharding, CPU-smoke limits, head
-hyperparameters).
+Every run gets its own folder with a `run.yaml` (config, code and package versions, result),
+`curves.jsonl` and `log.txt`, pushed as one commit to a private Hugging Face dataset you own
+(`$HF_RESULTS_DATASET`). Nothing is hardcoded and no repo is created for you, so make one
+first; the run refuses to start without it. A smoke stays local under `data/runs/smoke/`.
+The author's runs stay private and only `htmlsift-release` is public: you reproduce a number
+by re-running its experiment, not by downloading.
 
-**The mini (embedding table).** There is no encoder to fine-tune, so it pools the
-backbone's frozen token-embedding table per line and trains only the head:
-
-```bash
-python trainers/embedding_table.py --benchmark wmb --models 311m --emb fp32 --feats ABC --seeds 3 --keep --export-test
-```
-
-`--emb` picks the table variant (`fp32`, `int8`, or both) and replaces `--layers` here. The
-other grid flags work as above. This arm is the published `mini`: trained on the fp32 table
-and shipped with the table quantized to int8; `--export-test` scores the kept checkpoint both
-ways and records the int8 score as `test_int8_f1`.
+The `table` recipe is the published `mini`: there is no encoder to fine-tune, so it pools
+the backbone's frozen token-embedding table per line and trains only the head. It is
+trained on the fp32 table and shipped with the table quantized to int8; `export_test` scores
+the kept checkpoint both ways and records the int8 score as `test_int8_f1`.
 
 **The frozen screen.** No fine-tuning: encode once per layer and train only the head. This
 is the layer screen behind *Cut the encoder in half*, val-only, one record per (model,
@@ -419,7 +422,7 @@ val732 best-epoch unless a row says test545; 3 seeds where a spread is shown, el
 
 The labelling policy is learned, not baked in, so htmlsift retrains on your own labels
 cheaply. A few hundred pages already learn a policy (see [Learns the policy
-fast](#learns-the-policy-fast)). Point a `Benchmark` at your pages and run `finetune.py`.
+fast](#learns-the-policy-fast)). Point a `Benchmark` at your pages and run a `finetune` spec.
 
 The one thing you supply is per-line labels, and how you build them depends on what your
 gold looks like:

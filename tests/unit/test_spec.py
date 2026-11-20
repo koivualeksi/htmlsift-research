@@ -91,10 +91,27 @@ def test_unknown_top_level_key(tmp_path):
     (dict(fixed={"extra": "other"}), "unknown extra"),
     (dict(sweep={"extra_repeat": [1]}), "needs an extra"),
     (dict(fixed={"keep": False}), "set keep"),
+    (dict(sweep={"keep": [True, False]}), "set keep"),        # one swept value is enough
+    (dict(fixed={"emb": "lowrank128"}), "unknown emb"),
+    (dict(fixed={"extra": "custom", "train_limit": 250}), "extra with train_limit"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):
         table(**kw)
+
+
+def test_quant_eval_with_qat_raises():
+    with pytest.raises(ValueError, match="incompatible with qat_w8a8"):
+        S.Spec(name="x", recipe="finetune", board="wmb",
+               fixed={"quant_eval": True}, sweep={"qat_w8a8": [False, True]})
+
+
+def test_committed_specs_load():
+    from pathlib import Path
+    paths = sorted(Path(__file__).resolve().parents[2].glob("experiments/*.yaml"))
+    assert paths
+    for p in paths:
+        S.expand(S.load(p))
 
 
 def test_finetune_rejects_table_key():

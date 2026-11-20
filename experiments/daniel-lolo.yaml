@@ -1,0 +1,7 @@
+# DAnIEL leave-one-language-out: the base model trained without each language in turn,
+# scored on it. For one language, sweep only that one.
+name: daniel-lolo
+recipe: finetune
+board: daniel
+sweep:
+  holdout: [Greek, Polish, Russian, English, Chinese]

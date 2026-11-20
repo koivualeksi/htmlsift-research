@@ -1,0 +1,7 @@
+# Data-efficiency ladder: the base model on nested, val-matched subsets of the train pool.
+name: wmb-ladder
+recipe: finetune
+board: wmb
+export_test: false
+sweep:
+  train_limit: [125, 250, 500, 1000, 2000, 4000]

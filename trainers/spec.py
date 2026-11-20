@@ -25,6 +25,7 @@ DEFAULTS = {
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
+EMBS = ("fp32", "int8")
 
 
 @dataclass(frozen=True)
@@ -54,16 +55,27 @@ class Spec:
                 raise ValueError(f"sweep.{k} repeats a value: {values}")
         if not isinstance(self.seeds, int) or isinstance(self.seeds, bool) or self.seeds < 1:
             raise ValueError(f"seeds must be a positive int, got {self.seeds!r}")
-        extras = self.sweep.get("extra", [self.fixed.get("extra")])
-        if bad := [e for e in extras if e is not None and e not in EXTRAS]:
-            raise ValueError(f"unknown extra {bad}; one of {EXTRAS}")
-        if None in extras and "extra_repeat" in self.sweep.keys() | self.fixed.keys():
-            raise ValueError("extra_repeat needs an extra")
-        if self.recipe == "table":
-            export = self.sweep.get("export_test", [self.fixed.get("export_test", True)])
-            keep = self.sweep.get("keep", [self.fixed.get("keep", True)])
-            if any(export) and not all(keep):
-                raise ValueError("table export_test scores the kept ckpt: set keep")
+        expand(self)                              # runs check() on every config
+
+
+def check(cfg):
+    """Rules on one expanded config (or a run.yaml's), so a bad combination of swept
+    values fails at load, before any compute."""
+    if cfg.get("extra") is not None and cfg["extra"] not in EXTRAS:
+        raise ValueError(f"unknown extra {cfg['extra']!r}; one of {EXTRAS}")
+    if cfg.get("extra") is None and cfg.get("extra_repeat") is not None:
+        raise ValueError("extra_repeat needs an extra")
+    if cfg.get("extra") is not None and cfg["train_limit"] is not None:
+        raise ValueError("extra with train_limit is unsupported (the z-score refit "
+                         "would have to decide whether extra pages count)")
+    if cfg.get("quant_eval") and cfg.get("qat_w8a8"):
+        raise ValueError("quant_eval scores int8 variants against the fp32 model; "
+                         "incompatible with qat_w8a8")
+    if cfg["recipe"] == "table":
+        if cfg["emb"] not in EMBS:
+            raise ValueError(f"unknown emb {cfg['emb']!r}; one of {EMBS}")
+        if cfg["export_test"] and not cfg["keep"]:
+            raise ValueError("table export_test scores the kept ckpt: set keep")
 
 
 def load(path):
@@ -87,7 +99,7 @@ def expand(spec):
         cfg = {**base, **dict(zip(spec.sweep, combo))}
         if cfg.get("extra") is not None and cfg["extra_repeat"] is None:
             cfg["extra_repeat"] = 1
-        for seed in range(spec.seeds):
-            configs.append({"recipe": spec.recipe, "board": spec.board, **cfg,
-                            "seed": seed})
+        cfg = {"recipe": spec.recipe, "board": spec.board, **cfg}
+        check(cfg)
+        configs += [{**cfg, "seed": seed} for seed in range(spec.seeds)]
     return configs

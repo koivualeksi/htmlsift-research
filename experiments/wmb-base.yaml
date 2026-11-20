@@ -1,0 +1,4 @@
+# The shipped base model: 311m truncated to 10 layers, BiGRU head, 3 seeds.
+name: wmb-base
+recipe: finetune
+board: wmb
