@@ -10,7 +10,8 @@ rule, §6).
 The tables below are the legacy ledgers, converted to run folders with their source file
 and line in run.yaml's legacy block. They select by that file and keep the ledgers' rule:
 the latest record per cell wins. The generalization matrix also takes the eval runs
-bench/accuracy/predict.py writes.
+bench/accuracy/predict.py writes. A table of new runs selects one experiment by name and
+renders through render_runs: one row per config, seeds pooled, nothing deduplicated.
 """
 
 import json
@@ -260,6 +261,53 @@ def render_matrix(records, caption):
     return "\n".join(out)
 
 
+# (result key, column heading), shown where any selected run carries the key
+RESULT_COLS = (("best_val", "val"), ("test_f1", "test"), ("test_int8_f1", "test int8"))
+
+
+def render_runs(selected, caption):
+    """Runs from the run store, one row per config with its seeds pooled. Nothing is
+    deduplicated: a rerun adds seeds to its row, and the seeds column says how many. Rows
+    are told apart by the config keys that vary across the selected runs; the keys that
+    do not are stated once above the table. Every run is listed below it by id."""
+    cfgs = [{k: v for k, v in r["config"].items() if k != "seed"} for r in selected]
+    keys = list(dict.fromkeys(k for c in cfgs for k in c))
+    varying = [k for k in keys if len({repr(c.get(k)) for c in cfgs}) > 1]
+    cols = [(k, h) for k, h in RESULT_COLS if any(k in r["result"] for r in selected)]
+    rows = defaultdict(list)
+    for r, c in zip(selected, cfgs):
+        rows[tuple(c.get(k) for k in varying)].append(r)
+    ordered = sorted(rows, key=lambda row: [str(v) for v in row])
+
+    def line(cells):
+        return "| " + " | ".join(str(x) for x in cells) + " |"
+
+    def values(rs, key):
+        vals = [r["result"][key] for r in rs if key in r["result"]]
+        return cell(vals) if vals else "—"
+
+    out = [caption, "", "Regenerate: `python tools/render_tables.py`", "",
+           "Config: " + ", ".join(f"`{k}={cfgs[0].get(k)}`" for k in keys if k not in varying),
+           ""]
+    test_n = sorted({r["result"]["test_n"] for r in selected if "test_n" in r["result"]})
+    if test_n:
+        out += [f"Test n: {', '.join(map(str, test_n))}.", ""]
+    head = varying + ["seeds"] + [h for _, h in cols]
+    out += [line(head), "|" + "|".join(["---"] * len(head)) + "|"]
+    for row in ordered:
+        out.append(line(list(row) + [len(rows[row])] + [values(rows[row], k) for k, _ in cols]))
+    head = ["run"] + varying + ["seed", "commit"] + [h for _, h in cols]
+    out += ["", "## Runs", "", line(head), "|" + "|".join(["---"] * len(head)) + "|"]
+    for row in ordered:
+        for r in sorted(rows[row], key=lambda r: (r["config"]["seed"], r["id"])):
+            prov = r.get("provenance") or {}
+            commit = (prov.get("git_sha") or "?")[:7] + ("+dirty" if prov.get("dirty") else "")
+            out.append(line([r["id"]] + list(row) + [r["config"]["seed"], commit]
+                            + [f"{r['result'][k]:.4f}" if k in r["result"] else "—"
+                               for k, _ in cols]))
+    return "\n".join(out)
+
+
 def record(folder):
     """A run folder -> (order, run, record): the record is the flat dict the renderers
     read, config and result merged with the curves as per-epoch lists. A converted run
@@ -341,6 +389,11 @@ TABLES = [
      "a reproduction, not a zero-shot number.",
      from_experiment("generalization", also=from_ledgers(["generalization_results.jsonl"])),
      render_matrix),
+    ("results/wmb-mini.md",
+     "WMB mini (experiments/wmb-mini.yaml: 311m token-embedding table, BiGRU head, features "
+     "ABC) -- ROUGE-5 F1 on val732 (best epoch) and test545. test int8 is the same head "
+     "with the table int8-quantised at inference, the shipped mini's numerics.",
+     from_experiment("wmb-mini"), render_runs),
 ]
 
 
@@ -348,11 +401,13 @@ def main():
     load_dotenv()
     loaded = sorted((record(f) for f in runs.fetch("curves.jsonl")), key=lambda x: x[0])
     for out, caption, selects, renderer in TABLES:
-        recs = [rec for _, run, rec in loaded if selects(run)]
-        if not recs:
+        chosen = [(run, rec) for _, run, rec in loaded if selects(run)]
+        if not chosen:
             raise SystemExit(f"{out}: no runs selected")
-        (ROOT / out).write_text(renderer(recs, caption) + "\n", encoding="utf-8")
-        print(f"wrote {out} ({len(recs)} runs)")
+        text = (render_runs([run for run, _ in chosen], caption) if renderer is render_runs
+                else renderer([rec for _, rec in chosen], caption))
+        (ROOT / out).write_text(text + "\n", encoding="utf-8")
+        print(f"wrote {out} ({len(chosen)} runs)")
 
 
 if __name__ == "__main__":

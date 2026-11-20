@@ -347,11 +347,13 @@ The run folders on the HF dataset render to `results/`:
 
     python tools/render_tables.py
 
-Eight files, each from the old result ledgers converted to run folders (run.yaml's
-`legacy` block names the source line, and the latest record per cell wins, as it did);
-the generalization matrix also takes every eval run `predict.py` has pushed since:
-the WMB frozen screen, WMB fine-tune and its QAT ledger, the three WCXB ledgers, the
-DAnIEL LOLO holdouts, and the generalization matrix. Val tables render
+Eight files are the old result ledgers converted to run folders (run.yaml's `legacy`
+block names the source line, and the latest record per cell wins, as it did): the WMB
+frozen screen, WMB fine-tune and its QAT ledger, the three WCXB ledgers, the DAnIEL LOLO
+holdouts, and the generalization matrix, which also takes every eval run `predict.py` has
+pushed since. Every other file is one experiment of new runs (`results/wmb-mini.md` is
+`experiments/wmb-mini.yaml`): one row per config with its seeds pooled, nothing
+deduplicated, and every run listed by id and commit below it. Legacy val tables render
 once per basis — epoch-mean (the §6 selection basis) and best-epoch (what the kept
 checkpoint realizes) — with the epoch budget as a row dimension, since neither basis
 is comparable across budgets. Full-pool runs, the train-limit ladder and the LOLO

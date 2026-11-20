@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from tools.render_tables import (_epochs, collapse, from_experiment, from_ledgers, group_key,
-                                 record, render, render_matrix)
+                                 record, render, render_matrix, render_runs)
 
 FROZEN = {"model": "311m", "layers": 12, "head": "bigru", "feats": "ABC",
           "seed": 0, "ts": "2026-01-01", "best_val": 0.89, "frozen": True}
@@ -246,3 +246,42 @@ def test_experiment_selection_adds_the_converted_ledger():
     assert sel(run(experiment="generalization"))
     assert sel(run("generalization_results.311m.jsonl"))
     assert not sel(run(experiment="wmb-base"))
+
+
+# ---- runs from the run store ----
+
+def new(seed=0, val=0.86, test=0.90, sha="115b03b5c8", dirty=False, run_id=None, **cfg):
+    return {"id": run_id or f"2026-11-20T2138-000{seed}",
+            "config": {"recipe": "table", "board": "wmb", "hidden": 256, "seed": seed, **cfg},
+            "provenance": {"git_sha": sha, "dirty": dirty},
+            "result": {"best_val": val, "test_f1": test, "test_n": 544}}
+
+
+def test_seeds_pool_into_one_row_and_fixed_keys_are_stated_once():
+    out = render_runs([new(0, val=0.86), new(1, val=0.88)], "cap")
+    assert "| 2 | 0.8700±0.0141 | 0.9000±0.0000 |" in out
+    assert "Config: `recipe=table`, `board=wmb`, `hidden=256`" in out
+    assert "Test n: 544." in out
+
+
+def test_a_varying_key_splits_rows():
+    out = render_runs([new(0, hidden=128, val=0.80), new(0, hidden=256, val=0.86)], "cap")
+    assert "| hidden | seeds | val | test |" in out
+    assert "| 128 | 1 | 0.8000 |" in out and "| 256 | 1 | 0.8600 |" in out
+    assert "hidden=" not in out
+
+
+def test_a_rerun_adds_seeds_and_is_not_deduplicated():
+    out = render_runs([new(0, val=0.86), new(0, val=0.84, run_id="2026-11-21T0900-aaaa")], "cap")
+    assert "| 2 | 0.8500±0.0141 |" in out
+    assert "2026-11-21T0900-aaaa" in out
+
+
+def test_each_run_is_listed_with_its_commit():
+    out = render_runs([new(0), new(1, dirty=True)], "cap")
+    assert "| 2026-11-20T2138-0000 | 0 | 115b03b | 0.8600 | 0.9000 |" in out
+    assert "| 2026-11-20T2138-0001 | 1 | 115b03b+dirty |" in out
+
+
+def test_a_column_shows_only_when_a_run_carries_it():
+    assert "test int8" not in render_runs([new(0)], "cap")
