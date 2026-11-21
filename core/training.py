@@ -5,6 +5,13 @@ import numpy as np
 from htmlsift.core.features import _ORDER, GROUPS, _zscore_idx
 from htmlsift.core.prep_page import prep_page, window_starts
 
+# Research-only groups, screened here before any enters the package: appended after the
+# package's, so a package selection keeps its column positions in a file that also
+# carries them. Booleans only, so the package's z-score indices stay valid. D is built
+# by vendors/wmb/adapter/blocks.py (hint_features).
+GROUPS = {**GROUPS, "D": ["hidden_hint", "button_like"]}
+_ORDER = (*_ORDER, "D")
+
 
 def make_samples(input_ids, members, window, stride=None):
     """Training samples (tok_lo, tok_hi, blk_lo, blk_hi). A page within the
@@ -41,8 +48,13 @@ def train_page(tok, tid, blocks, labels, window, stride=None, cap=0, feats=None,
     return page
 
 
+def feature_dim(groups):
+    """htmlsift.core.features.feature_dim over the research groups too."""
+    return sum(len(GROUPS[g]) for g in _ORDER if groups and g in groups)
+
+
 def group_columns(groups):
-    """Column indices a group subset occupies within the FULL A/B/C layout that
+    """Column indices a group subset occupies within the FULL A/B/C(/D) layout that
     feats.jsonl is written in -- so the frozen sweep slices a subset (e.g. 'BC')
     from the one file instead of re-rendering per group."""
     full = [c for g in _ORDER for c in GROUPS[g]]

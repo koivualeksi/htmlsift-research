@@ -100,12 +100,14 @@ if [ -n "${CHECK:-}" ]; then
 fi
 
 # Board data from the published source: prepare.py acquires (pinned + sha256-checked) and
-# builds the board; blocks.py --feats ABC adds the structural features on the same render,
-# and labels.py re-derives labels where the board derives them from the render.
+# builds the board; blocks.py --feats adds the structural features on the same render,
+# and labels.py re-derives labels where the board derives them from the render. WMB also
+# builds the research group D: its columns follow ABC's, so an ABC run slices the same values.
 for board in $BOARDS; do
     echo "--- prep $board ---"
+    feats=ABC; if [ "$board" = wmb ]; then feats=ABCD; fi
     timeout "$MAX_RUNTIME" "$PYBIN" "vendors/$board/adapter/prepare.py"
-    timeout "$MAX_RUNTIME" "$PYBIN" "vendors/$board/adapter/blocks.py" --feats ABC
+    timeout "$MAX_RUNTIME" "$PYBIN" "vendors/$board/adapter/blocks.py" --feats "$feats"
     if [ -f "vendors/$board/adapter/labels.py" ]; then
         timeout "$MAX_RUNTIME" "$PYBIN" "vendors/$board/adapter/labels.py"
     fi

@@ -4,8 +4,9 @@ weight is 1 and the loss is plain masked BCE with pos_weight = neg/pos."""
 import numpy as np
 import torch
 import torch.nn.functional as F
-from htmlsift.core.features import GROUPS
 from htmlsift.extractor import THRESHOLD
+
+from core.training import feature_dim
 
 
 def len_weight(chars, cap, floor):
@@ -49,7 +50,7 @@ class Objective:
                                     np.cumsum(np.r_[True, b[1:] != b[:-1]]) - 1, -1)
                            for b in train_box]
         self.text_drop, self.feat_drop = cfg.get("text_drop", 0.0), cfg.get("feat_drop", 0.0)
-        self.n_feat = sum(len(GROUPS[g]) for g in cfg.get("feats") or "")
+        self.n_feat = feature_dim(cfg.get("feats"))
         # Its own stream, so the drop draws leave train_head's batch shuffle untouched.
         self.rng = np.random.default_rng((cfg.get("seed", 0), 1))
 

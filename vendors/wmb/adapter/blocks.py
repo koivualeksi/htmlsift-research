@@ -16,7 +16,8 @@ blocks without markdown markers, for the table recipe's plain arm.
 
 --feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
-parallel to blocks.jsonl. Omit it and no feature pass runs.
+parallel to blocks.jsonl. Omit it and no feature pass runs. Group D (hint_features) is a
+research screen, not in the package: its columns follow the package's.
 
     python vendors/wmb/adapter/blocks.py [--feats ABC]
 """
@@ -25,6 +26,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 from htmlsift.core import render as cr
 from htmlsift.core.features import collect_features
 from vendors.wmb.adapter.sanitize import sanitize_tree
@@ -36,6 +38,16 @@ BLOCKS = DATA / "blocks.jsonl"
 FEATS = DATA / "feats.jsonl"
 
 SELECT_ATTR = "cc-select"                         # upstream main_html.SELECT_ATTR
+
+# Group D: hiding and button-like markers that the renderer prints as ordinary text (it drops
+# only inline display:none). Class tokens match exactly, so "overflow-hidden" is not hidden.
+HIDDEN_CLASSES = {"sr-only", "visually-hidden", "visuallyhidden", "screen-reader-text",
+                  "screen-reader-only", "d-none", "hidden", "invisible", "hide", "is-hidden",
+                  "u-hidden", "a11y-hidden", "offscreen"}
+BUTTON_CLASSES = {"btn", "button", "cta"}
+BUTTON_PREFIXES = ("btn-", "button-", "cta-")
+BUTTON_CLASS_TAGS = {"a", "span", "div", "input"}
+BUTTON_TYPES = {"button", "submit", "reset"}
 
 
 def compute_main_set(root):
@@ -108,6 +120,48 @@ def box_sizes(line_src, labels):
     return [max((n[e] for e in els if not gold[e]), default=0) for els in inside]
 
 
+def _hidden(e):
+    style = "".join((e.get("style") or "").lower().split())
+    return (e.get("hidden") is not None
+            or (e.get("aria-hidden") or "").strip().lower() == "true"
+            or "visibility:hidden" in style
+            or any(t in HIDDEN_CLASSES for t in (e.get("class") or "").lower().split()))
+
+
+def _button_like(e):
+    return (e.tag == "button"
+            or (e.get("role") or "").strip().lower() == "button"
+            or (e.tag == "input" and (e.get("type") or "").strip().lower() in BUTTON_TYPES)
+            or (e.tag in BUTTON_CLASS_TAGS
+                and any(t in BUTTON_CLASSES or t.startswith(BUTTON_PREFIXES)
+                        for t in (e.get("class") or "").lower().split())))
+
+
+def hint_features(lines, line_src):
+    """Group D [n_blocks, 2]: (hidden_hint, button_like), ancestor-or-self over each
+    block's source elements, rows filtered like collect_features. Chains are cached as
+    there, for the same reason (every block re-walks the same containers)."""
+    memo = {}
+
+    def chain(e):
+        stack = []
+        while e is not None and isinstance(e.tag, str) and e not in memo:
+            stack.append(e)
+            e = e.getparent()
+        h, b = memo.get(e, (False, False))
+        for nd in reversed(stack):
+            h, b = h or _hidden(nd), b or _button_like(nd)
+            memo[nd] = (h, b)
+        return h, b
+
+    srcs = [src for ln, src in zip(lines, line_src, strict=True) if ln.strip()]
+    out = np.zeros((len(srcs), 2), dtype=np.float32)
+    for bi, src in enumerate(srcs):
+        for e in src:
+            out[bi] = np.maximum(out[bi], chain(e))
+    return out
+
+
 def label_page(html, feats=None):
     """Raw page HTML -> (blocks, labels, box, plain) with exact DOM provenance. No
     fallback.
@@ -137,6 +191,8 @@ def label_page(html, feats=None):
     if feats is None:
         return blocks, labels, box, plain
     fa = collect_features(lines, line_src, feats)
+    if "D" in feats:
+        fa = np.hstack([fa, hint_features(lines, line_src)])
     assert fa.shape[0] == len(blocks), (fa.shape[0], len(blocks))
     return blocks, labels, box, plain, fa
 
