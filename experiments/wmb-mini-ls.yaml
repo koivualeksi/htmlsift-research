@@ -1,8 +1,7 @@
 # Label smoothing on the shipped mini: BCE targets 0.975 / 0.025 instead of 1 / 0, so a
-# confidently scored block stops pulling its logit further. One seed; compare against
-# wmb-mini-1seed.
+# confidently scored block stops pulling its logit further. Three seeds; compare against
+# wmb-mini.
 name: wmb-mini-ls
 recipe: table
 board: wmb
-seeds: 1
 label_smooth: 0.05

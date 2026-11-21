@@ -1,9 +1,8 @@
 # The shipped mini on plain row text: markdown markers are stripped from the model input
 # (train and val/test inference), so a short row such as "# Header" pools its words, not
 # its marker; the features carry the structure. Labels and scoring stay on the markdown
-# render. One seed; compare against wmb-mini-1seed.
+# render. Three seeds; compare against wmb-mini.
 name: wmb-mini-plain
 recipe: table
 board: wmb
-seeds: 1
 plain: true
