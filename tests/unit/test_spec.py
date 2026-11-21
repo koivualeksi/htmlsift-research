@@ -40,7 +40,7 @@ def test_load_and_expand(tmp_path):
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
                        "len_cap": None, "len_floor": None, "len_side": "both",
                        "page_norm": False, "fp_weight": 1.0, "fp_box": None,
-                       "text_drop": 0.0, "feat_drop": 0.0,
+                       "text_drop": 0.0, "feat_drop": 0.0, "plain": False,
                        "export_test": True, "keep": True, "seed": 0}
 
 
@@ -110,6 +110,9 @@ def test_unknown_top_level_key(tmp_path):
     (dict(fixed={"text_drop": 0.6, "feat_drop": 0.6}), "sum <= 1"),
     (dict(fixed={"feat_drop": -0.1}), "sum <= 1"),
     (dict(fixed={"text_drop": 0.3, "feats": None}), "need feats"),
+    (dict(fixed={"plain": 1}), "plain must be"),
+    (dict(fixed={"plain": True, "extra": "custom"}), "only WMB"),
+    (dict(board="wcxb", fixed={"plain": True}), "only WMB"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):
@@ -140,5 +143,5 @@ def test_run_yaml_from_before_a_key_passes_check():
     # from that yaml must not fail on the missing keys.
     old = {k: v for k, v in S.expand(table())[0].items()
            if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight",
-                        "fp_box", "text_drop", "feat_drop")}
+                        "fp_box", "text_drop", "feat_drop", "plain")}
     S.check(old)

@@ -37,7 +37,9 @@ class WMBBenchmark:
     holdout_groups = ()               # no leave-one-out rotation
     supports_train_limit = True       # the data-efficiency ladder (pool prefixes)
 
-    def __init__(self):
+    def __init__(self, plain=False):
+        # Model-input rows only; labels, serialize and scoring stay on the markdown blocks.
+        self._text = "plain" if plain else "blocks"
         self._feats = None               # raw feats.jsonl {tid: [n, K]}, loaded once
         self._folds = {}                 # fold -> (pages, blocks), cached for score_fold
 
@@ -114,12 +116,12 @@ class WMBBenchmark:
         fold_set = ids if ids is not None else wmb_eval.fold_ids(fold)
         blk = wmb_eval.load_blocks(fold_set)
         items = [(tid, b) for tid, b in blk.items() if b["blocks"]]
-        return [train_page(tok, tid, b["blocks"], b["labels"], window, cap=cap,
+        return [train_page(tok, tid, b[self._text], b["labels"], window, cap=cap,
                            feats=(feats[tid] if feats else None), box=b["box"])
                 for tid, b in items[:limit]]
 
     def _fold_blocks(self, fold):
-        return {tid: b["blocks"]
+        return {tid: b[self._text]
                 for tid, b in wmb_eval.load_blocks(wmb_eval.fold_ids(fold)).items()}
 
     def export_probs(self, fold, tok, infer_fn, out_path, window, cap=0, feats=None, limit=None):

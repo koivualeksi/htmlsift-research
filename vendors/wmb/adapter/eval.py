@@ -75,15 +75,14 @@ def load_pages(ids: set[str]) -> dict:
 
 
 def load_blocks(ids: set[str]) -> dict:
-    """track_id -> {blocks, labels, box} for the fold, from blocks.jsonl."""
+    """track_id -> {blocks, labels, box, plain} for the fold, from blocks.jsonl."""
     blocks = {}
     with open(BLOCKS, encoding="utf-8") as f:
         for line in f:
             r = json.loads(line)
             if r["track_id"] not in ids:
                 continue
-            blocks[r["track_id"]] = {"blocks": r["blocks"], "labels": r["labels"],
-                                     "box": r["box"]}
+            blocks[r["track_id"]] = {k: v for k, v in r.items() if k != "track_id"}
     return blocks
 
 

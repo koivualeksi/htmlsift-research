@@ -24,7 +24,7 @@ DEFAULTS = {
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
-              "export_test": True, "keep": True},
+              "plain": False, "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
 EMBS = ("fp32", "int8")
@@ -105,6 +105,11 @@ def check(cfg):
                 and (td + fd == 0 or cfg["feats"])):
             raise ValueError(f"text_drop and feat_drop must be >= 0 with sum <= 1, and need "
                              f"feats; got {td!r}, {fd!r}, feats {cfg['feats']!r}")
+        if not isinstance(cfg["plain"], bool):
+            raise ValueError(f"plain must be true or false, got {cfg['plain']!r}")
+        if cfg["plain"] and (cfg["board"] != "wmb" or cfg["extra"] is not None):
+            raise ValueError("plain needs plain rows, which only WMB's blocks.jsonl carries "
+                             "(no other board, no extra pages)")
 
 
 def load(path):

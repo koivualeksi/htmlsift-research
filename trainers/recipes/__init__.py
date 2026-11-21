@@ -31,5 +31,6 @@ def cached(ctx, name, key, build):
 
 
 def bench(ctx, cfg):
-    return cached(ctx, "bench", (cfg["board"], cfg.get("holdout")),
-                  lambda: load_benchmark(cfg["board"], cfg.get("holdout")))
+    plain = cfg.get("plain", False)
+    return cached(ctx, "bench", (cfg["board"], cfg.get("holdout"), plain),
+                  lambda: load_benchmark(cfg["board"], cfg.get("holdout"), plain))

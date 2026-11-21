@@ -9,9 +9,10 @@ to cc-select decision is exact -- no marker injection, no alignment gate, no
 matcher fallback.
 
 Reads data/wmb.jsonl, writes data/blocks.jsonl, one record per page:
-    {track_id, blocks, labels, box}
+    {track_id, blocks, labels, box, plain}
 labels is a 0/1 list parallel to blocks. A page with no cc-select (no annotated
-main content) gets all-zero labels. box is parallel too: see box_sizes.
+main content) gets all-zero labels. box is parallel too: see box_sizes. plain is
+blocks without markdown markers, for the table recipe's plain arm.
 
 --feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
@@ -108,12 +109,18 @@ def box_sizes(line_src, labels):
 
 
 def label_page(html, feats=None):
-    """Raw page HTML -> (blocks, labels, box) with exact DOM provenance. No fallback.
+    """Raw page HTML -> (blocks, labels, box, plain) with exact DOM provenance. No
+    fallback.
+
+    plain renders the same tree without markdown markers. Its walk emits the same
+    lines, so it is filtered by the markdown lines' `keep`: a row stays aligned with
+    blocks, labels and features even where plain is empty (table separator, rule,
+    fence, quote spacer).
 
     feats is a feature-group string (e.g. "ABC"): when given, structural features
-    are gathered on the SAME render and returned as (blocks, labels, box, feat_array
-    [n_blocks, K]); None (default) skips the feature pass entirely, so a run that
-    does not want them pays nothing. collect_features filters non-empty lines with
+    are gathered on the SAME render and returned as (blocks, labels, box, plain,
+    feat_array [n_blocks, K]); None (default) skips the feature pass entirely, so a
+    run that does not want them pays nothing. collect_features filters non-empty lines with
     the same rule as `keep`, so its rows align 1:1 with blocks -- asserted."""
     root = cr.parse(html)
     main_set = compute_main_set(root)
@@ -124,11 +131,14 @@ def label_page(html, feats=None):
     blocks = [lines[i].rstrip() for i in keep]
     labels = [labels_full[i] for i in keep]
     box = box_sizes([line_src[i] for i in keep], labels)
+    plain_lines, _ = cr.render_tree(root, plain=True)
+    assert len(plain_lines) == len(lines), (len(plain_lines), len(lines))
+    plain = [plain_lines[i].rstrip() for i in keep]
     if feats is None:
-        return blocks, labels, box
+        return blocks, labels, box, plain
     fa = collect_features(lines, line_src, feats)
     assert fa.shape[0] == len(blocks), (fa.shape[0], len(blocks))
-    return blocks, labels, box, fa
+    return blocks, labels, box, plain, fa
 
 
 def main():

@@ -36,7 +36,8 @@ def name(cfg):
             + (f"-fp{cfg['fp_weight']:g}" if cfg.get("fp_weight", 1.0) != 1.0 else "")
             + (f"-box{cfg['fp_box']}" if cfg.get("fp_box") is not None else "")
             + (f"-td{cfg['text_drop']:g}" if cfg.get("text_drop", 0.0) else "")
-            + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else ""))
+            + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else "")
+            + ("-plain" if cfg.get("plain") else ""))
 
 
 def _extra_src(cfg):
@@ -60,7 +61,7 @@ def _pages(ctx, cfg):
             raise RuntimeError(f"{len(clash)} extra track_ids collide with {b.name}")
         return train_p, val_p, b.build_val_scorer(val_p, ctx.eval_workers), ext_p
 
-    return cached(ctx, "pages", (cfg["board"], cfg["model"], cfg["extra"]), build)
+    return cached(ctx, "pages", (cfg["board"], cfg["model"], cfg["extra"], cfg.get("plain")), build)
 
 
 def _pooled(ctx, cfg, train_p, val_p, ext_p):
@@ -73,7 +74,7 @@ def _pooled(ctx, cfg, train_p, val_p, ext_p):
         del embedder
         return out
 
-    key = (cfg["board"], cfg["model"], cfg["extra"], cfg["emb"])
+    key = (cfg["board"], cfg["model"], cfg["extra"], cfg["emb"], cfg.get("plain"))
     return cached(ctx, "pooled", key, build)
 
 

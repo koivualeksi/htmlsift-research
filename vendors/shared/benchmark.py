@@ -54,10 +54,10 @@ class Benchmark(Protocol):
 
 # Board registry: name -> Benchmark. Lazy per-board imports keep this a load-time leaf,
 # so importing the Protocol never drags in a board.
-def load_benchmark(name, holdout=None):
+def load_benchmark(name, holdout=None, plain=False):
     if name == "wmb":
         from vendors.wmb.adapter.benchmark import WMBBenchmark
-        return WMBBenchmark()
+        return WMBBenchmark(plain)
     if name == "wcxb":
         from vendors.wcxb.adapter.benchmark import WCXBBenchmark
         return WCXBBenchmark()

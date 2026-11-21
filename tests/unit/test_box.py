@@ -32,7 +32,7 @@ PAGE = """<html><body>
 
 
 def _box_by_text():
-    blocks, labels, box = wmb_blocks.label_page(PAGE)
+    blocks, labels, box, _plain = wmb_blocks.label_page(PAGE)
     return {b.lstrip("-#0123456789. "): (y, s) for b, y, s in zip(blocks, labels, box)}
 
 
@@ -55,5 +55,5 @@ def test_inside_gold_container_is_small():
 
 
 def test_no_gold_page_is_one_box():
-    _, labels, box = wmb_blocks.label_page(PAGE.replace('cc-select="true"', ""))
+    _, labels, box, _plain = wmb_blocks.label_page(PAGE.replace('cc-select="true"', ""))
     assert not any(labels) and set(box) == {len(box)}
