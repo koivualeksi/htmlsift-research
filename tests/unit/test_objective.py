@@ -106,3 +106,30 @@ def test_fp_box_upweights_only_picks_in_big_boxes():
     per = F.binary_cross_entropy_with_logits(
         logits, y, pos_weight=obj.pos_weight, reduction="none")
     assert torch.allclose(obj.loss(logits, y, valid, [0]), (per * w).sum() / w.sum())
+
+
+def _drop_pages(cfg):
+    # Rows are [text | ABC feats], as table.run concatenates them.
+    rng = np.random.default_rng(0)
+    xs = [rng.standard_normal((n, 8 + 33)).astype(np.float32) + 1 for n in (5, 3)]
+    obj = Objective({"feats": "ABC", **cfg}, [np.eye(len(x), dtype=np.float32)[0] for x in xs],
+                    [np.ones(len(x)) for x in xs], DEV)
+    return xs, obj.augment(xs)
+
+
+def test_default_augment_leaves_pages_untouched():
+    xs, out = _drop_pages({})
+    assert all(o is x for o, x in zip(out, xs))
+
+
+def test_text_drop_zeroes_text_keeps_feats():
+    xs, out = _drop_pages({"text_drop": 1.0})
+    for o, x in zip(out, xs):
+        assert not o[:, :8].any() and np.array_equal(o[:, 8:], x[:, 8:])
+        assert x[:, :8].all()                         # the input page is not mutated
+
+
+def test_feat_drop_zeroes_feats_keeps_text():
+    xs, out = _drop_pages({"feat_drop": 1.0})
+    for o, x in zip(out, xs):
+        assert not o[:, 8:].any() and np.array_equal(o[:, :8], x[:, :8])

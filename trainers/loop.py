@@ -171,7 +171,8 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
     best, best_state, history = {"val": -1.0, "epoch": 0}, None, []
     for epoch in range(1, epochs + 1):
         head.train()
-        batches = list(_batches(train_x, by_len, batch_size, max_len, max_tokens))
+        batches = list(_batches(objective.augment(train_x), by_len, batch_size, max_len,
+                                max_tokens))
         rng.shuffle(batches)
         total_loss = 0.0
         for idx, packed in batches:

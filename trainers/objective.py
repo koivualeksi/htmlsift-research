@@ -4,6 +4,7 @@ with pos_weight = neg/pos."""
 import numpy as np
 import torch
 import torch.nn.functional as F
+from htmlsift.core.features import GROUPS
 from htmlsift.extractor import THRESHOLD
 
 
@@ -38,6 +39,24 @@ class Objective:
         self.fp = [np.where(b >= box_min, fp, 1.0).astype(np.float32) if box_min
                    else np.full(len(y), fp, np.float32)
                    for y, b in zip(train_y, train_box or [None] * len(train_y))]
+        self.text_drop, self.feat_drop = cfg.get("text_drop", 0.0), cfg.get("feat_drop", 0.0)
+        self.n_feat = sum(len(GROUPS[g]) for g in cfg.get("feats") or "")
+        # Its own stream, so the drop draws leave train_head's batch shuffle untouched.
+        self.rng = np.random.default_rng((cfg.get("seed", 0), 1))
+
+    def augment(self, xs):
+        """Modality dropout over the train pages for one epoch: one draw per page picks
+        text-dropped, feat-dropped or intact, so a page never loses both. Rows are
+        [text | feats] (table.run's cat); zeroed feats sit at the train mean of the
+        z-scored columns. An intact page is passed through uncopied."""
+        out = []
+        for x, u in zip(xs, self.rng.random(len(xs))):
+            if u < self.text_drop + self.feat_drop:
+                d = x.shape[1] - self.n_feat
+                x = x.copy()
+                x[:, slice(None, d) if u < self.text_drop else slice(d, None)] = 0
+            out.append(x)
+        return out
 
     def loss(self, logits, y, valid, idx):
         """Weighted mean of per-block BCE over the valid (non-pad) blocks; idx names the

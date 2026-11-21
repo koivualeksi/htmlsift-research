@@ -1,0 +1,8 @@
+# Text dropout on the shipped mini: each epoch 30 % of train pages have their pooled
+# token-embedding columns zeroed, so features + order must carry them. One seed;
+# compare against wmb-mini-1seed.
+name: wmb-mini-textdrop
+recipe: table
+board: wmb
+seeds: 1
+text_drop: 0.3

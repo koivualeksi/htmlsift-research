@@ -23,7 +23,7 @@ DEFAULTS = {
               "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
-              "fp_weight": 1.0, "fp_box": None,
+              "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -100,6 +100,11 @@ def check(cfg):
         if box is not None and (cfg["board"] != "wmb" or cfg["extra"] is not None):
             raise ValueError("fp_box needs box sizes, which only WMB's blocks.jsonl carries "
                              "(no other board, no extra pages)")
+        td, fd = cfg["text_drop"], cfg["feat_drop"]
+        if not (all(isinstance(v, (int, float)) and v >= 0 for v in (td, fd)) and td + fd <= 1
+                and (td + fd == 0 or cfg["feats"])):
+            raise ValueError(f"text_drop and feat_drop must be >= 0 with sum <= 1, and need "
+                             f"feats; got {td!r}, {fd!r}, feats {cfg['feats']!r}")
 
 
 def load(path):
