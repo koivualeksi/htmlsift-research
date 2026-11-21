@@ -28,7 +28,9 @@ def name(cfg):
     return (f"{cfg['model']}-table" + ("-int8" if cfg["emb"] == "int8" else "")
             + (f"-h{cfg['hidden']}" if cfg["hidden"] != 256 else "")
             + (f"+{cfg['extra']}{cfg['extra_repeat']}" if cfg["extra"] else "")
-            + f"-{cfg['head']}-f{cfg['feats'] or 'none'}")
+            + f"-{cfg['head']}-f{cfg['feats'] or 'none'}"
+            + (f"-len{cfg['len_cap']}f{cfg['len_floor']:g}"
+               if cfg.get("len_cap") is not None else ""))
 
 
 def _extra_src(cfg):
@@ -139,7 +141,8 @@ def run(cfg, ctx):
     tx, vx = cat(tp, et), cat(val_p, eva)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
-    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev, Objective(cfg, yt, ctx.dev),
+    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev,
+                   Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev),
                    epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
                    head_lr=cfg["head_lr"])
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}

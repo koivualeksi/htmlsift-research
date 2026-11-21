@@ -1,0 +1,8 @@
+# Length-weighted loss on the shipped mini: each block's loss is weighted by
+# clip(chars / 200, 0.2, 1), with pos_weight balancing the classes by weight.
+# Compare against wmb-mini (3 seeds).
+name: wmb-mini-len
+recipe: table
+board: wmb
+len_cap: 200
+len_floor: 0.2

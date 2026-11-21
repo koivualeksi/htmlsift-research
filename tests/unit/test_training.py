@@ -26,6 +26,7 @@ def test_train_page_short_page():
     assert page["members"] == [[1, 2], [3]]
     assert page["y"].dtype == np.float32 and page["y"].tolist() == [1.0, 0.0]
     assert page["feats"].tolist() == [[1.0], [2.0]]
+    assert page["chars"].tolist() == [3, 1]
     assert page["samples"] == [(0, 5, 0, 2)]           # within the window: one sample
 
 

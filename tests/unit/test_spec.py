@@ -38,6 +38,7 @@ def test_load_and_expand(tmp_path):
                        "model": "97m", "emb": "fp32", "head": "bigru", "feats": "ABC",
                        "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
+                       "len_cap": None, "len_floor": None,
                        "export_test": True, "keep": True, "seed": 0}
 
 
@@ -94,6 +95,9 @@ def test_unknown_top_level_key(tmp_path):
     (dict(sweep={"keep": [True, False]}), "set keep"),        # one swept value is enough
     (dict(fixed={"emb": "lowrank128"}), "unknown emb"),
     (dict(fixed={"extra": "custom", "train_limit": 250}), "extra with train_limit"),
+    (dict(fixed={"len_cap": 200}), "len_floor in"),
+    (dict(fixed={"len_cap": 0, "len_floor": 0.2}), "len_floor in"),
+    (dict(fixed={"len_cap": 200, "len_floor": 1.5}), "len_floor in"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):

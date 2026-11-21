@@ -62,14 +62,14 @@ def test_train_head_runs():
     train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
     val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
     val_pages = list(range(len(val_x)))
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
 
     def score_val(pages, probs):
         return float(np.mean([p.mean() for p in probs]))
 
     for kind in ("linear", "bigru", "transformer"):
         s = train_head(_heads(d)[kind], train_x, train_y, val_x, val_pages,
-                       score_val, DEV, Objective({}, train_y, DEV), epochs=2, seed=0,
-                       batch_size=2)
+                       score_val, DEV, obj, epochs=2, seed=0, batch_size=2)
         assert set(s) == {"best_val", "best_epoch", "history"}
         assert 1 <= s["best_epoch"] <= 2 and len(s["history"]) == 2
 
@@ -89,12 +89,13 @@ def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
     train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
     val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
     val_pages = list(range(len(val_x)))
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
 
     def score_val(pages, probs):
         return float(np.mean([p.mean() for p in probs]))
 
     train_head(_heads(d)["bigru"], train_x, train_y, val_x, val_pages,
-               score_val, DEV, Objective({}, train_y, DEV), epochs=2, seed=0, batch_size=2)
+               score_val, DEV, obj, epochs=2, seed=0, batch_size=2)
     assert not list(tmp_path.iterdir()), [p.name for p in tmp_path.iterdir()]
 
 

@@ -22,6 +22,7 @@ DEFAULTS = {
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
               "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
+              "len_cap": None, "len_floor": None,
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -76,6 +77,11 @@ def check(cfg):
             raise ValueError(f"unknown emb {cfg['emb']!r}; one of {EMBS}")
         if cfg["export_test"] and not cfg["keep"]:
             raise ValueError("table export_test scores the kept ckpt: set keep")
+        cap, floor = cfg["len_cap"], cfg["len_floor"]
+        if cap is not None and not (isinstance(cap, int) and cap >= 1
+                                    and isinstance(floor, (int, float)) and 0 < floor <= 1):
+            raise ValueError(f"len_cap must be a positive int and len_floor in (0, 1], "
+                             f"got {cap!r}, {floor!r}")
 
 
 def load(path):

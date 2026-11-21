@@ -183,7 +183,7 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
                 y[r, :len(train_y[k])] = train_y[k]
             yt = torch.from_numpy(y).to(dev)
             valid = torch.ones_like(logits) if mt is None else (~mt).float()
-            loss = objective.loss(logits, yt, valid)
+            loss = objective.loss(logits, yt, valid, idx)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.0)
             opt.step()
