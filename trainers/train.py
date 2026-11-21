@@ -112,7 +112,9 @@ def main(argv=None):
         runs.preflight()
         done = runs.done(launch)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    workers = os.cpu_count() if sys.platform == "linux" else 1
+    # Capped: on a pod cpu_count is the host's cores, and each epoch's fork pool copies the
+    # parent's pages as refcounts touch them; ~90 workers OOM-killed a 6-epoch run.
+    workers = min(os.cpu_count(), 16) if sys.platform == "linux" else 1
     todo = [c for c in configs if c not in done]
     print(f"launch {launch}: {experiment}, {len(todo)} of {len(configs)} runs to do on {dev}"
           + (" (smoke)" if smoke else ""), flush=True)
