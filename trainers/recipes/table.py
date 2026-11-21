@@ -116,9 +116,9 @@ def _export_test(ctx, b, ck_path, result):
     variants = [("", ck["int8"])] + ([("_int8", True)] if not ck["int8"] else [])
     for sfx, int8 in variants:
         tok, infer, _kind, cap = build_infer({**ck, "int8": int8}, ctx.dev)
-        for fold in ("val", "test"):
-            pr = b.export_probs(fold, tok, infer, ctx.probs / f"{fold}{sfx}.jsonl",
-                                WINDOW, cap, feats, ctx.limit)
+        for fold in ("val", "test"):        # val probs ship with the run (errors.py); test stays on the pod
+            out = (ctx.folder if fold == "val" else ctx.probs) / f"{fold}{sfx}.jsonl"
+            pr = b.export_probs(fold, tok, infer, out, WINDOW, cap, feats, ctx.limit)
             s = b.score_fold(pr, fold, THRESHOLD)
             result.update({f"{fold}{sfx}_f1": round(s["f1"], 6), f"{fold}{sfx}_n": s["n"]})
         print(f"  ckpt{sfx}: val {result[f'val{sfx}_f1']:.4f} "
