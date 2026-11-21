@@ -1,0 +1,10 @@
+# Head capacity on the ema 0.999 + smooth_weight 1 base: the error analysis puts 18 % of
+# the remaining room on whole-region misses (16 pages under F1 0.2), which more context
+# capacity might reach. BiGRU hidden 128 and 512 against the shipped 256.
+name: wmb-mini-hidden
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+sweep:
+  hidden: [128, 512]
