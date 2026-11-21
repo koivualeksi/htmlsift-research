@@ -41,7 +41,8 @@ def test_load_and_expand(tmp_path):
                        "len_cap": None, "len_floor": None, "len_side": "both",
                        "page_norm": False, "fp_weight": 1.0, "fp_box": None,
                        "focal_gamma": 0, "label_smooth": 0.0, "smooth_weight": 0.0,
-                       "box_mass": 0.0, "ema": 0.0, "text_drop": 0.0, "feat_drop": 0.0,
+                       "box_mass": 0.0, "page_f1": 0.0, "ema": 0.0, "text_drop": 0.0,
+                       "feat_drop": 0.0,
                        "plain": False,
                        "export_test": True, "keep": True, "seed": 0}
 

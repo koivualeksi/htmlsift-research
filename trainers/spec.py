@@ -25,7 +25,7 @@ DEFAULTS = {
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
               "focal_gamma": 0, "label_smooth": 0.0, "smooth_weight": 0.0, "box_mass": 0.0,
-              "ema": 0.0, "plain": False, "export_test": True, "keep": True},
+              "page_f1": 0.0, "ema": 0.0, "plain": False, "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
 EMBS = ("fp32", "int8")
@@ -114,6 +114,8 @@ def check(cfg):
         bm = cfg["box_mass"]
         if not (isinstance(bm, (int, float)) and bm >= 0 and (bm == 0 or box is not None)):
             raise ValueError(f"box_mass must be >= 0 and needs fp_box, got {bm!r}")
+        if not (isinstance(cfg["page_f1"], (int, float)) and cfg["page_f1"] >= 0):
+            raise ValueError(f"page_f1 must be >= 0, got {cfg['page_f1']!r}")
         if not (isinstance(cfg["ema"], (int, float)) and 0 <= cfg["ema"] < 1):
             raise ValueError(f"ema must be in [0, 1), got {cfg['ema']!r}")
         td, fd = cfg["text_drop"], cfg["feat_drop"]

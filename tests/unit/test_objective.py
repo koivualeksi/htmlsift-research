@@ -137,12 +137,12 @@ def test_label_smooth_matches_hand_computed():
     assert np.isclose(_two_blocks({"label_smooth": 0.1}), 0.2950948493, rtol=1e-6)
 
 
-def _extra_term(cfg, train_y, box, logits, valid):
+def _extra_term(cfg, train_y, box, logits, valid, chars=None):
     # The term on top of the default loss: both share pos_weight, as neither cfg moves it.
     y = torch.zeros_like(logits)
     for r, t in enumerate(train_y):
         y[r, :len(t)] = torch.from_numpy(t)
-    chars = [np.ones(len(t)) for t in train_y]
+    chars = chars or [np.ones(len(t)) for t in train_y]
     arm, base = (Objective(c, train_y, chars, DEV, box) for c in (cfg, {}))
     idx = list(range(len(train_y)))
     return float(arm.loss(logits, y, valid, idx) - base.loss(logits, y, valid, idx))
@@ -169,6 +169,19 @@ def test_box_mass_matches_hand_computed():
     valid[1, 3:] = 0
     term = _extra_term({"box_mass": 1.0, "fp_box": 3}, train_y, box, logits, valid)
     assert np.isclose(term, 0.5710367515, rtol=1e-5)
+
+
+def test_page_f1_matches_hand_computed():
+    # p 0.75 / 0.25 / 0.5 from logits ln 3 / -ln 3 / 0; padding carries logit 5.
+    # Page 0, chars clipped to [100, 2000, 50]: tp 100, sel 600, gold 150, 1 - 200 / 751.
+    # Page 1, gold-free: sel 175, 1 - 100 / 275. The term is 2 * their mean.
+    l3 = float(np.log(3))
+    train_y = [np.array([1, 0, 1], np.float32), np.zeros(2, np.float32)]
+    chars = [np.array([100, 3000, 50]), np.array([300, 100])]
+    logits = torch.tensor([[l3, -l3, 0.0, 5.0], [0.0, -l3, 5.0, 5.0]])
+    valid = torch.tensor([[1.0, 1.0, 1.0, 0.0], [1.0, 1.0, 0.0, 0.0]])
+    term = _extra_term({"page_f1": 2.0}, train_y, None, logits, valid, chars)
+    assert np.isclose(term, (1 - 200 / 751) + (1 - 100 / 275), rtol=1e-5)
 
 
 def _drop_pages(cfg):

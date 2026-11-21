@@ -49,6 +49,11 @@ class Objective:
             self.box_id = [np.where(b >= box_min,
                                     np.cumsum(np.r_[True, b[1:] != b[:-1]]) - 1, -1)
                            for b in train_box]
+        self.page_f1 = cfg.get("page_f1", 0.0)
+        if self.page_f1:
+            # Clipped so one giant row (a JSON config rendered as text) cannot swamp a page's
+            # char mass; 2000 sits above nearly every real paragraph.
+            self.chars = [np.minimum(c, 2000).astype(np.float32) for c in train_chars]
         self.text_drop, self.feat_drop = cfg.get("text_drop", 0.0), cfg.get("feat_drop", 0.0)
         self.n_feat = feature_dim(cfg.get("feats"))
         # Its own stream, so the drop draws leave train_head's batch shuffle untouched.
@@ -113,4 +118,18 @@ class Objective:
             mean = s[n > 0] / n[n > 0]
             # A batch can hold no box (one long page alone, say): its term is then 0.
             loss = loss + self.box_mass * -torch.log(1 - mean + 1e-6).sum() / max(len(mean), 1)
+        if self.page_f1:
+            # WMB F1 is per page over chars: a char-weighted soft F1 per page sees what BCE
+            # cannot, that 5k stray chars wreck a 300-char-gold page and barely touch a 20k one.
+            c = np.zeros(tuple(logits.shape), np.float32)
+            for r, k in enumerate(idx):
+                c[r, :len(self.chars[k])] = self.chars[k]
+            c = valid * torch.from_numpy(c).to(logits.device)
+            pc = torch.sigmoid(logits) * c
+            tp, sel, gold = (pc * y).sum(1), pc.sum(1), (c * y).sum(1)
+            # A gold-free page scores 1 only if nothing is selected (rouge_utils: both empty),
+            # so its F1 is softened to 100 / (sel + 100): 100 selected chars cost half.
+            # eps 1 keeps the unused branch finite on a page of all-empty rows.
+            f1 = torch.where(gold > 0, 2 * tp / (sel + gold + 1), 100 / (sel + 100))
+            loss = loss + self.page_f1 * (1 - f1).mean()
         return loss

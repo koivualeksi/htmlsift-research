@@ -39,6 +39,7 @@ def name(cfg):
             + (f"-ls{cfg['label_smooth']:g}" if cfg.get("label_smooth", 0.0) else "")
             + (f"-nb{cfg['smooth_weight']:g}" if cfg.get("smooth_weight", 0.0) else "")
             + (f"-bm{cfg['box_mass']:g}" if cfg.get("box_mass", 0.0) else "")
+            + (f"-pf{cfg['page_f1']:g}" if cfg.get("page_f1", 0.0) else "")
             + (f"-ema{cfg['ema']:g}" if cfg.get("ema", 0.0) else "")
             + (f"-td{cfg['text_drop']:g}" if cfg.get("text_drop", 0.0) else "")
             + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else "")
