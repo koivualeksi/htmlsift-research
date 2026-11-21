@@ -157,11 +157,11 @@ def main():
             out = label_page(r["html"], args.feats)
             blocks, labels = out[0], out[1]
             fout.write(json.dumps({"track_id": r["track_id"], "blocks": blocks,
-                                   "labels": labels, "box": out[2]},
+                                   "labels": labels, "box": out[2], "plain": out[3]},
                                   ensure_ascii=False) + "\n")
             if ffeat is not None:
                 ffeat.write(json.dumps({"track_id": r["track_id"],
-                                        "feats": out[3].round(4).tolist()}) + "\n")
+                                        "feats": out[4].round(4).tolist()}) + "\n")
             n += 1
             n_pos = sum(labels)
             n_main += n_pos > 0
