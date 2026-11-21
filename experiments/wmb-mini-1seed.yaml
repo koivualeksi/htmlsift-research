@@ -1,0 +1,6 @@
+# The shipped mini at one seed (seed 0): a quick retrain to check a change against
+# wmb-mini seed 0 without paying for three.
+name: wmb-mini-1seed
+recipe: table
+board: wmb
+seeds: 1
