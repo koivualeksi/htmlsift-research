@@ -39,6 +39,7 @@ def name(cfg):
             + (f"-ls{cfg['label_smooth']:g}" if cfg.get("label_smooth", 0.0) else "")
             + (f"-nb{cfg['smooth_weight']:g}" if cfg.get("smooth_weight", 0.0) else "")
             + (f"-bm{cfg['box_mass']:g}" if cfg.get("box_mass", 0.0) else "")
+            + (f"-ema{cfg['ema']:g}" if cfg.get("ema", 0.0) else "")
             + (f"-td{cfg['text_drop']:g}" if cfg.get("text_drop", 0.0) else "")
             + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else "")
             + ("-plain" if cfg.get("plain") else ""))
@@ -156,7 +157,7 @@ def run(cfg, ctx):
                    Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev,
                              [p["box"] for p in tp]),
                    epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
-                   head_lr=cfg["head_lr"])
+                   head_lr=cfg["head_lr"], ema=cfg.get("ema", 0.0))
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
     if cfg["extra"]:
         result["extra_pages"] = len(ext_p)

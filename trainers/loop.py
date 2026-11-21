@@ -6,6 +6,7 @@ frozen, pre-pooled block inputs, batched over pages (recipe table).
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 from htmlsift.extractor import THRESHOLD
 from core.model import cat_feats, encode_window, infer_page, pool
@@ -151,12 +152,14 @@ def _forward(head, xs, idx, packed, dev):
 
 def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objective,
                *, epochs=4, head_lr=1e-3, seed=0, batch_size=64,
-               max_len=2048, max_tokens=32768):
+               max_len=2048, max_tokens=32768, ema=0.0):
     """Train a per-block head on FROZEN, pre-pooled inputs, batched over pages
     (length-bucketed, padded, masked; the masked forward is per-block identical to the
     unbatched path). train_x/val_x are lists of [n_blocks, d_in] aligned with train_y /
-    val_pages; objective (trainers.objective) gives the batch loss. Leaves head holding
-    the best epoch's weights and returns {best_val, best_epoch, history}."""
+    val_pages; objective (trainers.objective) gives the batch loss. ema > 0 scores, selects
+    and keeps an exponential moving average of the weights (that decay per step) while the
+    raw weights train on. Leaves head holding the best epoch's weights and returns
+    {best_val, best_epoch, history}."""
     torch.manual_seed(seed)
     opt = torch.optim.AdamW(head.parameters(), lr=head_lr)
     by_len = sorted(range(len(train_x)), key=lambda i: len(train_x[i]))
@@ -168,6 +171,10 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
     warmup = max(1, n_steps // 10)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / warmup))
     rng = np.random.default_rng(seed)
+    scored = head
+    if ema:
+        avg = AveragedModel(head, multi_avg_fn=get_ema_multi_avg_fn(ema), use_buffers=True)
+        scored = avg.module
     best, best_state, history = {"val": -1.0, "epoch": 0}, None, []
     for epoch in range(1, epochs + 1):
         head.train()
@@ -189,20 +196,22 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.0)
             opt.step()
             sched.step()
+            if ema:
+                avg.update_parameters(head)
             total_loss += float(loss.detach())
 
-        head.eval()
+        scored.eval()
         probs = [None] * len(val_x)
         with torch.no_grad():
             for idx, packed in _batches(val_x, val_order, batch_size, max_len, max_tokens):
-                p = torch.sigmoid(_forward(head, val_x, idx, packed, dev)[0]).cpu().numpy()
+                p = torch.sigmoid(_forward(scored, val_x, idx, packed, dev)[0]).cpu().numpy()
                 for r, k in enumerate(idx):
                     probs[k] = p[r][:len(val_x[k])]
         v = score_val(val_pages, probs)
         history.append({"val": v, "loss": total_loss / len(batches)})
         if v > best["val"]:
             best = {"val": v, "epoch": epoch}
-            best_state = {k: t.cpu().clone() for k, t in head.state_dict().items()}
+            best_state = {k: t.cpu().clone() for k, t in scored.state_dict().items()}
         print(f"  epoch {epoch}: val {v:.4f}"
               f"{'  *' if epoch == best['epoch'] else ''}", flush=True)
 

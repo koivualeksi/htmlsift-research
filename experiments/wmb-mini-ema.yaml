@@ -1,0 +1,9 @@
+# EMA of the head's weights on the shipped mini: val scoring, best-epoch selection and the
+# kept ckpt use the per-step average while the raw weights train on. ~820 steps an epoch,
+# so 0.995 averages over ~200 steps (a quarter epoch), 0.999 over ~1,000 (about one).
+# Compare against wmb-mini (3 seeds).
+name: wmb-mini-ema
+recipe: table
+board: wmb
+sweep:
+  ema: [0.995, 0.999]
