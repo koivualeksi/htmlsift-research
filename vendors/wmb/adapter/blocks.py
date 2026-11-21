@@ -16,13 +16,15 @@ blocks without markdown markers, for the table recipe's plain arm.
 
 --feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
-parallel to blocks.jsonl. Omit it and no feature pass runs. Group D (hint_features) is a
-research screen, not in the package: its columns follow the package's.
+parallel to blocks.jsonl. Omit it and no feature pass runs. Groups D (hint_features) and
+E (container_features) are research screens, not in the package: their columns follow the
+package's, D before E.
 
     python vendors/wmb/adapter/blocks.py [--feats ABC]
 """
 import argparse
 import json
+import math
 from collections import Counter
 from pathlib import Path
 
@@ -162,6 +164,40 @@ def hint_features(lines, line_src):
     return out
 
 
+def container_features(lines, line_src):
+    """Group E [n_blocks, 5]: (cont_log_chars, cont_link_density, cont_rows_log, row_pos,
+    cont_pos), rows filtered like collect_features. A row's container is the nearest
+    element holding all of its source elements (box_sizes' rule) and at least 2 rows, else
+    the page (None, which every row's chain ends in, so a row without sources lands there).
+    The ABC columns see only the row's own chain; references, bios and teaser lists look
+    like content row by row and differ in the box they sit in and where it is on the page.
+    Link density counts a row's chars as linked by has_link's rule (an <a> ancestor-or-self)."""
+    rows = [(len(ln), src) for ln, src in zip(lines, line_src, strict=True) if ln.strip()]
+    chains, n, chars, linked = [], Counter(), Counter(), Counter()
+    for c, src in rows:
+        anc = [{e, *e.iterancestors()} for e in src]
+        # src is a set: walking up from any one source and keeping what every source
+        # shares gives the same deepest-first chain whichever source comes out first.
+        e = next(iter(src), None)
+        walk = [e, *e.iterancestors()] if src else []
+        chain = [a for a in walk if all(a in s for s in anc)] + [None]
+        link = any(a.tag == "a" for s in anc for a in s)
+        for e in chain:
+            n[e] += 1
+            chars[e] += c
+            linked[e] += c * link
+        chains.append(chain)
+    seen = Counter()
+    out = np.zeros((len(rows), 5), dtype=np.float32)
+    for i, chain in enumerate(chains):
+        k = next(e for e in chain if e is None or n[e] >= 2)
+        out[i] = (math.log1p(chars[k]), linked[k] / chars[k], math.log1p(n[k]),
+                  i / max(1, len(rows) - 1), seen[k] / max(1, n[k] - 1))
+        for e in chain:
+            seen[e] += 1
+    return out
+
+
 def label_page(html, feats=None):
     """Raw page HTML -> (blocks, labels, box, plain) with exact DOM provenance. No
     fallback.
@@ -193,6 +229,8 @@ def label_page(html, feats=None):
     fa = collect_features(lines, line_src, feats)
     if "D" in feats:
         fa = np.hstack([fa, hint_features(lines, line_src)])
+    if "E" in feats:
+        fa = np.hstack([fa, container_features(lines, line_src)])
     assert fa.shape[0] == len(blocks), (fa.shape[0], len(blocks))
     return blocks, labels, box, plain, fa
 

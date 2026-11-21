@@ -109,8 +109,8 @@ class WMBBenchmark:
     def load_features(self, group="ABC"):
         return bench_ops.load_features(self.raw_features(), self._train_ids(), group)
 
-    def feature_stats(self):
-        return bench_ops.feature_stats(self.raw_features(), self._train_ids())
+    def feature_stats(self, group="ABC"):
+        return bench_ops.feature_stats(self.raw_features(), self._train_ids(), group)
 
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None):
         fold_set = ids if ids is not None else wmb_eval.fold_ids(fold)

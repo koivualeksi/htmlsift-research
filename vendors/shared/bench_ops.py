@@ -32,8 +32,8 @@ def load_features(raw_full, train_ids, group):
     return raw, {t: apply_zscore(a, stats) for t, a in raw.items()}
 
 
-def feature_stats(raw_full, train_ids):
-    return zscore_stats([raw_full[t] for t in train_ids if t in raw_full], "ABC")
+def feature_stats(raw_full, train_ids, group="ABC"):
+    return zscore_stats([raw_full[t] for t in train_ids if t in raw_full], group, full=True)
 
 
 def carried_features(bench, ck):

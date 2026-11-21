@@ -74,8 +74,9 @@ def check(cfg):
     if cfg.get("extra") is not None and cfg["train_limit"] is not None:
         raise ValueError("extra with train_limit is unsupported (the z-score refit "
                          "would have to decide whether extra pages count)")
-    if "D" in (cfg.get("feats") or "") and (cfg["board"] != "wmb" or cfg.get("extra") is not None):
-        raise ValueError("feats D is a research group only WMB's feats.jsonl carries "
+    if set("DE") & set(cfg.get("feats") or "") and (cfg["board"] != "wmb"
+                                                    or cfg.get("extra") is not None):
+        raise ValueError("feats D and E are research groups only WMB's feats.jsonl carries "
                          "(no other board, no extra pages)")
     if cfg.get("quant_eval") and cfg.get("qat_w8a8"):
         raise ValueError("quant_eval scores int8 variants against the fp32 model; "

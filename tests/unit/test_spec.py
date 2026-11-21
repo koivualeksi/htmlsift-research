@@ -127,6 +127,8 @@ def test_unknown_top_level_key(tmp_path):
     (dict(board="wcxb", fixed={"plain": True}), "only WMB"),
     (dict(board="wcxb", fixed={"feats": "ABCD"}), "only WMB"),
     (dict(fixed={"feats": "ABCD", "extra": "custom"}), "only WMB"),
+    (dict(board="wcxb", fixed={"feats": "ABCE"}), "only WMB"),
+    (dict(fixed={"feats": "ABCE", "extra": "custom"}), "only WMB"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):

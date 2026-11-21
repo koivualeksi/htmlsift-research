@@ -46,10 +46,11 @@ class Benchmark(Protocol):
         raw feeds XGBoost, z-scored (train-fold stats) feeds torch heads. group defaults
         to the full A/B/C set; the frozen sweep passes A/AB/ABC/BC/C."""
 
-    def feature_stats(self) -> tuple:
-        """Train-fold z-score stats (idx, mean, std) over the full feature layout -- what
-        a saved table ckpt carries so inference normalizes any board's features by this
-        board's training yardstick. Board-specific (its own train fold), so it lives here."""
+    def feature_stats(self, group="ABC") -> tuple:
+        """Train-fold z-score stats (idx, mean, std) for a group's scalars, idx over the
+        full feature layout -- what a saved table ckpt carries so inference normalizes any
+        board's features by this board's training yardstick. Board-specific (its own train
+        fold), so it lives here."""
 
 
 # Board registry: name -> Benchmark. Lazy per-board imports keep this a load-time leaf,

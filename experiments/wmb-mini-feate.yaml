@@ -1,0 +1,10 @@
+# Group E (container chars, rows and link density, page and in-container position) on the
+# ema 0.999 + smooth_weight 1 base (val 0.8723, 3 seeds), without D: the remaining false
+# positives are content-looking rows after the article or in gold-free boxes (references,
+# bios, teaser lists), which ABC's per-row chain cannot tell apart. Compare against that base.
+name: wmb-mini-feate
+recipe: table
+board: wmb
+feats: ABCE
+ema: 0.999
+smooth_weight: 1.0

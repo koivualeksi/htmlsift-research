@@ -99,7 +99,7 @@ def _feats(ctx, cfg, b, train_p_s):
         z = {t: apply_zscore(a, st) for t, a in raw.items()}
     src = _extra_src(cfg)
     if src:
-        xr, xz = src.load_features(b.feature_stats(), g)
+        xr, xz = src.load_features(b.feature_stats(g), g)
         z = {**z, **xz}
     return z
 
@@ -109,7 +109,7 @@ def _save(ctx, cfg, b, head):
     torch.save({"kind": "table", "model": MODELS[cfg["model"]][0], "int8": cfg["emb"] == "int8",
                 "head": cfg["head"], "feats": cfg["feats"], "hidden": cfg["hidden"],
                 "head_state": head.state_dict(),
-                "zscore": b.feature_stats() if cfg["feats"] else None}, ck)
+                "zscore": b.feature_stats(cfg["feats"]) if cfg["feats"] else None}, ck)
     print(f"  saved {ck}", flush=True)
     return ck
 
