@@ -91,3 +91,18 @@ def test_fp_weight_upweights_selected_negatives():
     per = F.binary_cross_entropy_with_logits(
         logits, y, pos_weight=obj.pos_weight, reduction="none")
     assert torch.allclose(obj.loss(logits, y, valid, [0]), (per * w).sum() / w.sum())
+
+
+def test_fp_box_upweights_only_picks_in_big_boxes():
+    # With fp_box 5, a picked gold-free block costs fp_weight only inside a gold-free box
+    # of at least 5 lines; a picked one in a smaller box (or none) keeps weight 1.
+    train_y = [np.array([1, 0, 0, 0], np.float32)]
+    box = [np.array([0, 6, 3, 5])]
+    obj = Objective({"fp_weight": 4.0, "fp_box": 5}, train_y, [np.ones(4)], DEV, box)
+    logits = torch.tensor([[2.0, 1.5, 1.5, -1.0]])    # picked, picked, picked, not picked
+    y = torch.tensor([[1.0, 0.0, 0.0, 0.0]])
+    valid = torch.ones(1, 4)
+    w = torch.tensor([[1.0, 4.0, 1.0, 1.0]])
+    per = F.binary_cross_entropy_with_logits(
+        logits, y, pos_weight=obj.pos_weight, reduction="none")
+    assert torch.allclose(obj.loss(logits, y, valid, [0]), (per * w).sum() / w.sum())

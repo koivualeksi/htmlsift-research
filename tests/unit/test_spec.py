@@ -39,7 +39,7 @@ def test_load_and_expand(tmp_path):
                        "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
                        "len_cap": None, "len_floor": None, "len_side": "both",
-                       "page_norm": False, "fp_weight": 1.0,
+                       "page_norm": False, "fp_weight": 1.0, "fp_box": None,
                        "export_test": True, "keep": True, "seed": 0}
 
 
@@ -103,6 +103,9 @@ def test_unknown_top_level_key(tmp_path):
     (dict(fixed={"len_side": "neg"}), "needs len_cap"),
     (dict(fixed={"len_cap": 200, "len_floor": 0.2, "len_side": "gold"}), "len_side must"),
     (dict(fixed={"fp_weight": 0}), "fp_weight must"),
+    (dict(fixed={"fp_box": 5}), "needs fp_weight"),
+    (dict(fixed={"fp_weight": 2.0, "fp_box": 0}), "fp_box must"),
+    (dict(fixed={"fp_weight": 2.0, "fp_box": 5, "extra": "custom"}), "only WMB"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):
@@ -132,5 +135,6 @@ def test_run_yaml_from_before_a_key_passes_check():
     # A run.yaml written before len_cap etc. existed ran with them off; re-running it
     # from that yaml must not fail on the missing keys.
     old = {k: v for k, v in S.expand(table())[0].items()
-           if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight")}
+           if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight",
+                        "fp_box")}
     S.check(old)

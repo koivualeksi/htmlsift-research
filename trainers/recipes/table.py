@@ -33,7 +33,8 @@ def name(cfg):
                + ("" if cfg.get("len_side", "both") == "both" else cfg["len_side"])
                if cfg.get("len_cap") is not None else "")
             + ("-pn" if cfg.get("page_norm") else "")
-            + (f"-fp{cfg['fp_weight']:g}" if cfg.get("fp_weight", 1.0) != 1.0 else ""))
+            + (f"-fp{cfg['fp_weight']:g}" if cfg.get("fp_weight", 1.0) != 1.0 else "")
+            + (f"-box{cfg['fp_box']}" if cfg.get("fp_box") is not None else ""))
 
 
 def _extra_src(cfg):
@@ -145,7 +146,8 @@ def run(cfg, ctx):
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
     s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev,
-                   Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev),
+                   Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev,
+                             [p["box"] for p in tp]),
                    epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
                    head_lr=cfg["head_lr"])
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}

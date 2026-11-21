@@ -115,7 +115,7 @@ class WMBBenchmark:
         blk = wmb_eval.load_blocks(fold_set)
         items = [(tid, b) for tid, b in blk.items() if b["blocks"]]
         return [train_page(tok, tid, b["blocks"], b["labels"], window, cap=cap,
-                           feats=(feats[tid] if feats else None))
+                           feats=(feats[tid] if feats else None), box=b["box"])
                 for tid, b in items[:limit]]
 
     def _fold_blocks(self, fold):

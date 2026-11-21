@@ -9,9 +9,9 @@ to cc-select decision is exact -- no marker injection, no alignment gate, no
 matcher fallback.
 
 Reads data/wmb.jsonl, writes data/blocks.jsonl, one record per page:
-    {track_id, blocks, labels}
+    {track_id, blocks, labels, box}
 labels is a 0/1 list parallel to blocks. A page with no cc-select (no annotated
-main content) gets all-zero labels.
+main content) gets all-zero labels. box is parallel too: see box_sizes.
 
 --feats <groups> also gathers the structural features (htmlsift.core.features) on the same
 render and writes them to data/feats.jsonl ({track_id, feats [n_blocks, K]}),
@@ -21,6 +21,7 @@ parallel to blocks.jsonl. Omit it and no feature pass runs.
 """
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 
 from htmlsift.core import render as cr
@@ -91,11 +92,26 @@ def labels_from_src(line_src, main_set):
     return lab
 
 
+def box_sizes(line_src, labels):
+    """Per line, the line count of the largest element that contains it and no gold
+    line, or 0: the gold-free box the fp_box loss reads. A line is inside an element
+    iff all of its source elements are, the annotator's rule (htmlsift-data
+    annotate), so a box here is the box shown there. Counts are over the given lines."""
+    inside = [set.intersection(*({e, *e.iterancestors()} for e in src)) if src else set()
+              for src in line_src]
+    n, gold = Counter(), Counter()
+    for els, y in zip(inside, labels):
+        for e in els:
+            n[e] += 1
+            gold[e] += y
+    return [max((n[e] for e in els if not gold[e]), default=0) for els in inside]
+
+
 def label_page(html, feats=None):
-    """Raw page HTML -> (blocks, labels) with exact DOM provenance. No fallback.
+    """Raw page HTML -> (blocks, labels, box) with exact DOM provenance. No fallback.
 
     feats is a feature-group string (e.g. "ABC"): when given, structural features
-    are gathered on the SAME render and returned as (blocks, labels, feat_array
+    are gathered on the SAME render and returned as (blocks, labels, box, feat_array
     [n_blocks, K]); None (default) skips the feature pass entirely, so a run that
     does not want them pays nothing. collect_features filters non-empty lines with
     the same rule as `keep`, so its rows align 1:1 with blocks -- asserted."""
@@ -107,11 +123,12 @@ def label_page(html, feats=None):
     keep = [i for i, ln in enumerate(lines) if ln.strip()]
     blocks = [lines[i].rstrip() for i in keep]
     labels = [labels_full[i] for i in keep]
+    box = box_sizes([line_src[i] for i in keep], labels)
     if feats is None:
-        return blocks, labels
+        return blocks, labels, box
     fa = collect_features(lines, line_src, feats)
     assert fa.shape[0] == len(blocks), (fa.shape[0], len(blocks))
-    return blocks, labels, fa
+    return blocks, labels, box, fa
 
 
 def main():
@@ -130,10 +147,11 @@ def main():
             out = label_page(r["html"], args.feats)
             blocks, labels = out[0], out[1]
             fout.write(json.dumps({"track_id": r["track_id"], "blocks": blocks,
-                                   "labels": labels}, ensure_ascii=False) + "\n")
+                                   "labels": labels, "box": out[2]},
+                                  ensure_ascii=False) + "\n")
             if ffeat is not None:
                 ffeat.write(json.dumps({"track_id": r["track_id"],
-                                        "feats": out[2].round(4).tolist()}) + "\n")
+                                        "feats": out[3].round(4).tolist()}) + "\n")
             n += 1
             n_pos = sum(labels)
             n_main += n_pos > 0

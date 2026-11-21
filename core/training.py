@@ -29,12 +29,14 @@ def make_samples(input_ids, members, window, stride=None):
     return out
 
 
-def train_page(tok, tid, blocks, labels, window, stride=None, cap=0, feats=None):
+def train_page(tok, tid, blocks, labels, window, stride=None, cap=0, feats=None, box=None):
     """htmlsift's prep_page plus y (labels as float32, None without labels), chars (each
-    block's length, for length-weighted losses) and the training samples."""
+    block's length, for length-weighted losses), box (each block's gold-free box size,
+    for fp_box; None on boards that do not build it) and the training samples."""
     page = prep_page(tok, blocks, window, stride=stride, cap=cap, feats=feats, tid=tid)
     page["y"] = None if labels is None else np.array(labels, dtype=np.float32)
     page["chars"] = np.array([len(b) for b in blocks], dtype=np.int64)
+    page["box"] = None if box is None else np.array(box, dtype=np.int64)
     page["samples"] = make_samples(page["ids"], page["members"], window, stride)
     return page
 

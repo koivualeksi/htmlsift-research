@@ -23,7 +23,7 @@ DEFAULTS = {
               "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
-              "fp_weight": 1.0,
+              "fp_weight": 1.0, "fp_box": None,
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -93,6 +93,13 @@ def check(cfg):
             raise ValueError(f"page_norm must be true or false, got {cfg['page_norm']!r}")
         if not (isinstance(cfg["fp_weight"], (int, float)) and cfg["fp_weight"] > 0):
             raise ValueError(f"fp_weight must be a positive number, got {cfg['fp_weight']!r}")
+        box = cfg["fp_box"]
+        if box is not None and not (isinstance(box, int) and box >= 1
+                                    and cfg["fp_weight"] != 1.0):
+            raise ValueError(f"fp_box must be a positive int and needs fp_weight, got {box!r}")
+        if box is not None and (cfg["board"] != "wmb" or cfg["extra"] is not None):
+            raise ValueError("fp_box needs box sizes, which only WMB's blocks.jsonl carries "
+                             "(no other board, no extra pages)")
 
 
 def load(path):

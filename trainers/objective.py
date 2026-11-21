@@ -13,8 +13,9 @@ def len_weight(chars, cap, floor):
 
 
 class Objective:
-    def __init__(self, cfg, train_y, train_chars, dev):
-        """train_y and train_chars are per train page, in train_head's train_x order."""
+    def __init__(self, cfg, train_y, train_chars, dev, train_box=None):
+        """train_y, train_chars and train_box are per train page, in train_head's train_x
+        order. train_box is only read with fp_box set."""
         cap, side = cfg.get("len_cap"), cfg.get("len_side", "both")
         self.w = [np.ones(len(c), np.float32) for c in train_chars]
         if cap:
@@ -31,7 +32,12 @@ class Objective:
         pos = sum(float((w * y).sum()) for w, y in zip(self.w, train_y))
         neg = sum(float((w * (1 - y)).sum()) for w, y in zip(self.w, train_y))
         self.pos_weight = torch.tensor(neg / pos, device=dev)
-        self.fp_weight = cfg.get("fp_weight", 1.0)
+        # The weight a pick of each gold-free block costs: fp_weight, or with fp_box only
+        # inside a gold-free box of at least fp_box lines (blocks.box_sizes), 1 elsewhere.
+        fp, box_min = cfg.get("fp_weight", 1.0), cfg.get("fp_box")
+        self.fp = [np.where(b >= box_min, fp, 1.0).astype(np.float32) if box_min
+                   else np.full(len(y), fp, np.float32)
+                   for y, b in zip(train_y, train_box or [None] * len(train_y))]
 
     def loss(self, logits, y, valid, idx):
         """Weighted mean of per-block BCE over the valid (non-pad) blocks; idx names the
@@ -40,11 +46,13 @@ class Objective:
         per = F.binary_cross_entropy_with_logits(
             logits, y, pos_weight=self.pos_weight, reduction="none")
         w = np.zeros(tuple(logits.shape), np.float32)
+        fp = np.ones(tuple(logits.shape), np.float32)
         for r, k in enumerate(idx):
             w[r, :len(self.w[k])] = self.w[k]
+            fp[r, :len(self.fp[k])] = self.fp[k]
         w = valid * torch.from_numpy(w).to(logits.device)
-        # Online hard negatives: a gold-free block the model currently selects costs
-        # fp_weight times more. Weight 1 multiplies by 1, leaving the loss bit-identical.
+        # Online hard negatives: a gold-free block the model currently selects costs its
+        # fp weight. Weight 1 multiplies by 1, leaving the loss bit-identical.
         picked = torch.sigmoid(logits.detach()) > THRESHOLD
-        w = w * torch.where((y == 0) & picked, self.fp_weight, 1.0)
+        w = w * torch.where((y == 0) & picked, torch.from_numpy(fp).to(logits.device), 1.0)
         return (per * w).sum() / w.sum()

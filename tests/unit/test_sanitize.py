@@ -41,7 +41,7 @@ def test_harvest_before_sanitize_or_leak():
 
 
 def test_label_page_labels_only_cc_select():
-    blocks, labels = wmb_blocks.label_page(MAIN_HTML)
+    blocks, labels, _box = wmb_blocks.label_page(MAIN_HTML)
     labeled = [b for b, l in zip(blocks, labels) if l]
     assert labeled == ["Main content here."]
 
