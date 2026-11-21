@@ -24,7 +24,7 @@ DEFAULTS = {
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
-              "focal_gamma": 0, "label_smooth": 0.0,
+              "focal_gamma": 0, "label_smooth": 0.0, "smooth_weight": 0.0, "box_mass": 0.0,
               "plain": False, "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -96,8 +96,9 @@ def check(cfg):
             raise ValueError(f"fp_weight must be a positive number, got {cfg['fp_weight']!r}")
         box = cfg["fp_box"]
         if box is not None and not (isinstance(box, int) and box >= 1
-                                    and cfg["fp_weight"] != 1.0):
-            raise ValueError(f"fp_box must be a positive int and needs fp_weight, got {box!r}")
+                                    and (cfg["fp_weight"] != 1.0 or cfg["box_mass"])):
+            raise ValueError(f"fp_box must be a positive int and needs fp_weight or box_mass, "
+                             f"got {box!r}")
         if box is not None and (cfg["board"] != "wmb" or cfg["extra"] is not None):
             raise ValueError("fp_box needs box sizes, which only WMB's blocks.jsonl carries "
                              "(no other board, no extra pages)")
@@ -105,6 +106,11 @@ def check(cfg):
             raise ValueError(f"focal_gamma must be >= 0, got {cfg['focal_gamma']!r}")
         if not (isinstance(cfg["label_smooth"], (int, float)) and 0 <= cfg["label_smooth"] < 0.5):
             raise ValueError(f"label_smooth must be in [0, 0.5), got {cfg['label_smooth']!r}")
+        if not (isinstance(cfg["smooth_weight"], (int, float)) and cfg["smooth_weight"] >= 0):
+            raise ValueError(f"smooth_weight must be >= 0, got {cfg['smooth_weight']!r}")
+        bm = cfg["box_mass"]
+        if not (isinstance(bm, (int, float)) and bm >= 0 and (bm == 0 or box is not None)):
+            raise ValueError(f"box_mass must be >= 0 and needs fp_box, got {bm!r}")
         td, fd = cfg["text_drop"], cfg["feat_drop"]
         if not (all(isinstance(v, (int, float)) and v >= 0 for v in (td, fd)) and td + fd <= 1
                 and (td + fd == 0 or cfg["feats"])):

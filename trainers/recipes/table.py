@@ -37,6 +37,8 @@ def name(cfg):
             + (f"-box{cfg['fp_box']}" if cfg.get("fp_box") is not None else "")
             + (f"-fg{cfg['focal_gamma']:g}" if cfg.get("focal_gamma", 0) else "")
             + (f"-ls{cfg['label_smooth']:g}" if cfg.get("label_smooth", 0.0) else "")
+            + (f"-nb{cfg['smooth_weight']:g}" if cfg.get("smooth_weight", 0.0) else "")
+            + (f"-bm{cfg['box_mass']:g}" if cfg.get("box_mass", 0.0) else "")
             + (f"-td{cfg['text_drop']:g}" if cfg.get("text_drop", 0.0) else "")
             + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else "")
             + ("-plain" if cfg.get("plain") else ""))

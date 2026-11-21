@@ -40,7 +40,8 @@ def test_load_and_expand(tmp_path):
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
                        "len_cap": None, "len_floor": None, "len_side": "both",
                        "page_norm": False, "fp_weight": 1.0, "fp_box": None,
-                       "focal_gamma": 0, "label_smooth": 0.0, "text_drop": 0.0, "feat_drop": 0.0, "plain": False,
+                       "focal_gamma": 0, "label_smooth": 0.0, "smooth_weight": 0.0,
+                       "box_mass": 0.0, "text_drop": 0.0, "feat_drop": 0.0, "plain": False,
                        "export_test": True, "keep": True, "seed": 0}
 
 
@@ -110,6 +111,10 @@ def test_unknown_top_level_key(tmp_path):
     (dict(fixed={"focal_gamma": -1}), "focal_gamma must"),
     (dict(fixed={"label_smooth": 0.5}), "label_smooth must"),
     (dict(fixed={"label_smooth": -0.1}), "label_smooth must"),
+    (dict(fixed={"smooth_weight": -1.0}), "smooth_weight must"),
+    (dict(fixed={"box_mass": 1.0}), "needs fp_box"),
+    (dict(fixed={"box_mass": -1.0, "fp_box": 3}), "box_mass must"),
+    (dict(fixed={"box_mass": 1.0, "fp_box": 3, "extra": "custom"}), "only WMB"),
     (dict(fixed={"text_drop": 0.6, "feat_drop": 0.6}), "sum <= 1"),
     (dict(fixed={"feat_drop": -0.1}), "sum <= 1"),
     (dict(fixed={"text_drop": 0.3, "feats": None}), "need feats"),
@@ -146,6 +151,6 @@ def test_run_yaml_from_before_a_key_passes_check():
     # from that yaml must not fail on the missing keys.
     old = {k: v for k, v in S.expand(table())[0].items()
            if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight",
-                        "fp_box", "focal_gamma", "label_smooth", "text_drop", "feat_drop",
-                        "plain")}
+                        "fp_box", "focal_gamma", "label_smooth", "smooth_weight", "box_mass",
+                        "text_drop", "feat_drop", "plain")}
     S.check(old)

@@ -1,6 +1,6 @@
 """The table recipe's training loss, built from a run's config: per-block BCE, weighted
-per block. With no method active every weight is 1 and the loss is plain masked BCE
-with pos_weight = neg/pos."""
+per block, plus optional penalty terms on the probabilities. With no method active every
+weight is 1 and the loss is plain masked BCE with pos_weight = neg/pos."""
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -40,6 +40,14 @@ class Objective:
                    else np.full(len(y), fp, np.float32)
                    for y, b in zip(train_y, train_box or [None] * len(train_y))]
         self.gamma, self.smooth = cfg.get("focal_gamma", 0), cfg.get("label_smooth", 0.0)
+        self.nb, self.box_mass = cfg.get("smooth_weight", 0.0), cfg.get("box_mass", 0.0)
+        if self.box_mass:
+            # blocks.jsonl stores each line's box size, not its box: a DOM subtree renders to
+            # consecutive lines, so a box is taken as a maximal run of lines sharing one size
+            # >= fp_box. Two adjacent boxes of equal size merge into one. -1 is off-box.
+            self.box_id = [np.where(b >= box_min,
+                                    np.cumsum(np.r_[True, b[1:] != b[:-1]]) - 1, -1)
+                           for b in train_box]
         self.text_drop, self.feat_drop = cfg.get("text_drop", 0.0), cfg.get("feat_drop", 0.0)
         self.n_feat = sum(len(GROUPS[g]) for g in cfg.get("feats") or "")
         # Its own stream, so the drop draws leave train_head's batch shuffle untouched.
@@ -81,4 +89,27 @@ class Objective:
         # fp weight. Weight 1 multiplies by 1, leaving the loss bit-identical.
         picked = torch.sigmoid(logits.detach()) > THRESHOLD
         w = w * torch.where((y == 0) & picked, torch.from_numpy(fp).to(logits.device), 1.0)
-        return (per * w).sum() / w.sum()
+        loss = (per * w).sum() / w.sum()
+        if self.nb:
+            # Neighbour smoothness over pairs of equal gold label only, so a true content
+            # edge stays free to be sharp while an isolated flip inside a run is pulled back.
+            p = torch.sigmoid(logits)
+            pair = valid[:, 1:] * valid[:, :-1] * (y[:, 1:] == y[:, :-1])
+            loss = loss + self.nb * (pair * (p[:, 1:] - p[:, :-1]) ** 2).sum() / pair.sum()
+        if self.box_mass:
+            # A box's mean prob against 0, so a whole gold-free container is pushed down
+            # together. Ids are offset by r * L to be unique across the batch.
+            B, L = logits.shape
+            bid = np.full((B, L), -1, np.int64)
+            for r, k in enumerate(idx):
+                bid[r, :len(self.box_id[k])] = np.where(self.box_id[k] >= 0,
+                                                        self.box_id[k] + r * L, -1)
+            bid = torch.from_numpy(bid).to(logits.device)
+            on = bid >= 0
+            n = torch.bincount(bid[on], minlength=B * L)
+            s = torch.zeros(B * L, device=logits.device).index_add_(0, bid[on],
+                                                                    torch.sigmoid(logits)[on])
+            mean = s[n > 0] / n[n > 0]
+            # A batch can hold no box (one long page alone, say): its term is then 0.
+            loss = loss + self.box_mass * -torch.log(1 - mean + 1e-6).sum() / max(len(mean), 1)
+        return loss
