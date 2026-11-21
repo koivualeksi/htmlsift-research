@@ -24,6 +24,7 @@ DEFAULTS = {
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
+              "focal_gamma": 0, "label_smooth": 0.0,
               "plain": False, "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -100,6 +101,10 @@ def check(cfg):
         if box is not None and (cfg["board"] != "wmb" or cfg["extra"] is not None):
             raise ValueError("fp_box needs box sizes, which only WMB's blocks.jsonl carries "
                              "(no other board, no extra pages)")
+        if not (isinstance(cfg["focal_gamma"], (int, float)) and cfg["focal_gamma"] >= 0):
+            raise ValueError(f"focal_gamma must be >= 0, got {cfg['focal_gamma']!r}")
+        if not (isinstance(cfg["label_smooth"], (int, float)) and 0 <= cfg["label_smooth"] < 0.5):
+            raise ValueError(f"label_smooth must be in [0, 0.5), got {cfg['label_smooth']!r}")
         td, fd = cfg["text_drop"], cfg["feat_drop"]
         if not (all(isinstance(v, (int, float)) and v >= 0 for v in (td, fd)) and td + fd <= 1
                 and (td + fd == 0 or cfg["feats"])):

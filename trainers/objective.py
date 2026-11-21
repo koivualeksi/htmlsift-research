@@ -39,6 +39,7 @@ class Objective:
         self.fp = [np.where(b >= box_min, fp, 1.0).astype(np.float32) if box_min
                    else np.full(len(y), fp, np.float32)
                    for y, b in zip(train_y, train_box or [None] * len(train_y))]
+        self.gamma, self.smooth = cfg.get("focal_gamma", 0), cfg.get("label_smooth", 0.0)
         self.text_drop, self.feat_drop = cfg.get("text_drop", 0.0), cfg.get("feat_drop", 0.0)
         self.n_feat = sum(len(GROUPS[g]) for g in cfg.get("feats") or "")
         # Its own stream, so the drop draws leave train_head's batch shuffle untouched.
@@ -62,8 +63,14 @@ class Objective:
         """Weighted mean of per-block BCE over the valid (non-pad) blocks; idx names the
         train page of each batch row. Dividing by the weight sum, not the block count,
         keeps a weight from scaling the effective learning rate."""
+        # Label smoothing softens the BCE targets only: pos_weight and the hard-negative
+        # picks below stay on the hard labels. eps 0 leaves y exact.
         per = F.binary_cross_entropy_with_logits(
-            logits, y, pos_weight=self.pos_weight, reduction="none")
+            logits, y * (1 - self.smooth) + self.smooth / 2, pos_weight=self.pos_weight,
+            reduction="none")
+        # Focal: |y - p| is 1 - p_correct. Not detached, as in standard focal loss, so the
+        # factor also carries gradient; gamma 0 multiplies by exactly 1.
+        per = per * (y - torch.sigmoid(logits)).abs() ** self.gamma
         w = np.zeros(tuple(logits.shape), np.float32)
         fp = np.ones(tuple(logits.shape), np.float32)
         for r, k in enumerate(idx):

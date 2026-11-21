@@ -108,6 +108,35 @@ def test_fp_box_upweights_only_picks_in_big_boxes():
     assert torch.allclose(obj.loss(logits, y, valid, [0]), (per * w).sum() / w.sum())
 
 
+def _two_blocks(cfg):
+    # One content and one gold-free block, so pos_weight is 1 and drops out of the
+    # hand-computed values.
+    obj = Objective(cfg, [np.array([1, 0], np.float32)], [np.ones(2)], DEV)
+    logits, y = torch.tensor([[2.0, -1.0]]), torch.tensor([[1.0, 0.0]])
+    return float(obj.loss(logits, y, torch.ones(1, 2), [0]))
+
+
+def test_focal_matches_hand_computed():
+    # mean of -log(p_c) * (1 - p_c)^2 with p_c = sigmoid(2), 1 - sigmoid(-1)
+    assert np.isclose(_two_blocks({"focal_gamma": 2}), 0.0122308102, rtol=1e-6)
+
+
+def test_focal_downweights_confident_correct_block():
+    # A block scored right at p 0.95 keeps under 1 % of its BCE; one scored wrong keeps
+    # most of it.
+    train_y = [np.array([1, 0], np.float32)]
+    plain, focal = (Objective(c, train_y, [np.ones(2)], DEV) for c in ({}, {"focal_gamma": 2}))
+    logits, y = torch.tensor([[3.0, 3.0]]), torch.tensor([[1.0, 0.0]])
+    ratio = [float(focal.loss(logits, y, v, [0]) / plain.loss(logits, y, v, [0]))
+             for v in (torch.tensor([[1.0, 0.0]]), torch.tensor([[0.0, 1.0]]))]
+    assert ratio[0] < 0.01 and ratio[1] > 0.9
+
+
+def test_label_smooth_matches_hand_computed():
+    # eps 0.1: targets 0.95 and 0.05 in the BCE
+    assert np.isclose(_two_blocks({"label_smooth": 0.1}), 0.2950948493, rtol=1e-6)
+
+
 def _drop_pages(cfg):
     # Rows are [text | ABC feats], as table.run concatenates them.
     rng = np.random.default_rng(0)

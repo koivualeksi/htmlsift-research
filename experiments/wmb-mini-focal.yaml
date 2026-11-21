@@ -1,0 +1,8 @@
+# Focal loss on the shipped mini: each block's BCE times (1 - p_correct)^2, down-weighting
+# easy blocks on both sides instead of up-weighting only false positives. One seed;
+# compare against wmb-mini-1seed and wmb-mini-fp.
+name: wmb-mini-focal
+recipe: table
+board: wmb
+seeds: 1
+focal_gamma: 2
