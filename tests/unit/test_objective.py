@@ -68,3 +68,26 @@ def test_page_norm_is_mean_of_page_means():
         logits, y, pos_weight=obj.pos_weight, reduction="none")
     want = (per[0].mean() + per[1, :2].mean()) / 2
     assert torch.allclose(obj.loss(logits, y, valid, [0, 1]), want)
+
+
+def test_len_side_weights_one_class():
+    train_y = [np.array([1, 0, 1, 0], np.float32)]
+    chars = [np.array([20, 20, 400, 400])]
+    neg = Objective({"len_cap": 200, "len_floor": 0.2, "len_side": "neg"}, train_y, chars, DEV)
+    pos = Objective({"len_cap": 200, "len_floor": 0.2, "len_side": "pos"}, train_y, chars, DEV)
+    assert np.allclose(neg.w[0], [1.0, 0.2, 1.0, 1.0])
+    assert np.allclose(pos.w[0], [0.2, 1.0, 1.0, 1.0])
+
+
+def test_fp_weight_upweights_selected_negatives():
+    # Only a gold-free block scored above the threshold is multiplied; a selected
+    # content block and an unselected negative keep weight 1.
+    train_y = [np.array([1, 0, 0], np.float32)]
+    obj = Objective({"fp_weight": 4.0}, train_y, [np.ones(3)], DEV)
+    logits = torch.tensor([[2.0, 1.5, -1.0]])         # picked, picked, not picked
+    y = torch.tensor([[1.0, 0.0, 0.0]])
+    valid = torch.ones(1, 3)
+    w = torch.tensor([[1.0, 4.0, 1.0]])
+    per = F.binary_cross_entropy_with_logits(
+        logits, y, pos_weight=obj.pos_weight, reduction="none")
+    assert torch.allclose(obj.loss(logits, y, valid, [0]), (per * w).sum() / w.sum())

@@ -22,11 +22,13 @@ DEFAULTS = {
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
               "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
-              "len_cap": None, "len_floor": None, "page_norm": False,
+              "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
+              "fp_weight": 1.0,
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
 EMBS = ("fp32", "int8")
+LEN_SIDES = ("both", "pos", "neg")
 
 
 @dataclass(frozen=True)
@@ -61,7 +63,9 @@ class Spec:
 
 def check(cfg):
     """Rules on one expanded config (or a run.yaml's), so a bad combination of swept
-    values fails at load, before any compute."""
+    values fails at load, before any compute. A run.yaml from before a key existed lacks
+    it; it ran at that key's default, which is what it gets here."""
+    cfg = {**DEFAULTS.get(cfg["recipe"], {}), **cfg}
     if cfg.get("extra") is not None and cfg["extra"] not in EXTRAS:
         raise ValueError(f"unknown extra {cfg['extra']!r}; one of {EXTRAS}")
     if cfg.get("extra") is None and cfg.get("extra_repeat") is not None:
@@ -82,8 +86,13 @@ def check(cfg):
                                     and isinstance(floor, (int, float)) and 0 < floor <= 1):
             raise ValueError(f"len_cap must be a positive int and len_floor in (0, 1], "
                              f"got {cap!r}, {floor!r}")
+        if cfg["len_side"] not in LEN_SIDES or (cfg["len_side"] != "both" and cap is None):
+            raise ValueError(f"len_side must be one of {LEN_SIDES}, and needs len_cap; "
+                             f"got {cfg['len_side']!r}")
         if not isinstance(cfg["page_norm"], bool):
             raise ValueError(f"page_norm must be true or false, got {cfg['page_norm']!r}")
+        if not (isinstance(cfg["fp_weight"], (int, float)) and cfg["fp_weight"] > 0):
+            raise ValueError(f"fp_weight must be a positive number, got {cfg['fp_weight']!r}")
 
 
 def load(path):

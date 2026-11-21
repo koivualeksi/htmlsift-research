@@ -30,8 +30,10 @@ def name(cfg):
             + (f"+{cfg['extra']}{cfg['extra_repeat']}" if cfg["extra"] else "")
             + f"-{cfg['head']}-f{cfg['feats'] or 'none'}"
             + (f"-len{cfg['len_cap']}f{cfg['len_floor']:g}"
+               + ("" if cfg.get("len_side", "both") == "both" else cfg["len_side"])
                if cfg.get("len_cap") is not None else "")
-            + ("-pn" if cfg.get("page_norm") else ""))
+            + ("-pn" if cfg.get("page_norm") else "")
+            + (f"-fp{cfg['fp_weight']:g}" if cfg.get("fp_weight", 1.0) != 1.0 else ""))
 
 
 def _extra_src(cfg):

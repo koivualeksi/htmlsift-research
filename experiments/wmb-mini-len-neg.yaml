@@ -1,0 +1,8 @@
+# Length weight on gold-free blocks only: clip(chars / 200, 0.2, 1), content blocks at 1,
+# pos_weight balanced by weight. Compare against wmb-mini and wmb-mini-len (3 seeds).
+name: wmb-mini-len-neg
+recipe: table
+board: wmb
+len_cap: 200
+len_floor: 0.2
+len_side: neg
