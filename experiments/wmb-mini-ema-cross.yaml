@@ -1,9 +1,11 @@
-# EMA 0.999 (wmb-mini-ema's best) crossed with the two arms that tied the shipped mini
-# alone: label_smooth 0.05 and feat_drop 0.3. The {0, 0} cell repeats wmb-mini-ema 0.999.
+# The best base (ema 0.999 + smooth_weight 1) crossed with the two arms that tied the
+# shipped mini alone: label_smooth 0.05 and feat_drop 0.3. The {0, 0} cell repeats the
+# base.
 name: wmb-mini-ema-cross
 recipe: table
 board: wmb
 ema: 0.999
+smooth_weight: 1.0
 sweep:
   label_smooth: [0.0, 0.05]
   feat_drop: [0.0, 0.3]
