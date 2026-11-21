@@ -16,6 +16,7 @@ from core.loader import build_infer
 from core.model import build_head, build_table_embedder, pool_table_pages
 from core.training import zscore_stats
 from trainers.loop import train_head
+from trainers.objective import Objective
 from trainers.recipes import bench, cached
 from vendors.shared import bench_ops
 from vendors.shared.arms import MODELS, WINDOW
@@ -138,8 +139,9 @@ def run(cfg, ctx):
     tx, vx = cat(tp, et), cat(val_p, eva)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
-    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev, epochs=cfg["epochs"],
-                   seed=cfg["seed"], batch_size=cfg["batch_size"], head_lr=cfg["head_lr"])
+    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev, Objective(cfg, yt, ctx.dev),
+                   epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
+                   head_lr=cfg["head_lr"])
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
     if cfg["extra"]:
         result["extra_pages"] = len(ext_p)

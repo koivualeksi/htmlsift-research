@@ -6,7 +6,6 @@ frozen, pre-pooled block inputs, batched over pages (recipe table).
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from htmlsift.extractor import THRESHOLD
 from core.model import cat_feats, encode_window, infer_page, pool
@@ -150,18 +149,15 @@ def _forward(head, xs, idx, packed, dev):
     return head(torch.from_numpy(x).to(dev), mt), mt
 
 
-def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev,
+def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objective,
                *, epochs=4, head_lr=1e-3, seed=0, batch_size=64,
                max_len=2048, max_tokens=32768):
     """Train a per-block head on FROZEN, pre-pooled inputs, batched over pages
     (length-bucketed, padded, masked; the masked forward is per-block identical to the
     unbatched path). train_x/val_x are lists of [n_blocks, d_in] aligned with train_y /
-    val_pages. Leaves head holding the best epoch's weights and returns
-    {best_val, best_epoch, history}."""
+    val_pages; objective (trainers.objective) gives the batch loss. Leaves head holding
+    the best epoch's weights and returns {best_val, best_epoch, history}."""
     torch.manual_seed(seed)
-    pos = sum(float(y.sum()) for y in train_y)
-    tot = sum(len(y) for y in train_y)
-    pos_weight = torch.tensor((tot - pos) / max(pos, 1.0), device=dev)
     opt = torch.optim.AdamW(head.parameters(), lr=head_lr)
     by_len = sorted(range(len(train_x)), key=lambda i: len(train_x[i]))
     val_order = sorted(range(len(val_x)), key=lambda i: len(val_x[i]))
@@ -186,10 +182,8 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev,
             for r, k in enumerate(idx):
                 y[r, :len(train_y[k])] = train_y[k]
             yt = torch.from_numpy(y).to(dev)
-            per = F.binary_cross_entropy_with_logits(
-                logits, yt, pos_weight=pos_weight, reduction="none")
             valid = torch.ones_like(logits) if mt is None else (~mt).float()
-            loss = (per * valid).sum() / valid.sum()
+            loss = objective.loss(logits, yt, valid)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.0)
             opt.step()

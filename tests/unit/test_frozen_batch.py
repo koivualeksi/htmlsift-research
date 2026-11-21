@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from trainers.loop import _batches, _forward
+from trainers.objective import Objective
 from core.model import build_head
 
 DEV = torch.device("cpu")
@@ -67,7 +68,8 @@ def test_train_head_runs():
 
     for kind in ("linear", "bigru", "transformer"):
         s = train_head(_heads(d)[kind], train_x, train_y, val_x, val_pages,
-                       score_val, DEV, epochs=2, seed=0, batch_size=2)
+                       score_val, DEV, Objective({}, train_y, DEV), epochs=2, seed=0,
+                       batch_size=2)
         assert set(s) == {"best_val", "best_epoch", "history"}
         assert 1 <= s["best_epoch"] <= 2 and len(s["history"]) == 2
 
@@ -92,7 +94,7 @@ def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
         return float(np.mean([p.mean() for p in probs]))
 
     train_head(_heads(d)["bigru"], train_x, train_y, val_x, val_pages,
-               score_val, DEV, epochs=2, seed=0, batch_size=2)
+               score_val, DEV, Objective({}, train_y, DEV), epochs=2, seed=0, batch_size=2)
     assert not list(tmp_path.iterdir()), [p.name for p in tmp_path.iterdir()]
 
 
