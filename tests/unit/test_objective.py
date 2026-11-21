@@ -51,3 +51,20 @@ def test_len_weighted_loss():
     per = F.binary_cross_entropy_with_logits(
         logits, y, pos_weight=obj.pos_weight, reduction="none")
     assert torch.allclose(obj.loss(logits, y, valid, [1, 0]), (per * w).sum() / w.sum())
+
+
+def test_page_norm_is_mean_of_page_means():
+    # Each page's weights sum to 1, so a full batch's loss is the mean over pages of each
+    # page's mean BCE, whatever the page lengths.
+    train_y = [np.array([1, 0, 0, 0], np.float32), np.array([0, 1], np.float32)]
+    obj = Objective({"page_norm": True}, train_y, [np.ones(4), np.ones(2)], DEV)
+    # weights: page 0 [.25] * 4, page 1 [.5] * 2; pos .75, neg 1.25
+    assert np.isclose(float(obj.pos_weight), 1.25 / 0.75)
+
+    logits = torch.tensor([[0.3, -1.2, 0.7, 0.1], [2.0, 0.5, 0.0, 0.0]])
+    y = torch.tensor([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]])
+    valid = torch.tensor([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0]])
+    per = F.binary_cross_entropy_with_logits(
+        logits, y, pos_weight=obj.pos_weight, reduction="none")
+    want = (per[0].mean() + per[1, :2].mean()) / 2
+    assert torch.allclose(obj.loss(logits, y, valid, [0, 1]), want)

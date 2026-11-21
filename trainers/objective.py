@@ -17,6 +17,10 @@ class Objective:
         cap = cfg.get("len_cap")
         self.w = [len_weight(c, cap, cfg["len_floor"]) if cap else np.ones(len(c), np.float32)
                   for c in train_chars]
+        if cfg.get("page_norm"):
+            # WMB F1 is a mean over pages: each page's weights sum to 1, so a page counts
+            # once in the loss however many rows it has.
+            self.w = [w / w.sum() for w in self.w]
         # By weight, not row count: content rows run longer, so a count-based pos_weight
         # on top of a length weight would tilt the loss toward content.
         pos = sum(float((w * y).sum()) for w, y in zip(self.w, train_y))

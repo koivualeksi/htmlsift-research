@@ -22,7 +22,7 @@ DEFAULTS = {
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
               "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
-              "len_cap": None, "len_floor": None,
+              "len_cap": None, "len_floor": None, "page_norm": False,
               "export_test": True, "keep": True},
 }
 EXTRAS = ("custom",)
@@ -82,6 +82,8 @@ def check(cfg):
                                     and isinstance(floor, (int, float)) and 0 < floor <= 1):
             raise ValueError(f"len_cap must be a positive int and len_floor in (0, 1], "
                              f"got {cap!r}, {floor!r}")
+        if not isinstance(cfg["page_norm"], bool):
+            raise ValueError(f"page_norm must be true or false, got {cfg['page_norm']!r}")
 
 
 def load(path):

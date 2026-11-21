@@ -30,7 +30,8 @@ def name(cfg):
             + (f"+{cfg['extra']}{cfg['extra_repeat']}" if cfg["extra"] else "")
             + f"-{cfg['head']}-f{cfg['feats'] or 'none'}"
             + (f"-len{cfg['len_cap']}f{cfg['len_floor']:g}"
-               if cfg.get("len_cap") is not None else ""))
+               if cfg.get("len_cap") is not None else "")
+            + ("-pn" if cfg.get("page_norm") else ""))
 
 
 def _extra_src(cfg):
