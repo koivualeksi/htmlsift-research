@@ -15,6 +15,7 @@ pages). Gains overlap, so they do not add up. fixed/broken: chars of the class t
 got wrong and this run gets right, and the reverse. "room" is oracle F1 minus this run's F1.
 
     python vendors/wmb/adapter/errors.py --fold val base/val.jsonl arm/val.jsonl
+    python vendors/wmb/adapter/errors.py --worst s0/val.jsonl s1/val.jsonl s2/val.jsonl
 """
 import argparse
 import json
@@ -106,12 +107,28 @@ def report(name, b, oracle):
         print(f"| {k} | {r['rows']} | {r['ch']:.2%} | {r['pages']} | {r['gain']:+.4f} |{tail}")
 
 
+def worst(b, data, oracle, pages):
+    """The worst 10 % of pages by room, as listed in docs/mini-error-groups.md: dir is the
+    side that loses more chars (FP extra, FN missed), sel/gold the selected over gold chars."""
+    room = {t: oracle[t] - f for t, f in b["base"].items()}
+    print("\n| # | url | F1 / oracle | dir | sel/gold |\n|---|---|---|---|---|")
+    for k, t in enumerate(sorted(room, key=room.get, reverse=True)[:max(1, len(room) // 10)]):
+        ch, gold, cls = data[t]["chars"], data[t]["gold"], b["cls"][t]
+        fp, fn = int(ch[cls["FP"]].sum()), int(ch[cls["FN"]].sum())
+        sel = (gold & ~cls["FN"]) | cls["FP"]
+        ratio = ch[sel].sum() / max(1, ch[gold].sum())
+        print(f"| {k} | {pages[t]['url']} | {b['base'][t]:.2f} / {oracle[t]:.2f} | "
+              f"{'FP' if fp > fn else 'FN'} | {ratio:.1f} |")
+
+
 def main():
     global _SNAP
     ap = argparse.ArgumentParser()
     ap.add_argument("probs", nargs="+", help="{track_id, probs} jsonl, first is the reference")
     ap.add_argument("--fold", choices=["val", "test"], default="val")
     ap.add_argument("--workers", type=int, default=mp.cpu_count())
+    ap.add_argument("--worst", action="store_true",
+                    help="also list the worst 10 %% of pages of the last run (the average with several)")
     args = ap.parse_args()
 
     runs = []
@@ -144,6 +161,8 @@ def main():
             b = breakdown(r, data, pool, first)
             report(path, b, oracle)
             first = first or b
+        if args.worst:
+            worst(b, data, oracle, pages)
 
 
 if __name__ == "__main__":
