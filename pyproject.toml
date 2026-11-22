@@ -44,6 +44,11 @@ train = [
 runpod = [
     "huggingface-hub==1.12.2",
 ]
+# CC yield bench (bench/ccbench.py): lid.176 and the DCLM classifier. fasttext-predict is
+# fastText's inference code alone, with numpy-2 and cp313 wheels. Needs [repro,train] too.
+ccbench = [
+    "fasttext-predict==0.9.2.4",
+]
 test = [
     "pytest==8.4.1",
 ]
