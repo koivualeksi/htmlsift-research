@@ -1,0 +1,10 @@
+# Page soft-F1 past the bracket on the ema 0.999 + smooth_weight 1 base: 0.5/1/2/4 all lift
+# test (+0.003..+0.005 over 0.9085), 4.0 best on both folds (val 0.8734 / test 0.9136).
+# 8.0 asks whether the trend continues.
+name: wmb-mini-pagef1-c
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+sweep:
+  page_f1: [8.0]

@@ -1,0 +1,11 @@
+# page_f1 4 on the ema 0.999 + smooth_weight 1 base, plus gold-free box hard negatives
+# (fp_weight 2, boxes of 5+ rows): page soft-F1 cut isolated FPs, fp_box targets the FPs
+# that sit in whole gold-free containers. Compare against wmb-mini-pagef1-b page_f1 4.
+name: wmb-mini-pf-fpbox
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+page_f1: 4.0
+fp_weight: 2.0
+fp_box: 5
