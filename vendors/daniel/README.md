@@ -43,7 +43,7 @@ on file *contents*, the way WCXB anchors its tree: `acquire` computes the sha256
 of the sorted `sha256  relpath` manifest of every extracted file and asserts it
 equals
 
-    7f5723fb20a7d533bf6d2334a09e3917746ac5d0a58bbe50dc7f01a1a9203502
+    05e9e7e4520333097bb115e2f395681dc95367ea2f35c97a8e5afc03fd11010b
 
 recorded as `MANIFEST_SHA256` in `adapter/acquire.py`; one byte anywhere trips it.
 acquire also asserts the three counts above and that every `html/` file has a

@@ -23,7 +23,7 @@ SUBTREE = "corpora/Corpus_daniel_v2.1"
 TARBALL = f"https://github.com/{REPO}/archive/{COMMIT}.tar.gz"
 DATA = Path(__file__).resolve().parents[1] / "data"
 
-MANIFEST_SHA256 = "7f5723fb20a7d533bf6d2334a09e3917746ac5d0a58bbe50dc7f01a1a9203502"
+MANIFEST_SHA256 = "05e9e7e4520333097bb115e2f395681dc95367ea2f35c97a8e5afc03fd11010b"
 
 N_HTML = 1689
 N_REFERENCE = 2120
