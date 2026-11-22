@@ -99,6 +99,8 @@ package release, run `tools/fingerprint.py` against it (install the branch from 
 | every published number and the command that regenerates it | `docs/CLAIMS.md` |
 | corpus acquisition, environment, run order | `docs/REPRODUCE.md` |
 | scope limits, caveats, and retractions | `docs/LIMITS.md` |
+| the mini's objective changes and what each did | `docs/objective.md` |
+| where the mini still fails, on WMB val and Common Crawl | `docs/mini-error-groups.md` |
 
 ## Licence
 

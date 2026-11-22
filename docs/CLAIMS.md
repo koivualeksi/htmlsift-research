@@ -277,3 +277,40 @@ is 11× our p50 where theirs is 4×. Our batch-1 latency is model-only and their
 so the latency columns are shown side by side and not ratioed. The 97m-6-qat runs its fp32
 masters here (int8 is a CPU lever; GPU int8 is unmeasured). Same card type is the
 condition: no GPU number is compared across cards or against a CPU extractor.
+
+### Mini objective — WMB val732 / test545, ROUGE-5 F1
+
+Changes to the mini's training objective, with the model, features and data fixed. The method and
+every arm are in `docs/objective.md`; every seed is in `results/wmb-mini-objective.md`.
+
+    python -m trainers.train experiments/wmb-mini-pf-confirm.yaml
+    python tools/render_tables.py               # -> results/wmb-mini-objective.md
+
+| arm | seeds | val | test | test int8 |
+|---|---|---|---|---|
+| shipped mini | 3 | 0.8613±0.0026 | 0.9004±0.0007 | 0.9005±0.0006 |
+| candidate: ema 0.999 + smooth_weight 1 + page_f1 4 | 9 | 0.8739±0.0023 | 0.9130±0.0020 | 0.9129±0.0020 |
+
+The candidate's zero-shot rows (int8 table, 3 seeds) are
+`wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-int8` in `results/generalization.md`:
+WCXB 0.8518±0.0019 against the shipped mini's 0.8474±0.0089, and DAnIEL macro 0.8905±0.0037 against
+0.8797±0.0025. The candidate is not shipped yet: the `htmlsift` package still bundles the
+shipped mini.
+
+### Common Crawl yield — private data, context only
+
+These are FineWeb-Edu and DCLM filter passes on 7,177 CC-MAIN-2026-43 pages, weighted to 32,399.
+The page set is private (`koivualeksi/htmlsift-bench` @0ac5a811), so this is not a board and
+cannot be reproduced from published sources. Full tables are in `results/ccbench.md`.
+
+    python bench/ccbench.py --ckpt wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999_s1.pt --drop-title
+
+trafilatura passes 436 pages on Edu and 2,926 on DCLM (6,753 weighted). The candidate, with the
+title dropped, against trafilatura:
+- Edu pages -0.7 % [-6.3, +5.5];
+- DCLM pages +5.9 % [+1.8, +10.4];
+- DCLM tokens +41.0 % [+32.0, +51.2].
+
+322 of the pages are bot-challenge interstitials. Their one line passes DCLM for trafilatura on
+305 of them, which is 15 % of its weighted DCLM passes. With those pages removed, the candidate's
+DCLM page gain is +25.3 % [+20.7, +30.3].
