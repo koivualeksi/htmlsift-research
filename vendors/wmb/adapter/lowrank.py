@@ -7,18 +7,23 @@ seed and every arm; it is cached and refused if the htmlsift version changed. Ru
 WSL/pod render (libxml2-version-specific), never a Windows one.
 
     python -m vendors.wmb.adapter.lowrank 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128
+    ... --push [--dry-run]       # + upload to $HF_MODELS_REPO; never overwrites (as tools/promote.py)
 """
 import argparse
+import os
 from pathlib import Path
 
 import htmlsift
 import numpy as np
 import torch
+from dotenv import load_dotenv
+from huggingface_hub import HfApi
 from transformers import AutoTokenizer
 
 from core.loader import resolve_ckpt
 from core.model import build_table_embedder
 from core.quant import GRU_IH, factor_keeper, second_moment
+from trainers.runs import git_provenance
 from vendors.shared.arms import WINDOW
 from vendors.shared.benchmark import load_benchmark
 
@@ -58,19 +63,39 @@ def main(argv=None):
     ap.add_argument("--rank", type=int, required=True)
     ap.add_argument("--seeds", default="0,1,2")
     ap.add_argument("--refit", action="store_true", help="fit C even if cached")
+    ap.add_argument("--push", action="store_true", help="upload the derived keepers to $HF_MODELS_REPO")
+    ap.add_argument("--dry-run", action="store_true", help="with --push: print the targets, upload nothing")
     a = ap.parse_args(argv)
+    load_dotenv()
+    models = os.environ.get("HF_MODELS_REPO")
+    if a.push and not models:
+        raise SystemExit("--push needs HF_MODELS_REPO")
     OUT.mkdir(parents=True, exist_ok=True)
     cks = {s: resolve_ckpt(f"wmb/ckpt/{a.arm}_s{s}.pt", torch.device("cpu"))
            for s in map(int, a.seeds.split(","))}
-    models = {ck["model"] for ck in cks.values()}
-    if len(models) != 1 or any(ck.get("kind") != "table" for ck in cks.values()):
-        raise SystemExit(f"{a.arm}: seeds must be table keepers on one model, got {models}")
-    C = fit_or_load_C(models.pop(), a.refit)
+    bases = {ck["model"] for ck in cks.values()}
+    if len(bases) != 1 or any(ck.get("kind") != "table" for ck in cks.values()):
+        raise SystemExit(f"{a.arm}: seeds must be table keepers on one model, got {bases}")
+    C = fit_or_load_C(bases.pop(), a.refit)
+    api = HfApi() if a.push else None
+    sha, dirty = git_provenance() if a.push else (None, None)
+    if a.push and dirty and not a.dry_run:
+        raise SystemExit("dirty work tree: commit before pushing keepers")
     for s, ck in cks.items():
         lk = factor_keeper(ck, C, a.rank)
         path = OUT / f"{a.arm}-r{a.rank}_s{s}.pt"
         torch.save(lk, path)
         print(f"s{s}: weighted error {weighted_error(ck, lk, C):.4f} -> {path.name}", flush=True)
+        if not a.push:
+            continue
+        dest = f"wmb/ckpt/{path.name}"
+        if api.file_exists(models, dest):
+            raise SystemExit(f"{dest} is already a keeper; not overwriting")
+        print(f"  -> {models}/{dest}" + (" (dry run)" if a.dry_run else ""), flush=True)
+        if not a.dry_run:
+            api.upload_file(path_or_fileobj=str(path), path_in_repo=dest, repo_id=models,
+                            repo_type="model",
+                            commit_message=f"{a.arm} rank {a.rank} s{s} (research {sha})")
 
 
 if __name__ == "__main__":
