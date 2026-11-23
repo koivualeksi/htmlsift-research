@@ -124,7 +124,7 @@ def emb_int8_fakequant(encoder):
 # The factor is weighted by C, the second moment of pooled block vectors, so it is exact
 # where block vectors actually occur rather than over all of R^H.
 
-_GRU_IH = ("gru.weight_ih_l0", "gru.weight_ih_l0_reverse")
+GRU_IH = ("gru.weight_ih_l0", "gru.weight_ih_l0_reverse")
 
 
 @torch.no_grad()
@@ -158,11 +158,11 @@ def factor_keeper(ck, C, r):
     rank = r are added. Every other weight and key is carried over; ck is not modified."""
     H = C.shape[0]
     st = ck["head_state"]
-    W_e = np.concatenate([st[k][:, :H].double().numpy() for k in _GRU_IH])
+    W_e = np.concatenate([st[k][:, :H].double().numpy() for k in GRU_IH])
     A, B = factor(W_e, C, r)
-    G = st[_GRU_IH[0]].shape[0]
+    G = st[GRU_IH[0]].shape[0]
     head_state = dict(st)
-    for i, k in enumerate(_GRU_IH):
+    for i, k in enumerate(GRU_IH):
         a = torch.from_numpy(A[i * G:(i + 1) * G]).to(st[k].dtype)
         head_state[k] = torch.cat([a, st[k][:, H:]], dim=1)
     return {**ck, "head_state": head_state,

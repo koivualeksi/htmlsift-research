@@ -97,7 +97,7 @@ def test_factor_keeper_replaces_only_embedding_columns():
     assert lk["feats"] == "ABC" and "proj" not in ck                     # source untouched
     assert all(torch.equal(ck["head_state"][k], orig[k]) for k in orig)
     for k, v in orig.items():
-        if k in quant._GRU_IH:
+        if k in quant.GRU_IH:
             assert lk["head_state"][k].shape == (v.shape[0], r + K)
             assert torch.equal(lk["head_state"][k][:, r:], v[:, H:])     # feature columns
         else:
