@@ -1,0 +1,10 @@
+# Page soft-F1 bracket on the ema 0.999 + smooth_weight 1 base: 0.5 gave val 0.8736 /
+# test 0.9112, 2.0 gave 0.8715 / 0.9135 (every test seed above the base's best); 1.0 and
+# 4.0 find the peak. Compare against wmb-mini-pagef1.
+name: wmb-mini-pagef1-b
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+sweep:
+  page_f1: [1.0, 4.0]

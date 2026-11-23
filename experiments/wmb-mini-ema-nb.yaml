@@ -1,0 +1,9 @@
+# Stronger neighbour smoothness on EMA 0.999: smooth_weight 1 gave val 0.8723 / test
+# 0.9081 (3 seeds), 3 gave 0.8712 / 0.9115 on one seed; 3 and 10 at 3 seeds. Compare
+# against the smooth_weight 1 runs of the first wmb-mini-ema-nb launch.
+name: wmb-mini-ema-nb
+recipe: table
+board: wmb
+ema: 0.999
+sweep:
+  smooth_weight: [3.0, 10.0]

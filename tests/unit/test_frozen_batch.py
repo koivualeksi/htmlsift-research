@@ -5,8 +5,10 @@ TRAINING numbers move (mini-batch gradient vs per-page SGD); the forward must no
 """
 import numpy as np
 import torch
+from torch.optim.optimizer import register_optimizer_step_post_hook
 
 from trainers.loop import _batches, _forward
+from trainers.objective import Objective
 from core.model import build_head
 
 DEV = torch.device("cpu")
@@ -61,15 +63,47 @@ def test_train_head_runs():
     train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
     val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
     val_pages = list(range(len(val_x)))
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
 
     def score_val(pages, probs):
         return float(np.mean([p.mean() for p in probs]))
 
     for kind in ("linear", "bigru", "transformer"):
         s = train_head(_heads(d)[kind], train_x, train_y, val_x, val_pages,
-                       score_val, DEV, epochs=2, seed=0, batch_size=2)
+                       score_val, DEV, obj, epochs=2, seed=0, batch_size=2)
         assert set(s) == {"best_val", "best_epoch", "history"}
         assert 1 <= s["best_epoch"] <= 2 and len(s["history"]) == 2
+
+
+def test_ema_scores_and_keeps_the_average():
+    # With ema on, the head left behind (the best, here only, epoch's scored state) is the
+    # per-step EMA of the raw weights, not the raw weights; the raw ones are recorded after
+    # every optimizer step and averaged by hand. torch's EMA starts from the first step's
+    # weights, not from the init.
+    from trainers.loop import train_head
+    torch.manual_seed(0)
+    d, decay = 16, 0.9
+    rng = np.random.default_rng(4)
+    train_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [5, 12, 3, 20, 7]]
+    train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
+    val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
+    head = _heads(d)["linear"]
+    raw = []
+    hook = register_optimizer_step_post_hook(
+        lambda *_: raw.append(head.state_dict()["out.weight"].clone()))
+    try:
+        train_head(head, train_x, train_y, val_x, list(range(len(val_x))),
+                   lambda pages, probs: 0.0, DEV, obj, epochs=1, seed=0, batch_size=1,
+                   ema=decay)
+    finally:
+        hook.remove()
+    want = raw[0]
+    for w in raw[1:]:
+        want = decay * want + (1 - decay) * w
+    got = head.state_dict()["out.weight"]
+    assert len(raw) == 5 and not torch.allclose(got, raw[-1])
+    assert torch.allclose(got, want, atol=1e-6)
 
 
 def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
@@ -87,12 +121,13 @@ def test_frozen_head_persists_nothing(tmp_path, monkeypatch):
     train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
     val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
     val_pages = list(range(len(val_x)))
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
 
     def score_val(pages, probs):
         return float(np.mean([p.mean() for p in probs]))
 
     train_head(_heads(d)["bigru"], train_x, train_y, val_x, val_pages,
-               score_val, DEV, epochs=2, seed=0, batch_size=2)
+               score_val, DEV, obj, epochs=2, seed=0, batch_size=2)
     assert not list(tmp_path.iterdir()), [p.name for p in tmp_path.iterdir()]
 
 

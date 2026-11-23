@@ -1,0 +1,10 @@
+# Head learning rate on the current best base (ema 0.999 + smooth_weight 1, val 0.8723):
+# EMA's gain says the per-step weight noise is large at 2e-3, so a lower LR attacks the
+# same noise at the source; 4e-3 brackets it from above. Compare against wmb-mini-ema-nb.
+name: wmb-mini-lr
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+sweep:
+  head_lr: [5.0e-4, 1.0e-3, 4.0e-3]

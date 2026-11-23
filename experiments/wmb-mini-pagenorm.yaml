@@ -1,0 +1,6 @@
+# Page-normalised loss on the shipped mini: each page's block weights sum to 1, so the
+# loss is a mean over pages, as WMB F1 is. Compare against wmb-mini (3 seeds).
+name: wmb-mini-pagenorm
+recipe: table
+board: wmb
+page_norm: true

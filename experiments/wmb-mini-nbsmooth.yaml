@@ -1,0 +1,7 @@
+# Neighbour smoothness on the shipped mini: (p_i - p_i+1)^2 over adjacent rows of equal
+# gold label, pulling isolated flips inside a uniform run back to their neighbours while
+# leaving gold edges free. Three seeds; compare against wmb-mini.
+name: wmb-mini-nbsmooth
+recipe: table
+board: wmb
+smooth_weight: 1.0

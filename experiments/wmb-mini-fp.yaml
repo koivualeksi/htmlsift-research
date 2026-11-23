@@ -1,0 +1,7 @@
+# Online hard negatives on the shipped mini: a gold-free block the model currently scores
+# above 0.5 costs fp_weight times more. Compare against wmb-mini (3 seeds).
+name: wmb-mini-fp
+recipe: table
+board: wmb
+sweep:
+  fp_weight: [2.0, 4.0]

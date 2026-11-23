@@ -58,7 +58,8 @@ def board_inputs(name, html):
     """(blocks, labels, feats) for one page, as the board's block builder makes them."""
     mod = BOARDS[name][0]
     if name == "wmb":
-        return mod.label_page(html, FEATS)
+        blocks, labels, _box, _plain, feats = mod.label_page(html, FEATS)
+        return blocks, labels, feats
     blocks, feats = mod.render_page(html, FEATS)
     return blocks, None, feats
 

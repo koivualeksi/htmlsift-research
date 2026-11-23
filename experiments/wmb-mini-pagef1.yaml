@@ -1,0 +1,11 @@
+# Per-page soft F1 term on the ema 0.999 + smooth_weight 1 base (val 0.8723, 3 seeds):
+# char-weighted, so a page selecting several times its gold chars costs what WMB's
+# per-page F1 charges it. 1 - soft F1 starts near 0.5 against a BCE near 0.7; 0.5 keeps
+# BCE leading, 2.0 lets the page term lead.
+name: wmb-mini-pagef1
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+sweep:
+  page_f1: [0.5, 2.0]

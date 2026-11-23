@@ -341,6 +341,16 @@ def from_ledgers(paths, exclude=()):
     return selects
 
 
+OBJECTIVE_EXPERIMENTS = {
+    "wmb-mini", "wmb-mini-ema", "wmb-mini-ema-nb", "wmb-mini-ema-long", "wmb-mini-ema-cross",
+    "wmb-mini-nbsmooth", "wmb-mini-ls", "wmb-mini-focal", "wmb-mini-fp", "wmb-mini-fp-box",
+    "wmb-mini-boxmass", "wmb-mini-len", "wmb-mini-len-neg", "wmb-mini-pagenorm",
+    "wmb-mini-lr", "wmb-mini-featdrop", "wmb-mini-textdrop", "wmb-mini-pagef1",
+    "wmb-mini-pagef1-b", "wmb-mini-pagef1-c", "wmb-mini-pf-fd", "wmb-mini-pf-fpbox",
+    "wmb-mini-pf-confirm",
+}
+
+
 def from_experiment(name, also=None):
     return lambda run: run["experiment"] == name or (also is not None and also(run))
 
@@ -394,6 +404,13 @@ TABLES = [
      "ABC) -- ROUGE-5 F1 on val732 (best epoch) and test545. test int8 is the same head "
      "with the table int8-quantised at inference, the shipped mini's numerics.",
      from_experiment("wmb-mini"), render_runs),
+    ("results/wmb-mini-objective.md",
+     "WMB mini objective screens -- the shipped mini (wmb-mini) under changes to the loss, "
+     "weight averaging and the training schedule; features and inputs fixed. ROUGE-5 F1 on "
+     "val732 (best epoch) and test545. Run-to-run noise at one seed is ~0.006 val / ~0.009 "
+     "test, so a row under three seeds is a screen, not a result. None is an option the run "
+     "predates, so it ran at the default (off).",
+     lambda run: run["experiment"] in OBJECTIVE_EXPERIMENTS, render_runs),
 ]
 
 

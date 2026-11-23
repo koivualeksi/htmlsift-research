@@ -1,0 +1,10 @@
+# Hard negatives in gold-free boxes only: a gold-free block the model scores above 0.5
+# costs fp_weight times more only inside an element of at least fp_box lines with no gold
+# (blocks.box_sizes; the annotator marks the same boxes). Compare against wmb-mini-fp
+# (same fp_weight on every pick) and wmb-mini (3 seeds).
+name: wmb-mini-fp-box
+recipe: table
+board: wmb
+sweep:
+  fp_weight: [2.0, 4.0]
+  fp_box: [3, 5]

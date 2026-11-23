@@ -75,7 +75,7 @@ stages, and why each exists:
 | `collapse` | merges them into one `wmb.jsonl` keyed by `track_id`, recording each record's source in `splits.json` | the files overlap (529 shared) and neither is a superset (16 test-only); one keyed corpus fixes the training pool at 7,809 − 529 = 7,280 and removes the leakage ambiguity |
 | `repopulate` | re-renders `main_html` and checks it reproduces the stored `convert_main_content` byte-for-byte; fills the 16 test-only records | proves our html2text version and config match theirs exactly before anything is built on it |
 | `split` | domain-grouped train/val fold (seed 20260815), zero domain overlap asserted | pages from one site must not straddle train and val, or the validation set leaks |
-| `blocks` | renders each sanitized page to markdown lines and labels each line main/junk | the per-line training data; a line is main iff one of its DOM source elements is cc-selected, exact provenance with no marker injection and no matcher fallback (structural lines with no source take a deterministic neighbour rule) |
+| `blocks` | renders each sanitized page to markdown lines and labels each line main/junk | the per-line training data; a line is main iff one of its DOM source elements is cc-selected, exact provenance with no marker injection and no matcher fallback (structural lines with no source take a deterministic neighbour rule); each line also gets its gold-free box size, the line count of the largest element containing it with no main line, which the `fp_box` loss reads |
 
 `sanitize` is not a separate stage: it is the residue stripper `blocks` calls to
 clean each page before rendering (annotation marks are the label and must not

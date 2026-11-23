@@ -32,7 +32,7 @@ At 4,016 page files, per-file sha256 is not listed; instead acquire computes the
 sha256 of the sorted `sha256  relpath` manifest of every downloaded file (the
 `.cache` bookkeeping excluded) and asserts it equals
 
-    e803b06b223bf932f7c682e13903f947d18835ad9d84bbd86e13a1061de18ad2
+    542085f7b6ac73e026f440bdb1dab8f760d925557aa3b8853818d468134b6d45
 
 recorded as `MANIFEST_SHA256` in `adapter/acquire.py`; one byte anywhere trips it.
 acquire also asserts gt/html stems pair exactly and the split counts (1,497 /

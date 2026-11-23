@@ -1,0 +1,10 @@
+# Longer horizon and room to settle on the best base (ema 0.999 + smooth_weight 1): ema
+# 0.999 still climbed at epochs 3-4, so 6 epochs at 0.999 and 0.9995 (~1 and ~2.5 epochs
+# of averaging). Compare against wmb-mini-ema-nb.
+name: wmb-mini-ema-long
+recipe: table
+board: wmb
+epochs: 6
+smooth_weight: 1.0
+sweep:
+  ema: [0.999, 0.9995]

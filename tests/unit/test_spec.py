@@ -38,6 +38,12 @@ def test_load_and_expand(tmp_path):
                        "model": "97m", "emb": "fp32", "head": "bigru", "feats": "ABC",
                        "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
+                       "len_cap": None, "len_floor": None, "len_side": "both",
+                       "page_norm": False, "fp_weight": 1.0, "fp_box": None,
+                       "focal_gamma": 0, "label_smooth": 0.0, "smooth_weight": 0.0,
+                       "box_mass": 0.0, "page_f1": 0.0, "ema": 0.0, "text_drop": 0.0,
+                       "feat_drop": 0.0,
+                       "plain": False,
                        "export_test": True, "keep": True, "seed": 0}
 
 
@@ -94,6 +100,35 @@ def test_unknown_top_level_key(tmp_path):
     (dict(sweep={"keep": [True, False]}), "set keep"),        # one swept value is enough
     (dict(fixed={"emb": "lowrank128"}), "unknown emb"),
     (dict(fixed={"extra": "custom", "train_limit": 250}), "extra with train_limit"),
+    (dict(fixed={"len_cap": 200}), "len_floor in"),
+    (dict(fixed={"len_cap": 0, "len_floor": 0.2}), "len_floor in"),
+    (dict(fixed={"len_cap": 200, "len_floor": 1.5}), "len_floor in"),
+    (dict(fixed={"page_norm": "yes"}), "page_norm must be"),
+    (dict(fixed={"len_side": "neg"}), "needs len_cap"),
+    (dict(fixed={"len_cap": 200, "len_floor": 0.2, "len_side": "gold"}), "len_side must"),
+    (dict(fixed={"fp_weight": 0}), "fp_weight must"),
+    (dict(fixed={"fp_box": 5}), "needs fp_weight"),
+    (dict(fixed={"fp_weight": 2.0, "fp_box": 0}), "fp_box must"),
+    (dict(fixed={"fp_weight": 2.0, "fp_box": 5, "extra": "custom"}), "only WMB"),
+    (dict(fixed={"focal_gamma": -1}), "focal_gamma must"),
+    (dict(fixed={"label_smooth": 0.5}), "label_smooth must"),
+    (dict(fixed={"label_smooth": -0.1}), "label_smooth must"),
+    (dict(fixed={"smooth_weight": -1.0}), "smooth_weight must"),
+    (dict(fixed={"box_mass": 1.0}), "needs fp_box"),
+    (dict(fixed={"box_mass": -1.0, "fp_box": 3}), "box_mass must"),
+    (dict(fixed={"box_mass": 1.0, "fp_box": 3, "extra": "custom"}), "only WMB"),
+    (dict(fixed={"ema": 1.0}), "ema must"),
+    (dict(fixed={"ema": -0.1}), "ema must"),
+    (dict(fixed={"text_drop": 0.6, "feat_drop": 0.6}), "sum <= 1"),
+    (dict(fixed={"feat_drop": -0.1}), "sum <= 1"),
+    (dict(fixed={"text_drop": 0.3, "feats": None}), "need feats"),
+    (dict(fixed={"plain": 1}), "plain must be"),
+    (dict(fixed={"plain": True, "extra": "custom"}), "only WMB"),
+    (dict(board="wcxb", fixed={"plain": True}), "only WMB"),
+    (dict(board="wcxb", fixed={"feats": "ABCD"}), "only WMB"),
+    (dict(fixed={"feats": "ABCD", "extra": "custom"}), "only WMB"),
+    (dict(board="wcxb", fixed={"feats": "ABCE"}), "only WMB"),
+    (dict(fixed={"feats": "ABCE", "extra": "custom"}), "only WMB"),
 ])
 def test_invalid_spec_raises(kw, msg):
     with pytest.raises(ValueError, match=msg):
@@ -117,3 +152,13 @@ def test_committed_specs_load():
 def test_finetune_rejects_table_key():
     with pytest.raises(ValueError, match="has no key"):
         S.Spec(name="x", recipe="finetune", board="wmb", fixed={"emb": "fp32"})
+
+
+def test_run_yaml_from_before_a_key_passes_check():
+    # A run.yaml written before len_cap etc. existed ran with them off; re-running it
+    # from that yaml must not fail on the missing keys.
+    old = {k: v for k, v in S.expand(table())[0].items()
+           if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight",
+                        "fp_box", "focal_gamma", "label_smooth", "smooth_weight", "box_mass",
+                        "ema", "text_drop", "feat_drop", "plain")}
+    S.check(old)

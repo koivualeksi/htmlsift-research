@@ -1,0 +1,9 @@
+# page_f1 4 on the ema 0.999 + smooth_weight 1 base, plus feature dropout 0.3 (a tie on its
+# own). Compare against wmb-mini-pagef1-b page_f1 4.
+name: wmb-mini-pf-fd
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+page_f1: 4.0
+feat_drop: 0.3

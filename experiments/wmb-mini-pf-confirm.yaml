@@ -1,0 +1,13 @@
+# Six seeds of the candidate (ema 0.999 + smooth_weight 1 + page_f1 4), with and without
+# feat_drop 0.3, to separate them from each other and from the base's six seeds (val
+# 0.8706 / test 0.9085). 3-seed screens: page_f1 4 0.8734 / 0.9136, + feat_drop 0.8762 /
+# 0.9115.
+name: wmb-mini-pf-confirm
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+page_f1: 4.0
+seeds: 6
+sweep:
+  feat_drop: [0.0, 0.3]

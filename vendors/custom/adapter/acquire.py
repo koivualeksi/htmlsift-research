@@ -16,12 +16,12 @@ from vendors.shared.acquire import manifest_sha256
 
 REPO_ID = "koivualeksi/htmlsift-annotations"
 REPO_TYPE = "dataset"
-REVISION = "88ba5c55e402e5bc6c9dde66ac96945e7ea78e94"
+REVISION = "88a2564ef63192ba08f795b5af59045b1fa8ca26"
 DATA = Path(__file__).resolve().parents[1] / "data"
 RAW = DATA / "raw"
 
-N_PAGES = 112
-MANIFEST_SHA256 = "849833c06e816922ee6f7bb1878927e9b6cb7103500280858d7eb6135ccedf95"
+N_PAGES = 355
+MANIFEST_SHA256 = "7129fc7ce18a739382f57859a229debdc118c09471c14c266d86de6a74202271"
 
 
 def acquire() -> None:

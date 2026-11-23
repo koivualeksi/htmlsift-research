@@ -1,0 +1,8 @@
+# Feature dropout on the shipped mini: each epoch 30 % of train pages have their ABC
+# feature columns zeroed, so text must carry them. One seed; compare against
+# wmb-mini-1seed and wmb-mini-textdrop.
+name: wmb-mini-featdrop
+recipe: table
+board: wmb
+seeds: 1
+feat_drop: 0.3

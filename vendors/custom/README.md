@@ -8,8 +8,8 @@ enter WMB's train fold only; WMB val selects and WMB test scores, unchanged.
 | | |
 |---|---|
 | dataset | `koivualeksi/htmlsift-annotations` (Hugging Face, private) |
-| revision | `88ba5c55e402e5bc6c9dde66ac96945e7ea78e94` |
-| pages | 112, Common Crawl pages where mini kept boilerplate that trafilatura dropped |
+| revision | `88a2564ef63192ba08f795b5af59045b1fa8ca26` |
+| pages | 355, Common Crawl pages mined where mini kept boilerplate (footers, side navigation) or failed DCLM where trafilatura passed |
 | labels | per block, 1 = main, guideline v1 (WMB policy) |
 | licence | labels ours; page HTML is third-party and not redistributable |
 
@@ -18,9 +18,9 @@ reproduces only with read access to it. Nothing acquired or derived is committed
 
 ## What acquire downloads
 
-`pages/<id>.json` and `html/<id>.html.gz` for all 112 pages, into `data/raw/`. The tree
+`pages/<id>.json` and `html/<id>.html.gz` for all 355 pages, into `data/raw/`. The tree
 is pinned by manifest sha256 (sorted `sha256  relpath` lines over both directories):
-`849833c06e816922ee6f7bb1878927e9b6cb7103500280858d7eb6135ccedf95`.
+`7129fc7ce18a739382f57859a229debdc118c09471c14c266d86de6a74202271`.
 
 ## Blocks
 
@@ -32,5 +32,5 @@ shapes. Must run on Linux with the libxml2 recorded in each page (2.14.6).
     python vendors/custom/adapter/acquire.py
     python vendors/custom/adapter/blocks.py
 
-At the pinned revision: 112/112 kept, no URL shared with WMB; custom domains also
-present in WMB: 3 in train, 1 in test.
+At the pinned revision: 355/355 kept, no URL shared with WMB; custom domains also
+present in WMB: 5 in train, 1 in val, 1 in test.

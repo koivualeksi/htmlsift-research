@@ -56,7 +56,7 @@ under `vendors/wmb/data/`:
 
 - `wmb.jsonl` — the merged, `track_id`-keyed corpus (7,825 records)
 - `splits.json` — per-record source, train/val fold, and stratification `level`
-- `blocks.jsonl` — per-line blocks and labels (the training data)
+- `blocks.jsonl` — per-line blocks, labels and gold-free box sizes (the training data)
 
 `prepare.py` runs `acquire -> collapse -> repopulate -> split -> blocks`, and every
 stage prints its own gate result and stops the chain on failure. The `repopulate`

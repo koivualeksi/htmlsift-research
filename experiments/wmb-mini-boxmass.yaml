@@ -1,0 +1,8 @@
+# Gold-free box mass on the shipped mini: each gold-free box of >= 3 lines adds the BCE of
+# its mean prob against 0, pushing whole containers down together (FP_region, the largest
+# error bucket). Three seeds; compare against wmb-mini and wmb-mini-fp-box.
+name: wmb-mini-boxmass
+recipe: table
+board: wmb
+box_mass: 1.0
+fp_box: 3

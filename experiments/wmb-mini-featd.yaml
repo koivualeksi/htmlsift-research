@@ -1,0 +1,6 @@
+# The shipped mini plus group D (hidden_hint, button_like: hiding and button-like markers
+# the render prints as plain text), 3 seeds. Compare against wmb-mini.
+name: wmb-mini-featd
+recipe: table
+board: wmb
+feats: ABCD

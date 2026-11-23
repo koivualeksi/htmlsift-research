@@ -1,0 +1,14 @@
+# The candidate (ema 0.999 + smooth_weight 1 + page_f1 4) with vendors/custom's annotated
+# Common Crawl pages added to WMB's train fold, once and three times. The baseline is the
+# candidate's 9 seeds in results/wmb-mini-objective.md: val 0.8739 / test 0.9130.
+# WMB val selects and is the guard; the payoff, if any, is read on ccbench.
+name: wmb-mini-custom
+recipe: table
+board: wmb
+ema: 0.999
+smooth_weight: 1.0
+page_f1: 4.0
+extra: custom
+seeds: 6
+sweep:
+  extra_repeat: [1, 3]

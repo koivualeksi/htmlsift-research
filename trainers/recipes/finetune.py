@@ -6,9 +6,9 @@ import copy
 import torch
 from transformers import AutoTokenizer
 
-from htmlsift.core.features import feature_dim
 from core.model import build_encoder, build_head, infer_page
 from core.quant import emb_int8_fakequant, patch_qat_w8a8, ptq_dynamic
+from core.training import feature_dim
 from trainers.loop import train_encoder
 from trainers.recipes import bench, cached
 from vendors.shared.arms import WINDOW, build_arms

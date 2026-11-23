@@ -48,6 +48,10 @@ assembly, or labels do not transfer.
 produced it, and a line is positive iff its elements fall in the main set. The
 `cc-select` annotation is harvested **before** sanitization strips it; inverting that
 order is silent label leakage. Every page labels exactly: 7,825/7,825, 0 fallbacks.
+The same render also records each line's gold-free box: the line count of the largest
+element that contains it and no positive line, a line being inside an element iff all
+of its source elements are. It is training-only (the `fp_box` loss reads it), never model
+input, and follows the rule htmlsift-data's annotator uses to mark boxes, so the two agree.
 
 **Sanitize.** Applied symmetrically to the model input and to label generation, so the
 two cannot diverge. Eval references stay verbatim, since they define the score.

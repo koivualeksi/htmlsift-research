@@ -16,6 +16,7 @@ from core.loader import build_infer
 from core.model import build_head, build_table_embedder, pool_table_pages
 from core.training import zscore_stats
 from trainers.loop import train_head
+from trainers.objective import Objective
 from trainers.recipes import bench, cached
 from vendors.shared import bench_ops
 from vendors.shared.arms import MODELS, WINDOW
@@ -27,7 +28,22 @@ def name(cfg):
     return (f"{cfg['model']}-table" + ("-int8" if cfg["emb"] == "int8" else "")
             + (f"-h{cfg['hidden']}" if cfg["hidden"] != 256 else "")
             + (f"+{cfg['extra']}{cfg['extra_repeat']}" if cfg["extra"] else "")
-            + f"-{cfg['head']}-f{cfg['feats'] or 'none'}")
+            + f"-{cfg['head']}-f{cfg['feats'] or 'none'}"
+            + (f"-len{cfg['len_cap']}f{cfg['len_floor']:g}"
+               + ("" if cfg.get("len_side", "both") == "both" else cfg["len_side"])
+               if cfg.get("len_cap") is not None else "")
+            + ("-pn" if cfg.get("page_norm") else "")
+            + (f"-fp{cfg['fp_weight']:g}" if cfg.get("fp_weight", 1.0) != 1.0 else "")
+            + (f"-box{cfg['fp_box']}" if cfg.get("fp_box") is not None else "")
+            + (f"-fg{cfg['focal_gamma']:g}" if cfg.get("focal_gamma", 0) else "")
+            + (f"-ls{cfg['label_smooth']:g}" if cfg.get("label_smooth", 0.0) else "")
+            + (f"-nb{cfg['smooth_weight']:g}" if cfg.get("smooth_weight", 0.0) else "")
+            + (f"-bm{cfg['box_mass']:g}" if cfg.get("box_mass", 0.0) else "")
+            + (f"-pf{cfg['page_f1']:g}" if cfg.get("page_f1", 0.0) else "")
+            + (f"-ema{cfg['ema']:g}" if cfg.get("ema", 0.0) else "")
+            + (f"-td{cfg['text_drop']:g}" if cfg.get("text_drop", 0.0) else "")
+            + (f"-fd{cfg['feat_drop']:g}" if cfg.get("feat_drop", 0.0) else "")
+            + ("-plain" if cfg.get("plain") else ""))
 
 
 def _extra_src(cfg):
@@ -51,7 +67,7 @@ def _pages(ctx, cfg):
             raise RuntimeError(f"{len(clash)} extra track_ids collide with {b.name}")
         return train_p, val_p, b.build_val_scorer(val_p, ctx.eval_workers), ext_p
 
-    return cached(ctx, "pages", (cfg["board"], cfg["model"], cfg["extra"]), build)
+    return cached(ctx, "pages", (cfg["board"], cfg["model"], cfg["extra"], cfg.get("plain")), build)
 
 
 def _pooled(ctx, cfg, train_p, val_p, ext_p):
@@ -64,7 +80,7 @@ def _pooled(ctx, cfg, train_p, val_p, ext_p):
         del embedder
         return out
 
-    key = (cfg["board"], cfg["model"], cfg["extra"], cfg["emb"])
+    key = (cfg["board"], cfg["model"], cfg["extra"], cfg["emb"], cfg.get("plain"))
     return cached(ctx, "pooled", key, build)
 
 
@@ -83,7 +99,7 @@ def _feats(ctx, cfg, b, train_p_s):
         z = {t: apply_zscore(a, st) for t, a in raw.items()}
     src = _extra_src(cfg)
     if src:
-        xr, xz = src.load_features(b.feature_stats(), g)
+        xr, xz = src.load_features(b.feature_stats(g), g)
         z = {**z, **xz}
     return z
 
@@ -93,7 +109,7 @@ def _save(ctx, cfg, b, head):
     torch.save({"kind": "table", "model": MODELS[cfg["model"]][0], "int8": cfg["emb"] == "int8",
                 "head": cfg["head"], "feats": cfg["feats"], "hidden": cfg["hidden"],
                 "head_state": head.state_dict(),
-                "zscore": b.feature_stats() if cfg["feats"] else None}, ck)
+                "zscore": b.feature_stats(cfg["feats"]) if cfg["feats"] else None}, ck)
     print(f"  saved {ck}", flush=True)
     return ck
 
@@ -107,9 +123,9 @@ def _export_test(ctx, b, ck_path, result):
     variants = [("", ck["int8"])] + ([("_int8", True)] if not ck["int8"] else [])
     for sfx, int8 in variants:
         tok, infer, _kind, cap = build_infer({**ck, "int8": int8}, ctx.dev)
-        for fold in ("val", "test"):
-            pr = b.export_probs(fold, tok, infer, ctx.probs / f"{fold}{sfx}.jsonl",
-                                WINDOW, cap, feats, ctx.limit)
+        for fold in ("val", "test"):        # val probs ship with the run (errors.py); test stays on the pod
+            out = (ctx.folder if fold == "val" else ctx.probs) / f"{fold}{sfx}.jsonl"
+            pr = b.export_probs(fold, tok, infer, out, WINDOW, cap, feats, ctx.limit)
             s = b.score_fold(pr, fold, THRESHOLD)
             result.update({f"{fold}{sfx}_f1": round(s["f1"], 6), f"{fold}{sfx}_n": s["n"]})
         print(f"  ckpt{sfx}: val {result[f'val{sfx}_f1']:.4f} "
@@ -138,8 +154,11 @@ def run(cfg, ctx):
     tx, vx = cat(tp, et), cat(val_p, eva)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
-    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev, epochs=cfg["epochs"],
-                   seed=cfg["seed"], batch_size=cfg["batch_size"], head_lr=cfg["head_lr"])
+    s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev,
+                   Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev,
+                             [p["box"] for p in tp]),
+                   epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
+                   head_lr=cfg["head_lr"], ema=cfg.get("ema", 0.0))
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
     if cfg["extra"]:
         result["extra_pages"] = len(ext_p)

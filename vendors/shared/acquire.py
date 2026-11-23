@@ -18,7 +18,11 @@ def sha256(path) -> str:                 # str from hf_hub_download, Path from t
 
 
 def manifest_sha256(paths, data_dir) -> str:
-    lines = [f"{sha256(p)}  {p.relative_to(data_dir).as_posix()}" for p in sorted(paths)]
+    # Sorted by posix path parts: Path ordering is case-insensitive on Windows only, so a
+    # pin recorded there failed on Linux.
+    rel = sorted((Path(p).relative_to(data_dir).as_posix() for p in paths),
+                 key=lambda r: r.split("/"))
+    lines = [f"{sha256(Path(data_dir) / r)}  {r}" for r in rel]
     return hashlib.sha256("\n".join(lines).encode()).hexdigest()
 
 

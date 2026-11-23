@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
 from transformers import AutoTokenizer
 
-from htmlsift.core.features import feature_dim
 from core.model import (build_encoder, build_head, build_table_embedder,
                         infer_page, infer_table_page)
 from core.quant import patch_qat_w8a8
+from core.training import feature_dim
 
 
 def resolve_ckpt(ref, device):
