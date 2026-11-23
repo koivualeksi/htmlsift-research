@@ -43,7 +43,8 @@ def build_infer(ck, device, band=True):
     table path (no attention). The A/B harness passes band= explicitly to turn it off."""
     tok = AutoTokenizer.from_pretrained(ck["model"])
     if ck.get("kind") == "table":
-        emb = build_table_embedder(ck["model"], int8=ck["int8"], device=device)
+        emb = build_table_embedder(ck["model"], int8=ck["int8"], proj=ck.get("proj"),
+                                   device=device)
         head = build_head(ck.get("head", "bigru"),
                           d_in=emb.hidden_size + feature_dim(ck.get("feats")),
                           hidden=ck.get("hidden", 256)).to(device)
