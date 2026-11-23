@@ -84,7 +84,7 @@ def cmd_mini(push):
     print(f"built {table_p.name} {table_p.stat().st_size / 1e6:.0f} MB | "
           f"{head_p.name} {head_p.stat().st_size / 1e6:.1f} MB (d_in {d_in})", flush=True)
 
-    flips, n = parity(table_p, head_p, emb, head, d_in)      # refuse to ship on drift
+    flips, n, _ = parity(table_p, head_p, emb, head, d_in)   # refuse to ship on drift
     if flips:
         raise SystemExit(f"ONNX parity gate FAILED: {flips}/{n} flips -- built graph drifts from torch")
     print(f"gate OK: 0/{n} flips over random inputs", flush=True)
