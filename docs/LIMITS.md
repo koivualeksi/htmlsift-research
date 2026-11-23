@@ -61,6 +61,14 @@ across. Caps are a page-width/speed lever, accuracy-flat within a one-seed val s
 not an accuracy win. Features are redundant once the encoder fine-tunes, now shown on
 both backbones (`CLAIMS.md`), while remaining worth 1.5-3 pt frozen.
 
+**The r=128 mini is an approximation, checked only where it was scored.** Its factor is weighted
+by C, the spread of pooled block vectors on WMB train alone; pages whose blocks fall outside that
+spread, in other languages or layouts, are where the approximation error can grow, and no board
+measures that directly. The boards move both ways (`CLAIMS.md`): DAnIEL macro +0.0012, WCXB −0.0020
+on every seed, forum and listing pages most. The shipped seed was picked on the test boards, by the
+cross-board mean, with s0 and s2 within 0.0003, so the published figure is the 3-seed mean, not
+the shipped seed's. Its speed and memory are the package's measurements, not this repo's.
+
 **The CPU speed number is a ratio at the heuristic tier — not a speed win.**
 `bench/speed/cpu_compare.py` times the shipped mini (int8 table, ONNX) against trafilatura,
 readability and resiliparse over WMB test545 (544 cmc-scored pages, one population on both

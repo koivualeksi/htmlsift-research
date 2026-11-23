@@ -295,7 +295,43 @@ The candidate's zero-shot rows (int8 table, 3 seeds) are
 `wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-int8` in `results/generalization.md`:
 WCXB 0.8518±0.0019 against the shipped mini's 0.8474±0.0089, and DAnIEL macro 0.8905±0.0037 against
 0.8797±0.0025. The candidate is not shipped yet: the `htmlsift` package still bundles the
-shipped mini.
+shipped mini. The next release ships it in its r=128 form (below).
+
+### Reduced-rank mini — r=128, no retraining
+
+The head sees a pooled block vector only through its input weights, and mean pooling is linear, so
+a rank-128 factor of those weights moves into the token table. The factor is an SVD weighted by the
+second moment of pooled int8-table block vectors on WMB train (C, 1,268,929 blocks, never val or
+test); the table stores int8 rows 128 wide with LayerNorm folded in, and the head's input becomes
+128 + 33. Same trained head on both sides, so each seed's difference is approximation error alone.
+Code in `core/quant.py`; the r=128 keepers are derived from the candidate's three:
+
+    python vendors/wmb/adapter/lowrank.py 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128
+    python bench/accuracy/predict.py --model wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-r128
+    python bench/accuracy/predict.py --model wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999 --table-int8
+    python -m export.gate wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999-r128_s2.pt --benchmark wmb --fold test
+
+| arm, 3 seeds | WMB test | WCXB | DAnIEL macro |
+|---|---|---|---|
+| candidate, int8 table | 0.9134±0.0012 | 0.8518±0.0019 | 0.8905±0.0037 |
+| candidate, r=128 | 0.9120±0.0022 | 0.8498±0.0028 | 0.8917±0.0023 |
+| paired difference | −0.0014 | −0.0020 | +0.0012 |
+
+Every difference is inside the −0.003 per-board bar set before the run. WMB val (`predict.py
+--ckpt <keeper> --benchmark wmb --fold val`) moves −0.0002. WCXB is lower on all three seeds, most
+on forum (−0.0072) and listing (−0.0058) pages. Per-language and per-type rows are in
+`results/generalization.md`.
+
+**Size.** Table 202.4 → 34.6 MB, head 6.5 → 2.6 MB: the two graphs 208.9 → 37.2 MB. The bundle
+also carries granite's `tokenizer.json` (33.4 MB): 242.3 → 70.6 MB.
+
+**Parity.** The built r=128 graphs, through the shipped forward, reproduce the torch r=128 model on
+all three seeds: 0/386 flips on random inputs and 0/154,523 over all 545 WMB test pages, max |dp|
+≤ 2.0e-5.
+
+The shipped seed is s2, the best equal-weight mean of WMB test, WCXB and DAnIEL macro (s0 0.8854,
+s1 0.8825, s2 0.8857); the claim is the 3-seed mean above. Speed and memory are measured in the
+`htmlsift` package, on the code that ships, and are not claimed here.
 
 ### Common Crawl yield — private data, context only
 

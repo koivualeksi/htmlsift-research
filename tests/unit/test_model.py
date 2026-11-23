@@ -79,3 +79,57 @@ def test_stitch_bounds_tiles_the_page():
         lo, hi = stitch_bounds(starts, window, k)
         covered.extend(range(s + lo, s + hi))
     assert covered == list(range(n))            # no gap, no overlap
+
+
+# ---- low-rank table embedder (core.quant.factor_keeper keepers) ----
+
+def _tiny_table(V=60, H=16, seed=0):
+    torch.manual_seed(seed)
+    norm = nn.LayerNorm(H, bias=False, eps=1e-12)
+    nn.init.uniform_(norm.weight, 0.5, 1.5)
+    return model.TableEmbedder(nn.Embedding(V, H), norm, H).eval()
+
+
+def test_lowrank_embedder_rows_are_the_shipped_int8_rows():
+    from core.quant import lowrank_table
+    emb, B = _tiny_table(), torch.randn(4, 16)
+    lr = model.lowrank_embedder(emb, B)
+    assert lr.hidden_size == 4 and isinstance(lr.norm, nn.Identity)
+    q, s = lowrank_table(emb.tok.weight, emb.norm, B)
+    ids = torch.arange(60)
+    assert torch.equal(lr(ids), q.float() * s)                    # loader == build rows
+
+
+def test_lowrank_keeper_full_rank_matches_source_keeper():
+    import numpy as np
+    from core.quant import factor_keeper, second_moment
+    V, H, K, hidden = 60, 16, 3, 8
+    emb = _tiny_table(V, H)
+    head = build_head("bigru", d_in=H + K, hidden=hidden).eval()
+    ck = {"hidden": hidden, "head_state": head.state_dict()}
+    rng = np.random.default_rng(0)
+
+    def page():
+        T, nb = int(rng.integers(30, 80)), int(rng.integers(3, 12))
+        members = [[] for _ in range(nb)]
+        for t in range(T):
+            members[int(rng.integers(nb))].append(t)
+        return {"ids": rng.integers(0, V, T).astype(np.int64), "members": members,
+                "feats": rng.standard_normal((nb, K)).astype(np.float32)}
+
+    C, n = second_moment(emb, [page() for _ in range(40)])
+    assert n > 0
+    lk = factor_keeper(ck, C, r=H)
+    lr = model.lowrank_embedder(emb, lk["proj"])
+    lr_head = build_head("bigru", d_in=H + K, hidden=hidden).eval()
+    lr_head.load_state_dict(lk["head_state"])
+    for _ in range(10):                                           # B moved before the mean
+        p = page()
+        ref = model.infer_table_page(emb, head, p, torch.device("cpu"))
+        got = model.infer_table_page(lr, lr_head, p, torch.device("cpu"))
+        assert abs(ref - got).max() < 1e-2                        # int8 rounding only
+
+
+def test_table_embedder_refuses_int8_with_proj():
+    with pytest.raises(ValueError, match="quantize twice"):
+        model.build_table_embedder("stub", int8=True, proj=torch.zeros(2, 4))

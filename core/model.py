@@ -250,20 +250,39 @@ class TableEmbedder(nn.Module):
         return self.norm(self.tok(ids))
 
 
-def build_table_embedder(model_name, int8=False, device="cpu"):
+def lowrank_embedder(emb, proj):
+    """The r-wide table embedder of a low-rank keeper (proj = B [r, H]) from a fp32
+    TableEmbedder: the dequantized core.quant.lowrank_table rows, LayerNorm folded in,
+    so its norm is the identity. The torch side of exactly what export/build.py ships."""
+    from core.quant import lowrank_table
+    q, s = lowrank_table(emb.tok.weight, emb.norm, proj)
+    table = nn.Embedding.from_pretrained(q.float() * s, freeze=True)
+    return TableEmbedder(table, nn.Identity(), q.shape[1]).eval()
+
+
+def build_table_embedder(model_name, int8=False, proj=None, device="cpu"):
     """Load the backbone, keep ONLY its embedding stage (drop every layer and the
     final norm), freeze it. int8 fake-quants the table per-row (core.quant) -- the
-    packaging lever; here the table is ~all of the params. fp32 params, printed to
-    satisfy the model gate (§4)."""
+    packaging lever; here the table is ~all of the params. proj (a low-rank keeper's
+    B) returns the r-wide int8 table instead; it is built from the fp32 table, so
+    int8 with proj would round twice and raises. fp32 params, printed to satisfy
+    the model gate (§4)."""
+    if proj is not None and int8:
+        raise ValueError("a low-rank table is already int8; int8=True would quantize twice")
     m = AutoModel.from_pretrained(model_name, dtype=torch.float32)
     if int8:
         from core.quant import emb_int8_fakequant
         emb_int8_fakequant(m)
     emb = TableEmbedder(m.embeddings.tok_embeddings, m.embeddings.norm,
-                        m.config.hidden_size).to(device)
+                        m.config.hidden_size)
+    if proj is not None:
+        emb = lowrank_embedder(emb, proj)
+    emb = emb.to(device)
     emb.requires_grad_(False).eval()
+    kind = f"int8 rank-{emb.hidden_size} table" if proj is not None else (
+        "int8 table" if int8 else "fp32 table")
     print(f"table-embedder: {model_name} embeddings only, hidden "
-          f"{emb.hidden_size}, {'int8 table' if int8 else 'fp32 table'}, "
+          f"{emb.hidden_size}, {kind}, "
           f"param dtype {str(next(emb.parameters()).dtype).replace('torch.','')}",
           flush=True)
     return emb

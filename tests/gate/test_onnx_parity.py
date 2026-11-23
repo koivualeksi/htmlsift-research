@@ -3,10 +3,11 @@
 features are a complete check -- so a tiny offline table embedder + head stand in for granite;
 export/gate.parity runs the shipped load_mini forward against the torch reference. §4.
 """
+import torch
 import torch.nn as nn
 
 from core.model import TableEmbedder, build_head
-from export.build import build_head_onnx, build_table_int8
+from export.build import build_head_onnx, build_table_int8, build_table_lowrank
 from export.gate import parity
 
 
@@ -21,5 +22,21 @@ def test_mini_onnx_parity_zero_flips(tmp_path):
     build_table_int8(emb, table_p)                 # dequantizes emb in place -> int8 reference
     ref_head = build_head_onnx(ck, d_in, head_p)
 
-    flips, n = parity(table_p, head_p, emb, ref_head, d_in)
+    flips, n, _ = parity(table_p, head_p, emb, ref_head, d_in)
+    assert n > 0 and flips == 0
+
+
+def test_lowrank_mini_onnx_parity_zero_flips(tmp_path):
+    H, V, K, hidden, r = 32, 200, 3, 16, 4
+    emb = TableEmbedder(nn.Embedding(V, H), nn.LayerNorm(H, bias=False, eps=1e-12), H)
+    d_in = r + K
+    head = build_head("bigru", d_in=d_in, hidden=hidden)
+    ck = {"head_state": head.state_dict(), "hidden": hidden}
+
+    table_p, head_p = tmp_path / "table.onnx", tmp_path / "head.onnx"
+    ref_emb = build_table_lowrank(emb, torch.randn(r, H), table_p)
+    assert ref_emb.hidden_size == r
+    ref_head = build_head_onnx(ck, d_in, head_p)
+
+    flips, n, _ = parity(table_p, head_p, ref_emb, ref_head, d_in)
     assert n > 0 and flips == 0

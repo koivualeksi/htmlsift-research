@@ -18,7 +18,11 @@ inputs -- so these produce admissible F1/size fields, never a speedup on their
 own. Speed is measured separately and is host-scoped (root CLAUDE.md section 7).
 
 Compose with band: quantize FIRST, then htmlsift.core.band.enable().
+
+The low-rank table (table arm) is a further size lever on the same storage path: a
+C-weighted factor of the head's input block, folded into an r-wide int8 table.
 """
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -111,3 +115,72 @@ def emb_int8_fakequant(encoder):
     print(f"EMB-INT8: {w.shape[0]:,} x {w.shape[1]} table fake-quantized per-row "
           f"(max |dw| {dw:.2e})", flush=True)
     return dw
+
+
+# ---- Storage: low-rank table for the table arm (reduced-rank regression) ----
+# The head sees a pooled block vector only through its GRU input weights W_e, and mean
+# pooling is linear, so a rank-r factor W_e ~ A B lets B move into the token table:
+# the table stores int8(B . LN(e)) at width r and the head's input block becomes A.
+# The factor is weighted by C, the second moment of pooled block vectors, so it is exact
+# where block vectors actually occur rather than over all of R^H.
+
+GRU_IH = ("gru.weight_ih_l0", "gru.weight_ih_l0_reverse")
+
+
+@torch.no_grad()
+def second_moment(emb, pages):
+    """Uncentred second moment C [H, H] (float64) of the pooled block vectors emb yields
+    over pages, and the block count. emb is the table embedder the head runs on at
+    inference (the int8 one), so C weights the factor by what the head actually saw."""
+    from core.model import pool_table_page        # core.model imports this module
+    C = torch.zeros(emb.hidden_size, emb.hidden_size, dtype=torch.float64)
+    n = 0
+    for p in pages:
+        x = pool_table_page(emb, p, "cpu").double()
+        C += x.T @ x
+        n += x.shape[0]
+    return C.numpy(), n
+
+
+def factor(W_e, C, r, eps=1e-4):
+    """C-weighted rank-r factor of W_e [G, H]: W_e C^1/2 = U S V^T, A = U_r S_r [G, r],
+    B = V_r^T C^-1/2 [r, H], float64. eps floors C's eigenvalues (relative to the largest)
+    so C^-1/2 stays finite on directions block vectors never take."""
+    lam, Q = np.linalg.eigh(C)
+    lam = np.maximum(lam, eps * lam.max())
+    U, S, Vt = np.linalg.svd(W_e @ ((Q * np.sqrt(lam)) @ Q.T), full_matrices=False)
+    return U[:, :r] * S[:r], Vt[:r] @ ((Q / np.sqrt(lam)) @ Q.T)
+
+
+def factor_keeper(ck, C, r):
+    """A derived table keeper at rank r: both GRU directions' embedding input columns
+    are factored jointly (one B serves both) and replaced by A; proj = B [r, H] and
+    rank = r are added. Every other weight and key is carried over; ck is not modified."""
+    H = C.shape[0]
+    st = ck["head_state"]
+    W_e = np.concatenate([st[k][:, :H].double().numpy() for k in GRU_IH])
+    A, B = factor(W_e, C, r)
+    G = st[GRU_IH[0]].shape[0]
+    head_state = dict(st)
+    for i, k in enumerate(GRU_IH):
+        a = torch.from_numpy(A[i * G:(i + 1) * G]).to(st[k].dtype)
+        head_state[k] = torch.cat([a, st[k][:, H:]], dim=1)
+    return {**ck, "head_state": head_state,
+            "proj": torch.from_numpy(B).float(), "rank": r}
+
+
+@torch.no_grad()
+def lowrank_table(weight, norm, B, chunk=32768):
+    """The shipped low-rank table: per-row symmetric int8 of LN(e) . B^T from the fp32
+    token table weight [V, H], with norm (the embedding LayerNorm) folded in. Returns
+    (int8 [V, r], fp32 scale [V, 1]); scale/round as emb_int8_fakequant. The one source
+    of these rows for both core.loader and export/build.py. Quantized once, after the
+    projection: starting from the int8 table would round twice."""
+    Bt = B.T.to(weight.dtype)
+    q, s = [], []
+    for i in range(0, weight.shape[0], chunk):
+        t = norm(weight[i:i + chunk]) @ Bt
+        scale = (t.abs().amax(dim=1, keepdim=True) / 127.0).clamp_min(1e-12)
+        q.append(torch.round(t / scale).clamp(-127, 127).to(torch.int8))
+        s.append(scale)
+    return torch.cat(q), torch.cat(s)
