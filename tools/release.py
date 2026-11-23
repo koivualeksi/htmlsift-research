@@ -41,8 +41,9 @@ from export.build import build_mini
 from export.gate import parity
 
 RELEASE_REPO = "koivualeksi/htmlsift-release"
-MINI_ARM, MINI_SEED = "311m-table-bigru-fABC", 1   # ship the best-val seed (val732 0.8623)
-BASE_ARM, BASE_SEED = "311m-10", 1                  # seeds within noise; s1 matches the mini
+# best equal-weight mean of WMB test, DAnIEL macro, WCXB (0.8857; s0 0.8854, s1 0.8825)
+MINI_ARM, MINI_SEED = "311m-table-bigru-fABC-nb1-pf4-ema0.999-r128", 2
+BASE_ARM, BASE_SEED = "311m-10", 1                  # seeds within noise
 WINDOW = 8192                                       # training window (arms.WINDOW); manifest schema
 ROOT = Path(__file__).resolve().parents[1]
 
