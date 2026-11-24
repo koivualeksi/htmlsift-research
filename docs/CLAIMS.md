@@ -323,7 +323,9 @@ on forum (−0.0072) and listing (−0.0058) pages. Per-language and per-type ro
 `results/generalization.md`.
 
 **Size.** Table 202.4 → 34.6 MB, head 6.5 → 2.6 MB: the two graphs 208.9 → 37.2 MB. The bundle
-also carries granite's `tokenizer.json` (33.4 MB): 242.3 → 70.6 MB.
+also carries granite's tokenizer, now gzipped (`tokenizer.json.gz`, 33.4 → 5.4 MB, byte-reproducible;
+`python tools/release.py mini`): the download 242.3 MB with the plain tokenizer → 42.6 MB. The plain
+`tokenizer.json` stays in the release repo as the fallback for a bundle without the `.gz`.
 
 **Parity.** The built r=128 graphs, through the shipped forward, reproduce the torch r=128 model on
 all three seeds: 0/386 flips on random inputs and 0/154,523 over all 545 WMB test pages, max |dp|
