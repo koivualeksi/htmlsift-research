@@ -5,8 +5,10 @@ Torch-side and human-run: the production package never runs this, it downloads t
 bundle and (for mini) runs onnxruntime. A "bundle" is exactly the directory the package's
 runtime loads -- the layout htmlsift/_artifacts.py hard-codes as <mode>/<file>:
 
-    mini/  mini-table-int8.onnx  mini-head-fABC.onnx  tokenizer.json  manifest.json
-    base/  config.json           weights.pt           tokenizer.json  manifest.json
+    mini/  mini-table-int8.onnx  mini-head-fABC.onnx  tokenizer.json(.gz)  manifest.json
+    base/  config.json           weights.pt           tokenizer.json(.gz)  manifest.json
+
+The package (0.3.0+) reads tokenizer.json.gz and falls back to the plain file, so both ship.
 
     python tools/release.py mini            # build + gate the mini bundle under data/bundles/mini
     python tools/release.py mini --push     # + upload it to mini/
@@ -24,6 +26,7 @@ built graphs must reproduce torch bit-for-bit. base ships the native-torch flags
 into a self-contained bundle so the runtime never pulls granite. Not a runtime import.
 """
 import argparse
+import gzip
 import json
 import shutil
 import subprocess
@@ -50,6 +53,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_json(path, obj):
     path.write_text(json.dumps(obj, indent=2), encoding="utf-8")
+
+
+def _write_tokenizer(model, out):
+    """tokenizer.json plus a byte-reproducible tokenizer.json.gz (mtime 0, no name in the
+    header), so rebuilding an unchanged bundle uploads nothing new."""
+    plain = out / "tokenizer.json"
+    shutil.copyfile(hf_hub_download(model, "tokenizer.json"), plain)
+    with open(out / "tokenizer.json.gz", "wb") as f, \
+            gzip.GzipFile(filename="", mode="wb", compresslevel=9, fileobj=f, mtime=0) as gz:
+        gz.write(plain.read_bytes())
 
 
 def _provenance(keeper_ref):
@@ -90,7 +103,7 @@ def cmd_mini(push):
         raise SystemExit(f"ONNX parity gate FAILED: {flips}/{n} flips -- built graph drifts from torch")
     print(f"gate OK: 0/{n} flips over random inputs", flush=True)
 
-    shutil.copyfile(hf_hub_download(ck["model"], "tokenizer.json"), out / "tokenizer.json")
+    _write_tokenizer(ck["model"], out)
     _idx, mean, std = ck["zscore"]                    # keeper stores (idx, mean, std)
     _write_json(out / "manifest.json", {
         "mode": "mini",
@@ -122,7 +135,7 @@ def cmd_base(push):
     config.save_pretrained(out)                        # writes config.json
 
     torch.save({"encoder": ck["encoder"], "head_state": ck["head_state"]}, out / "weights.pt")
-    shutil.copyfile(hf_hub_download(ck["model"], "tokenizer.json"), out / "tokenizer.json")
+    _write_tokenizer(ck["model"], out)
     _write_json(out / "manifest.json", {
         "mode": "base",
         "feats": ck.get("feats"),                     # None for the text-only encoder
