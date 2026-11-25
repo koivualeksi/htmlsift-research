@@ -23,7 +23,7 @@ import torch
 from dotenv import load_dotenv
 
 from bench.speed import competitors as ex
-from bench.speed.htmlsift import HtmlsiftExtractor, HtmlsiftOnnxExtractor
+from bench.speed.keeper import HtmlsiftExtractor, HtmlsiftOnnxExtractor
 from export.paths import mini_paths
 from vendors.wmb.adapter import eval as wmb_eval
 from vendors.wmb.adapter.benchmark import WMBBenchmark

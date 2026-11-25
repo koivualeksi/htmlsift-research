@@ -4,7 +4,7 @@ path does identically. Torch-free: parse -> sanitize -> render_tree -> blocks(+D
 are F1-only and would inflate a speed number). WMB-flavored (wmb sanitize), like the rest
 of bench/speed.
 
-`htmlsift` uses all four returns (root/block_src feed serialize); `stages` and
+`keeper` uses all four returns (root/block_src feed serialize); `stages` and
 `gpu_throughput` take blocks (+feats) and ignore the rest. Everything after the render --
 prep, inference, serialize, batching, timing -- is caller-specific and stays there.
 """
