@@ -125,6 +125,18 @@ the model repo as `<board>/ckpt/<arm>_s<seed>.pt`, only when promoted by hand:
 
 Shipping it in the package is then an edit of the keeper constants in `tools/release.py`.
 
+The 0.3.0 mini is the chosen objective arm (`docs/objective.md`) with its table factored to rank
+128, no retraining. Train it, promote each seed's run, derive the rank-128 keepers (on the Linux
+render: the factor is fit on WMB train renders), then build, gate and publish the bundle:
+
+    python -m trainers.train experiments/wmb-mini-pf-confirm.yaml
+    python tools/promote.py <run-id>               # the feat_drop 0.0 runs of seeds 0, 1, 2
+    python -m vendors.wmb.adapter.lowrank 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128 --push
+    python -m tools.release mini                   # build + gate under data/bundles/mini
+    python -m tools.release mini --push            # + upload to koivualeksi/htmlsift-release
+
+The bundle `htmlsift` 0.3.0 pins is seed 2, release commit `a86f08a` (tag `v0.3.0`).
+
 `train_limit` trains on stratified nested prefixes of the training pool matched to val's
 level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
 
@@ -133,19 +145,18 @@ level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
 ## WMB evaluation
 
 The board metric is ROUGE-5 F1 against `convert_main_content` (their
-`calc_rouge_n_score`, vendored). Predictions are manufactured through the DOM
-serializer, so the oracle (gold labels) bounds every model result and is the
-eval gate:
+`calc_rouge_n_score`, vendored). Predictions are the package's own pruned html
+(`htmlsift.core.prune`) through WMB's html2text, so the oracle (gold labels) bounds every
+model result and is the eval gate:
 
     python vendors/wmb/adapter/eval.py            # test fold
     python vendors/wmb/adapter/eval.py --fold val # val fold
 
-Expected, frozen from this repo's run and asserted on every run:
+Expected, frozen from this repo's run and asserted on every run (the ORACLE line before each
+also prints n, P and R):
 
-    ORACLE/test545 vs convert_main_content: n=544  P 0.9901  R 0.9945  F1 0.9918
-    ceiling gate OK: 0.991769 == 0.991769
-    ORACLE/val732  vs convert_main_content: n=732  P 0.9753  R 0.9858  F1 0.9784
-    ceiling gate OK: 0.978383 == 0.978383
+    ceiling gate OK: 0.991384 == 0.991384         # test545, n=544, F1 0.9914
+    ceiling gate OK: 0.977170 == 0.977170         # val732, n=732, F1 0.9772
 
 Drift in the render config, the serializer or the scorer trips the ceiling
 assertion. A model checkpoint's exported per-block probabilities are scored the
@@ -338,8 +349,8 @@ tables into `results/throughput-wmb.md` (one row per arm; the writer merges rows
 
     python tools/pod_logs.py --run thr311      # likewise thr311b, thr97q, dripper-v11
 
-Speed rows are one run of the seed-0 keeper; the F1 beside them is the 3-seed predict ledger
-(`results/generalization.md`). Pods are metered and human-launched (§2).
+Speed rows are one run of the seed-0 keeper; the F1 beside base is its shipped seed s1 through
+the package, and beside 97m-6-qat the 3-seed predict ledger (`results/generalization.md`). Pods are metered and human-launched (§2).
 
 ## Results tables
 

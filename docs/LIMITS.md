@@ -10,7 +10,7 @@ competitor and carries one regime-matched claim (below); the mini targets the CP
 regime, and CPU/GPU numbers are never interchanged.
 
 **Read against the select-all floor.** Word-F1 (WCXB) and ROUGE-5 (WMB) forgive
-boilerplate: selecting every rendered block already scores test 0.7156 / 0.7201
+boilerplate: selecting every rendered block already scores test 0.7147 / 0.7201
 (WMB / WCXB), so a board number is read as its margin over that floor, never in the
 absolute (floors and per-type/-language spread in `CLAIMS.md`). DAnIEL's ROUGE-L
 floor is far lower (macro 0.4984) because its LCS metric is broken by interleaved
@@ -26,7 +26,7 @@ inside 0.25 pt on epoch-mean, 0.58 pt on best-epoch, well under the sub-1-pt bar
 flatness is exactly the pattern whose archive version was refuted on test, so it is not
 a result. On test the 97m half is settled: 97m-6 0.9215±0.0046 against 97m-12
 0.9224±0.0038 (n=544, 3 seeds each) — flat, so the small encoder is depth-saturated. The
-311m half is now 3 seeds too: 311m-22 0.9348±0.0043 against 311m-10's 0.9311±0.0027
+311m half is now 3 seeds too: 311m-22 0.9348±0.0043 against the 311m-10 arm's 0.9311±0.0027
 (+0.37, n=544), but the seed spreads overlap and a gap that size is inside the noise, so
 **no 311m depth claim is made in either direction** — neither "flat" nor "deeper wins".
 The archive's +2.09 deep-advantage is not reproduced.
@@ -64,10 +64,14 @@ both backbones (`CLAIMS.md`), while remaining worth 1.5-3 pt frozen.
 **The r=128 mini is an approximation, checked only where it was scored.** Its factor is weighted
 by C, the spread of pooled block vectors on WMB train alone; pages whose blocks fall outside that
 spread, in other languages or layouts, are where the approximation error can grow, and no board
-measures that directly. The boards move both ways (`CLAIMS.md`): DAnIEL macro +0.0012, WCXB −0.0020
-on every seed, forum and listing pages most. The shipped seed was picked on the test boards, by the
-cross-board mean, with s0 and s2 within 0.0003, so the published figure is the 3-seed mean, not
-the shipped seed's. Its speed and memory are the package's measurements, not this repo's.
+measures that directly. Its cost is measured on WMB test545 only, at the shipped seed: 0.0008
+against the full-width table (`CLAIMS.md`); WCXB and DAnIEL are not measured at full width for
+that seed. The 0.3.0 seed was picked on the test boards, by the cross-board mean, with s0 and s2
+within 0.0003, so the shipped seed's figure, which every claim uses, is the best of three on
+those boards. Its speed and memory are measured through the package (`CLAIMS.md`).
+
+**The 0.2.x mini's published WMB figure does not reproduce.** It was published as 0.8994; its s1
+bundle through today's package scores 0.8975. That ledger predates this repo and cannot be traced.
 
 **The CPU speed number is a ratio at the heuristic tier — not a speed win.**
 `bench/speed/cpu_compare.py` times the shipped mini (int8 table, ONNX) against trafilatura,
@@ -97,19 +101,19 @@ trafilatura is level or ahead. Giving ORT more threads while pinning trafilatura
 the §7 landmine; the comparison is fair only at an equal core budget, which is why the
 harness pins a low thread count. Threading is a latency lever, not a speed win.
 
-**The GPU number is sustained throughput at matched accuracy, not the median-latency
+**The GPU number is sustained throughput at near-equal accuracy, not the median-latency
 ratio.** One comparison exists: the encoder keepers against MinerU-HTML v1.1 on the same
 card type (RTX 4090), same 545 pages, both scored html-mode (`CLAIMS.md`,
-`results/throughput-wmb.md`, `results/dripper-wmb.md`). 311m-10 ties it on F1 (0.9311±0.0027
-against 0.9306) at 16× its sustained rate, 21× with band attention. Three caveats travel
+`results/throughput-wmb.md`, `results/dripper-wmb.md`). Base is within ~0.2 pt of it on F1
+(0.9288 vs 0.9306, one MinerU run) at 16× its sustained rate, 21× with band attention. Three caveats travel
 with that figure. (1) The median-latency ratio is ~126× and is not the throughput ratio:
 pages over the 8,192-token window are encoded window by window at batch one, so a few
 whales set the sustained rate — our p90 is 11× our p50 where MinerU's is 4×. An earlier "~50×" scoping was the median
 figure read as throughput; it is withdrawn. (2) Our batch-1 latency is model-only (the
 CPU render and prep are timed apart) while MinerU's is the whole HTML-to-HTML call, so
 the latency columns are shown, never ratioed. (3) Speed rows are one run of the seed-0
-keeper with fp32 weights under bf16 autocast; band attention is bit-identical and so
-shares the fp32 F1, and GPU int8 is unmeasured. No GPU figure is compared across card
+keeper with fp32 weights under bf16 autocast, while the F1 is the shipped seed s1 through the
+package; band attention is bit-identical and so shares the fp32 F1, and GPU int8 is unmeasured. No GPU figure is compared across card
 types or against a CPU extractor.
 
 ## WMB
@@ -134,7 +138,7 @@ model input and label generation alike, so no htmlsift model ever sees it, and t
 references are untouched. A competitor fed the raw html does see it: MinerU-HTML keeps
 class attributes, so its 0.9306 (`CLAIMS.md`) is measured on input that carries the
 label. The archive measured the marker's effect on MinerU at +0.22 pt with a confidence
-interval spanning zero; it is not re-measured here, and the F1 tie is read with that in
+interval spanning zero; it is not re-measured here, and the ~0.2-pt F1 gap is read with that in
 mind.
 
 ## WCXB
