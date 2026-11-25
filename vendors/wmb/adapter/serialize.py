@@ -1,80 +1,75 @@
 """
 Block labels -> prediction markdown (or pruned HTML): the scoring output path.
 
-The 545's references are convert_main_content = render(extract_main_html(html)):
-prune the DOM to the cc-selected elements, then render. So the honest way to score
-against them is to manufacture our prediction the SAME way -- set cc-select on the
-elements our selected blocks came from, prune, render -- not to paste block text
-together (which loses every cross-block 5-gram).
+The scored object is the htmlsift package's own html output for the same labels: prune()
+keeps exactly the text of the selected lines (render_tree's per-line pieces), then the
+package's output sanitize. Research and package scores are therefore the same number;
+the package's pruner is imported, never copied.
 
-The bridge from a rendered line back to its owning elements is core's per-line
-provenance (render_tree's line_src), so this needs no marker injection and never
-falls back -- the failure mode the marker approach had on 112 pages is gone.
+The 545's references are convert_main_content = html2text(extract_main_html(html)), so
+the markdown is that same html2text over the pruned html -- not the package's own lxml
+markdown, which would move the score through a renderer the board does not use, and
+not pasted block text, which loses every cross-block 5-gram. WMB's extract_main_html
+keeps selected elements whole; it builds the references and stays in the gates only.
 
-prepare() does the label-independent render once per page; apply() does the
-label-dependent mark+prune+render. The training val loop caches one Prepared per
-page and re-applies it each epoch.
+prepare() does the label-independent render once per page; apply() prunes a copy, so the
+training val loop caches one Prepared per page and re-applies it each epoch. The package
+renders without this repo's WMB sanitize_tree; it is kept here, since it is model input.
 """
+import copy
 from dataclasses import dataclass
 from pathlib import Path
 
+from htmlsift._sanitize import sanitize as sanitize_output
 from htmlsift.core import render as cr
+from htmlsift.core.prune import prune
+from lxml import html as lxml_html
 from vendors.shared.upstream import load
 from vendors.wmb.adapter.sanitize import sanitize_tree
 
 WMB = Path(__file__).resolve().parents[1]
-SELECT_ATTR = "cc-select"                         # upstream main_html.SELECT_ATTR
-
-_up = load(WMB / "upstream" / "main_html.py", "wmb_main_html")
-extract_main_html = _up.extract_main_html
-element_to_html = _up.element_to_html
-HTML2TextWrapper = _up.HTML2TextWrapper
+HTML2TextWrapper = load(WMB / "upstream" / "main_html.py", "wmb_main_html").HTML2TextWrapper
 
 
 @dataclass
 class Prepared:
-    """One page's label-independent serialization state: the sanitized tree and,
-    per non-empty block, the source elements that produced it."""
+    """One page's label-independent serialization state: the sanitized tree and, per
+    non-empty block, the parts of elements its line holds (render_tree's pieces)."""
     root: object
-    block_src: list
+    block_pieces: list
     url: str = ""
 
 
+def blocks_of(lines: list, line_pieces: list) -> list:
+    """The block view of a render: the pieces of the non-empty lines, the same rows the
+    block builders keep."""
+    return [line_pieces[i] for i, ln in enumerate(lines) if ln.strip()]
+
+
 def prepare(html: str, url: str = "", n_blocks: int | None = None) -> Prepared:
-    """Render the page with provenance and keep, per block, its source elements."""
+    """Render the page with provenance and keep, per block, its line's pieces."""
     root = cr.parse(html)
     sanitize_tree(root)
-    lines, line_src = cr.render_tree(root)
-    block_src = [line_src[i] for i, ln in enumerate(lines) if ln.strip()]
+    lines, _, line_pieces = cr.render_tree(root, pieces=True)
+    block_pieces = blocks_of(lines, line_pieces)
     if n_blocks is not None:
-        assert len(block_src) == n_blocks, (len(block_src), n_blocks)
-    return Prepared(root, block_src, url)
+        assert len(block_pieces) == n_blocks, (len(block_pieces), n_blocks)
+    return Prepared(root, block_pieces, url)
 
 
 def apply(p: Prepared, labels: list, output: str = "markdown") -> str:
-    """Selected blocks -> cc-select on their source elements -> pruner -> render,
-    manufacturing the output exactly as render(main_html) made the references.
-
-    output="html" stops at the pruned main HTML instead of converting it; the two
-    modes are the product's two output shapes, and their cost differs by the
-    HTML2TextWrapper step. "markdown" is the scored representation (the WMB
-    references are html2text), so scoring always runs through it."""
-    assert len(labels) == len(p.block_src), (len(labels), len(p.block_src))
+    """Selected blocks -> the package's pruned html -> html2text, as the references were
+    made. output="html" stops at the pruned html (the product's html output); scoring
+    always runs through "markdown". No block selected -> ""."""
+    assert len(labels) == len(p.block_pieces), (len(labels), len(p.block_pieces))
     if output not in ("markdown", "html"):
         raise ValueError(f"output must be 'markdown' or 'html', got {output!r}")
-    selected = set()
-    for src, lab in zip(p.block_src, labels):
-        if lab == 1:
-            selected |= src
-    for el in p.root.iter():                       # clear any prior apply's marks
-        if isinstance(el.tag, str) and el.get(SELECT_ATTR) is not None:
-            del el.attrib[SELECT_ATTR]
+    selected = {i for i, lab in enumerate(labels) if lab == 1}
     if not selected:
         return ""
-    for el in selected:
-        if isinstance(el.tag, str):
-            el.set(SELECT_ATTR, "true")
-    pred_main = extract_main_html(element_to_html(p.root))
-    if not pred_main:
-        return ""
+    root = copy.deepcopy(p.root)
+    clone = dict(zip(p.root.iter(), root.iter(), strict=True))
+    prune(root, [{(clone[el], *rest) for el, *rest in blk} for blk in p.block_pieces], selected)
+    sanitize_output(root)
+    pred_main = lxml_html.tostring(root, encoding="unicode")
     return pred_main if output == "html" else HTML2TextWrapper()(pred_main, p.url)

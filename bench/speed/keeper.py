@@ -38,11 +38,11 @@ class HtmlsiftExtractor:
 
     def extract(self, html):
         t0 = time.perf_counter()
-        root, blocks, block_src, feats = render_blocks(html, self.feats_fn)
+        root, blocks, block_pieces, feats = render_blocks(html, self.feats_fn)
         if not blocks:
             return Output((time.perf_counter() - t0) * 1e3, "", "html")   # empty render: scorable empty prediction
         labels = [int(v > THRESHOLD) for v in self.infer_fn(self._page(blocks, feats))]
-        html_out = apply(Prepared(root, block_src, ""), labels, output="html")   # "" when no block clears 0.5 -- kept, scored
+        html_out = apply(Prepared(root, block_pieces, ""), labels, output="html")   # "" when no block clears 0.5 -- kept, scored
         return Output((time.perf_counter() - t0) * 1e3, html_out, "html")
 
     def tokens(self, html):
