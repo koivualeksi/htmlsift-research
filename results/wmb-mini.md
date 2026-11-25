@@ -1,4 +1,4 @@
-WMB mini (experiments/wmb-mini.yaml: 311m token-embedding table, BiGRU head, features ABC) -- ROUGE-5 F1 on val732 (best epoch) and test545. test int8 is the same head with the table int8-quantised at inference, the shipped mini's numerics.
+WMB mini (experiments/wmb-mini.yaml: 311m token-embedding table, BiGRU head, features ABC) -- ROUGE-5 F1 on val732 (best epoch) and test545. test int8 is the same head with the table int8-quantised at inference, the 0.2.x mini's numerics.
 
 Regenerate: `python tools/render_tables.py`
 

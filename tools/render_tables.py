@@ -402,10 +402,10 @@ TABLES = [
     ("results/wmb-mini.md",
      "WMB mini (experiments/wmb-mini.yaml: 311m token-embedding table, BiGRU head, features "
      "ABC) -- ROUGE-5 F1 on val732 (best epoch) and test545. test int8 is the same head "
-     "with the table int8-quantised at inference, the shipped mini's numerics.",
+     "with the table int8-quantised at inference, the 0.2.x mini's numerics.",
      from_experiment("wmb-mini"), render_runs),
     ("results/wmb-mini-objective.md",
-     "WMB mini objective screens -- the shipped mini (wmb-mini) under changes to the loss, "
+     "WMB mini objective screens -- the 0.2.x mini (wmb-mini) under changes to the loss, "
      "weight averaging and the training schedule; features and inputs fixed. ROUGE-5 F1 on "
      "val732 (best epoch) and test545. Run-to-run noise at one seed is ~0.006 val / ~0.009 "
      "test, so a row under three seeds is a screen, not a result. None is an option the run "
