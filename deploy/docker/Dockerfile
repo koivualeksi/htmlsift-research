@@ -26,6 +26,9 @@ ENV OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 \
     PYTHONUNBUFFERED=1 HF_HUB_DISABLE_TELEMETRY=1
 
 WORKDIR /repo
+# git: the htmlsift pin is a git+https URL until the pinned version is on PyPI.
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml ./
 COPY core core
 COPY vendors vendors
