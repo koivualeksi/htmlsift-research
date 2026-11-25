@@ -64,7 +64,7 @@ def _resiliparse(html):
     return extract_plain_text(html, main_content=True)
 
 
-def _one(spec, html, text=False):
+def time_one(spec, html, text=False):
     fn = spec.text_fn if (text and spec.text_fn) else spec.fn
     kind = "text" if (text and spec.text_fn) else spec.kind
     t0 = time.perf_counter()
@@ -83,13 +83,13 @@ def run(name, pages, warmup=5, text=False):
     items = [(tid, p["html"]) for tid, p in pages.items() if p.get("html")]
     for _, html in items[:warmup]:
         try:
-            _one(spec, html, text)
+            time_one(spec, html, text)
         except Exception:
             pass
     out, empty, raised = {}, 0, 0
     for tid, html in items:
         try:
-            o = _one(spec, html, text)
+            o = time_one(spec, html, text)
         except Exception:
             raised += 1
             continue

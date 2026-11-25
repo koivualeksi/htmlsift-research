@@ -10,6 +10,7 @@
 # Build from the repo root so the context is the whole tree (.dockerignore drops data/):
 #
 #   docker build -f deploy/docker/Dockerfile -t htmlsift-bench .
+#   sh deploy/docker/cpu_speed.sh                   # the published mini runs, both containers
 #   docker run --rm --cpus=2 --cpuset-cpus=0,1 \
 #       -v "$PWD/vendors/wmb/data:/repo/vendors/wmb/data" \
 #       -v "$PWD/data/runs/wcxb/ckpt/97m-6_s0.pt:/repo/ckpt.pt" \
