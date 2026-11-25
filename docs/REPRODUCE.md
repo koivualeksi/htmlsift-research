@@ -307,9 +307,10 @@ an empty prediction (F1 0 vs non-empty gold), only a crash is excluded (asterisk
 published figure is the **ratio** with its size dependence, never an absolute: a cgroup
 CPU cap fixes the thread count, not the host microarchitecture, so absolute ms does not
 carry across machines. On CPU we are not faster than the heuristics (`LIMITS.md`); the
-ratio is reported honestly and size-bucketed. The published figure is the shipped mini
-(`--onnx`, `CLAIMS.md`); an encoder keeper via `--ckpt`/`--model` is slower and not the
-CPU competitor.
+ratio is reported honestly and size-bucketed. The mini is timed through the installed
+package on a bundle directory (`--bundle`); the published speed figure is still the 0.2.x
+mini's, from an earlier form of the harness (`CLAIMS.md`), and the 0.3.0 run is not yet done.
+An encoder keeper via `--ckpt`/`--model` is slower and not the CPU competitor.
 
 Run it in the pinned container so the render stack (Python 3.13 + lxml 6.1.1, the §4
 render-gate versions) and the extractor versions are fixed, and the report records the
@@ -325,7 +326,7 @@ forward gains on more cores (ORT intra-op) while a single trafilatura call canno
 so handing ORT more threads than trafilatura would manufacture an unfair win (§7) — pin the
 same low count for both. A modest 2 is the conservative choice; the single-threaded lxml
 render+prep floor caps the end-to-end gain regardless. The run writes `results/speed-wmb.md`
-for the `--onnx` mini, or `results/speed-wmb-<model>.md` for an encoder keeper.
+for the `--bundle` mini, or `results/speed-wmb-<model>.md` for an encoder keeper.
 
 ## GPU throughput vs MinerU-HTML v1.1 (§7)
 

@@ -74,12 +74,13 @@ those boards. Its speed and memory are measured through the package (`CLAIMS.md`
 bundle through today's package scores 0.8975. That ledger predates this repo and cannot be traced.
 
 **The CPU speed number is a ratio at the heuristic tier — not a speed win.**
-`bench/speed/cpu_compare.py` times the shipped mini (int8 table, ONNX) against trafilatura,
+`bench/speed/cpu_compare.py` timed the 0.3.0 mini through the package against trafilatura,
 readability and resiliparse over WMB test545 (544 cmc-scored pages, one population on both
-axes, CPU single-thread); `results/speed-wmb.md` and `CLAIMS.md` carry the figure. Ours
-wins on F1 (0.8994 vs trafilatura's 0.7525) and sits at trafilatura's speed tier —
-level-to-slightly-slower on the p50, ahead on pages under ~4k tokens, behind on the >32k
-whales. Never "faster than trafilatura / resiliparse" in the absolute, and never a single
+axes, single-thread, two pinned containers on one Intel i7-6820HQ host); `results/speed-wmb.md`,
+`results/speed-wmb-1vcpu.md` and `CLAIMS.md` carry the figures. On F1 the 0.3.0 mini is ~16 pt
+over trafilatura (0.9114 vs 0.7525); on speed it sits at the heuristic tier — trafilatura takes
+1.3× its median time, readability is about level, resiliparse takes ~0.1×, and on the >32k
+whales trafilatura is the quicker one. The ratios are one host's; another CPU moves them. Never "faster than trafilatura / resiliparse" in the absolute, and never a single
 blended factor: the published figure is the measured ratio with its population and its
 size-dependence. The encoder arms are slower than the table; GPU is a separate regime
 with its own paragraph below.

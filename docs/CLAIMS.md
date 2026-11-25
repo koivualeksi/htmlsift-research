@@ -260,23 +260,32 @@ row is still the 0.2.x ONNX until `bench/accuracy/heuristics.py` scores the pack
 
 ### CPU speed + F1 vs third-party extractors
 
-The shipped mini (`311m-table-bigru-fABC` s1, int8 table + BiGRU head, ONNX) against
-trafilatura, readability and resiliparse — CPU single-thread (`onnxruntime intra=1`), WMB
-test545. One population, the 544 cmc-scored pages, on both speed and F1: an empty return is
-timed and scores as an empty prediction (F1 0 vs non-empty gold); only a crash is excluded.
-Full table, pins and size-dependence in `results/speed-wmb.md`:
+The mini against trafilatura, readability and resiliparse — CPU single-thread
+(`onnxruntime intra=1`), WMB test545. One population, the 544 cmc-scored pages, on both speed
+and F1: an empty return is timed and scores as an empty prediction (F1 0 vs non-empty gold);
+only a crash is excluded. The mini is the 0.3.0 bundle through the `htmlsift` package, in two
+containers of one pinned image (2 vCPU / 4 GB and 1 vCPU / 2 GB), on one Intel i7-6820HQ host;
+methods are timed page by page in rotating order. Full tables, pins and size-dependence in
+`results/speed-wmb.md` and `results/speed-wmb-1vcpu.md`:
 
-    python bench/speed/cpu_compare.py --onnx --model 311m-table-bigru-fABC --seed 1 --fold test --threads 1
+    sh deploy/docker/cpu_speed.sh
 
 **Accuracy is the win.** ROUGE-5 F1 (the board metric, html2text of each extractor's HTML):
-ours **0.8994**, readability 0.8016, trafilatura 0.7525, resiliparse 0.7135 (empty on 4 of
-544, scored 0) — +14.7 pt over trafilatura, the strongest heuristic on speed.
+mini 0.3.0 **0.9114** (delivered table above), readability 0.8016, trafilatura 0.7525,
+resiliparse 0.7135 (empty on 4 of 544, scored 0) — ~16 pt over trafilatura, the strongest
+heuristic on speed.
 
-**Speed is the heuristic tier, not faster than it.** On the p50 ours sits level with
-trafilatura and a shade slower (trafilatura ≈0.9× our time); readability is ~1.7-2× and
-resiliparse ~15-20× faster, both far behind on F1. The ratio is size-dependent: ours beats
-trafilatura on pages under ~4k tokens and trafilatura pulls ahead on the >32k whales. No
-absolute "N× faster" claim — see `LIMITS.md` / §7. The encoder arms are slower than the
+**Speed is the heuristic tier.** On the same pages in the same container, trafilatura takes
+1.3× the mini's median time and 1.4× its mean (2 vCPU: mini p50 32.9 ms, trafilatura 44.0 ms;
+1 vCPU: 31.3 / 41.5 ms). readability is about level (0.9× on the p50, 0.8× on the mean) and
+resiliparse takes ~0.1× the mini's time, both far behind on F1. The ratio is size-dependent:
+trafilatura takes ~2× the mini's time on pages under 1k tokens and 0.9× on the 15 pages over
+32k. No absolute "N× faster" claim — see `LIMITS.md` / §7.
+
+**Memory.** Resident memory of a process holding only that method, after loading it and one
+page: the mini 401 MB (2 vCPU) / 369 MB (1 vCPU), trafilatura 48 MB, readability 34 MB,
+resiliparse 26-27 MB. The largest single-page peak over the fold: the mini 576 / 627 MB,
+trafilatura 285 MB, readability 134 MB, resiliparse 87 MB. The mini fits the 2 GB container. The encoder arms are slower than the
 table and are not the CPU competitor.
 
 The figures above are single-thread (`--threads 1`). ORT intra-op threads speed the forward
