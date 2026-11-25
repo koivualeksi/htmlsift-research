@@ -114,7 +114,7 @@ below and adds `test_f1` to the run's result:
 The `table` recipe (`experiments/wmb-mini.yaml`) keeps its checkpoint as `ckpt.pt` in the
 run folder and, with `export_test`, reloads it through `core.loader.build_infer`, the same
 path `bench/accuracy/predict.py --ckpt` uses. An fp32-table run is also scored with an
-int8 table (`*_int8_f1`), the shipped mini's numerics.
+int8 table (`*_int8_f1`), the 0.2.x mini's numerics.
 
 `keep: true` saves any run's checkpoint as `ckpt.pt` in its run folder, pushed with the
 run. A kept run becomes a keeper, the checkpoint `bench/` and `tools/release.py` load from

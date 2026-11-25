@@ -368,7 +368,7 @@ WCXB and DAnIEL are not measured at full width for s2.
 
 **Size.** Table 202.4 → 34.6 MB, head 6.5 → 2.6 MB: the two graphs 208.9 → 37.2 MB. The bundle
 also carries granite's tokenizer, now gzipped (`tokenizer.json.gz`, 33.4 → 5.4 MB, byte-reproducible;
-`python tools/release.py mini`): the download 242.3 MB with the plain tokenizer → 42.6 MB. The plain
+`python -m tools.release mini`): the download 242.3 MB with the plain tokenizer → 42.6 MB. The plain
 `tokenizer.json` stays in the release repo as the fallback for a bundle without the `.gz`.
 
 **Parity.** The built r=128 graphs, through the shipped forward, reproduce the torch r=128 model on

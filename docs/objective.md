@@ -1,6 +1,6 @@
 # Objective changes on the mini
 
-The shipped mini (`experiments/wmb-mini.yaml`) trains with one loss: masked BCE over rows, with
+The 0.2.x mini (`experiments/wmb-mini.yaml`) trains with one loss: masked BCE over rows, with
 pos_weight balancing the classes by character weight. The WMB metric is something else: a per-page
 ROUGE-5 F1 over characters, averaged over pages. A row-level loss treats a stray 2,000-character
 block the same on a page with 300 gold characters as on a page with 20,000, while the metric
@@ -25,7 +25,7 @@ Each arm is one spec under `experiments/`:
 - **Seeds.** A screen runs 3 seeds. An arm that leads at 3 seeds is confirmed at 6 or more
   before it is called a result.
 - **Greedy order.** Changes are stacked one at a time on the best base so far. Each arm is
-  compared against the base it was added to, not against the shipped mini.
+  compared against the base it was added to, not against the 0.2.x mini.
 
 ## What was tried
 
@@ -39,7 +39,7 @@ Each arm is one spec under `experiments/`:
 | `len_cap` / `len_floor` | Weights each row's loss by its length, clipped. | Loses. |
 | `page_norm` | Makes the BCE a mean over pages. | Ties. |
 | `label_smooth` 0.05 | BCE targets 0.975 / 0.025. | Ties alone and with EMA. |
-| `feat_drop` 0.3 | Zeroes the feature columns on 30 % of pages per epoch. | Ties: no measurable effect with or without `page_f1` at 6 seeds. |
+| `feat_drop` 0.3 | Zeroes the feature columns on 30 % of pages per epoch. | Ties: no measurable effect, at 9 seeds with `page_f1` and 3 without. |
 | `text_drop` 0.3 | Zeroes the text columns on 30 % of pages per epoch. | Loses. |
 | `head_lr` 5e-4 / 1e-3 / 4e-3 | Learning rate, against the 2e-3 default. | All lose. |
 | `epochs` 6, `ema` 0.9995 | A longer horizon for the average. | Ties: no gain. |

@@ -1,15 +1,17 @@
 # Where the mini still fails
 
-This is an error analysis of the candidate mini (`ema 0.999 + smooth_weight 1 + page_f1 4`,
-`docs/objective.md`) on WMB val732 and on the Common Crawl page set (`results/ccbench.md`).
+This is an error analysis of the mini's training arm (`ema 0.999 + smooth_weight 1 + page_f1 4`,
+`docs/objective.md`) on WMB val732, at full width (`CLAIMS.md`), and of the 0.3.0 mini on the
+Common Crawl page set (`results/ccbench.md`). `htmlsift` 0.3.0 ships this arm, seed 2, with the
+table factored to rank 128.
 
 ## WMB val: the worst 10 % of pages
 
-Probabilities are averaged over the candidate's 3 seeds at the 0.5 threshold, which gives val F1
+Probabilities are averaged over the full-width arm's 3 seeds at the 0.5 threshold, which gives val F1
 0.8791. Pages are ranked by room, the oracle DOM F1 minus the model's F1. The 73 worst of 732
 pages hold 59 % of all room.
 
-Per seed, those 73 pages hold 58 to 60 % of the room, and the shipped mini fails on the same pages.
+Per seed, those 73 pages hold 58 to 60 % of the room, and the 0.2.x mini fails on the same pages.
 So the losses come from the kind of page, not from training noise.
 
     python vendors/wmb/adapter/errors.py --worst s0/val.jsonl s1/val.jsonl s2/val.jsonl

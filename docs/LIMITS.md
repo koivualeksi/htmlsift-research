@@ -15,9 +15,9 @@ boilerplate: selecting every rendered block already scores test 0.7147 / 0.7201
 absolute (floors and per-type/-language spread in `CLAIMS.md`). DAnIEL's ROUGE-L
 floor is far lower (macro 0.4984) because its LCS metric is broken by interleaved
 boilerplate, making it the board that discriminates a select-everything model. The
-no-encoder table-embedding arm is the one to watch (the shipped `mini` is its int8
-`fABC` keeper): it can collapse to select-all and still post ~0.72 on the first-class
-boards.
+no-encoder table-embedding arm is the one to watch (the `mini` is its `fABC` keeper:
+an int8 table in 0.2.x, a rank-128 table in 0.3.0): it can collapse to select-all and
+still post ~0.72 on the first-class boards.
 
 **Selection is val-only, and 311m depth is not decision-grade.** Architecture is chosen on val
 (WMB val732); the 545 test is spent on the arms re-run with `--export-test` — a ledgered

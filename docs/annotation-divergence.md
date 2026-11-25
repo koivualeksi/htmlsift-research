@@ -84,8 +84,8 @@ learned policy is what generalizes: the 311m-10 arm clears every heuristic on bo
 the 0.3.0 mini is ~0.6 pt behind the leader on WCXB (0.8529) and ~0.2 pt ahead of it on DAnIEL (0.8925)
 while staying consistent.
 
-The transfer is directional, and our own models show it too. A WMB-trained encoder carried to
-DAnIEL scores 0.9175 macro; a WCXB-trained one scores 0.8826 (`CLAIMS.md`). Training on one
+The transfer is directional, and our own models show it too. A WMB-trained 311m-10 encoder carried
+to DAnIEL scores 0.9175 macro; a WCXB-trained one scores 0.8826 (3 seeds each, `CLAIMS.md`). Training on one
 policy and moving to a third board is not free, the same effect measured on collections above,
 now across languages.
 
