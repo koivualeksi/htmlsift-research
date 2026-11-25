@@ -1,9 +1,8 @@
 Common Crawl yield -- how many pages an extractor's text gets past the FineWeb-Edu and DCLM quality filters, against trafilatura on the same pages. **Private data.** The page set is `koivualeksi/htmlsift-bench` at revision `0ac5a811`. Its HTML is not redistributable, so this table cannot be reproduced from the published sources; it is context only, not a board.
 
-Regenerate (Linux, pinned `htmlsift` 0.2.1, `pip install -e .[ccbench]`):
+Regenerate (Linux, `htmlsift` 0.3.0, `pip install -e .[ccbench]`):
 
-    python bench/ccbench.py --ckpt wmb/ckpt/311m-table-bigru-fABC_s1.pt [--drop-title]
-    python bench/ccbench.py --ckpt wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999_s1.pt [--drop-title]
+    python bench/ccbench.py --ckpt mini --drop-title --dedup
 
 **Page set:**
 - 7,177 pages from CC-MAIN-2026-43, drawn in three strata: edu 2,677, dclm 3,000 and rest
@@ -19,23 +18,21 @@ Regenerate (Linux, pinned `htmlsift` 0.2.1, `pip install -e .[ccbench]`):
 
 **Extractors:**
 - trafilatura is its stored output on the same pages.
-- `mini` is the shipped mini, s1. `candidate` is `ema 0.999 + smooth_weight 1 + page_f1 4`, s1
-  (`docs/objective.md`). Both run with the int8 table through the package's own `Extractor`.
+- `mini 0.3.0` is the bundle `htmlsift` 0.3.0 ships (`311m-table-bigru-fABC-nb1-pf4-ema0.999-r128`,
+  seed 2, `docs/CLAIMS.md`), through the package's own `Extractor` with `drop_title` and `dedup`.
 - `drop_title` removes the extracted title before scoring. trafilatura's text carries no title.
-  The setting changes scoring only, not the model or the labels.
+- `dedup` drops repeated lines from the extracted text.
+- Both settings change only the extracted text, not the model or the labels.
 
 ## Totals
 
 Edu pages are unweighted, because every Edu-passing page has weight 1. The other counts are raw,
-with the weighted count in brackets.
+with the weighted count in brackets. Mean tokens is over all 7,177 pages.
 
 | extractor | Edu pages | DCLM pages | English pages | mean tokens | empty texts |
 |---|---|---|---|---|---|
 | trafilatura | 436 | 2,926 (6,753) | 6,817 (30,517) | 885 | 59 (302) |
-| mini | 383 | 2,990 (6,885) | 6,365 (27,993) | 1,145 | 433 (2,380) |
-| candidate | 402 | 2,994 (7,060) | 6,233 (26,985) | 1,090 | 514 (2,912) |
-| mini, drop_title | 428 | 3,009 (6,943) | 6,316 (27,663) | 1,140 | 557 (3,088) |
-| candidate, drop_title | 433 | 3,027 (7,153) | 6,189 (26,682) | 1,084 | 640 (3,689) |
+| mini 0.3.0, drop_title, dedup | 436 | 3,003 (6,966) | 6,194 (26,819) | 1,078 | 637 (3,605) |
 
 ## Against trafilatura
 
@@ -43,36 +40,25 @@ Relative change in passing pages and passing tokens, weighted:
 
 | extractor | Edu pages | Edu tokens | DCLM pages | DCLM tokens |
 |---|---|---|---|---|
-| mini | -12.2 % [-18.0, -6.0] | +26.6 % [-20.2, +120.4] | +2.0 % [-1.8, +5.9] | +41.6 % [+33.0, +51.5] |
-| candidate | -7.8 % [-13.8, -1.9] | +36.4 % [-10.7, +128.8] | +4.5 % [+0.4, +9.1] | +40.5 % [+31.7, +50.6] |
-| mini, drop_title | -1.8 % [-7.5, +4.3] | +39.8 % [-7.8, +134.3] | +2.8 % [-0.9, +6.7] | +42.4 % [+33.6, +52.5] |
-| candidate, drop_title | -0.7 % [-6.3, +5.5] | +42.9 % [-3.8, +135.5] | +5.9 % [+1.8, +10.4] | +41.0 % [+32.0, +51.2] |
-
-## Candidate against mini
-
-| setting | Edu pages | Edu tokens | DCLM pages | DCLM tokens |
-|---|---|---|---|---|
-| title kept | +5.0 % [+0.6, +9.5] | +7.7 % [+1.4, +19.2] | +2.5 % [+0.0, +5.1] | -0.8 % [-2.6, +0.9] |
-| drop_title | +1.2 % [-2.6, +5.4] | +2.2 % [-2.6, +9.3] | +3.0 % [+0.4, +5.8] | -1.0 % [-2.6, +0.6] |
+| mini 0.3.0, drop_title, dedup | +0.0 % [-5.6, +6.3] | +41.9 % [-4.7, +134.6] | +3.1 % [-0.8, +7.3] | +40.4 % [+31.9, +50.7] |
 
 ## Reading
 
-- **The title is most of the Edu gap.** The Edu classifier reads only the first 512 tokens.
-  Once the title is dropped, both models are level with trafilatura on Edu pages, and both
-  intervals span zero.
-- **DCLM pages.** The candidate leads trafilatura by +5.9 % [+1.8, +10.4]. It also leads the
-  shipped mini by +3.0 %.
-- **Tokens.** The models pass about 41 % more DCLM tokens, because the text they keep on
-  passing pages is longer.
+- **Edu pages.** The Edu classifier reads only the first 512 tokens, and trafilatura's text
+  carries no title, so the mini is scored with its title dropped. It is then level with
+  trafilatura on Edu pages, and the interval spans zero.
+- **DCLM pages.** The 0.3.0 mini leads trafilatura by +3.1 % [-0.8, +7.3]; the interval spans zero.
+- **Tokens.** The mini passes about 40 % more DCLM tokens, because the text it keeps on passing
+  pages is longer.
 - **Empty texts are mostly bot-challenge pages.** 322 of the 7,177 pages (1,256 weighted) are
   bot-challenge or JavaScript-wall interstitials. On these, trafilatura returns a line such as
-  "Please wait while your request is being verified..." and the models return nothing.
+  "Please wait while your request is being verified..." and the right output is nothing.
   - That line passes DCLM on 305 of them, 1,045 weighted. This is 15 % of trafilatura's weighted
     DCLM passes, earned on pages with no content.
-  - The models leave 318 or 319 of these pages empty, out of their 557 and 640 empty texts.
-- **With the challenge pages removed** (trafilatura text of 60 tokens or fewer that matches a
-  challenge phrase), DCLM pages against trafilatura become +21.6 % [+17.2, +26.2] for the mini
-  and +25.3 % [+20.7, +30.3] for the candidate, both with drop_title. Edu is unchanged.
-- **Remaining empties.** The candidate leaves 321 non-challenge pages empty. On those pages,
-  trafilatura's median text is 70 tokens, and it passes DCLM on 52 pages (166 weighted). These
-  are the model's real misses, analysed in `docs/mini-error-groups.md`.
+  - The 0.3.0 mini returns nothing on 319 of the 322; they are half of its 637 empty texts.
+- **With the challenge pages removed** (trafilatura text of 60 tokens or fewer that contains a
+  challenge phrase, case-insensitive; `docs/mini-error-groups.md`), on the other 6,855 pages the
+  0.3.0 mini against trafilatura: Edu pages +0.0 % [-5.8, +6.4], DCLM pages +22.0 % [+17.7, +26.7],
+  DCLM tokens +40.7 % [+32.1, +51.0].
+- **Remaining empties.** The 0.3.0 mini's other 318 empty pages (2,388 weighted) are its real
+  misses, analysed in `docs/mini-error-groups.md`.
