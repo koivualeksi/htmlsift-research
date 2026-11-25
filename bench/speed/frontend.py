@@ -10,6 +10,8 @@ prep, inference, serialize, batching, timing -- is caller-specific and stays the
 """
 from htmlsift.core.features import apply_zscore, collect_features
 from htmlsift.core.render import parse, render_tree
+
+from core.training import group_columns
 from vendors.wmb.adapter.sanitize import sanitize_tree
 
 
