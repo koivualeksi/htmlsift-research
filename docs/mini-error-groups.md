@@ -208,23 +208,23 @@ often with an oracle below 1, and which line is gold is close to arbitrary.
 
 ## Common Crawl: empty texts
 
-On the 7,177 Common Crawl pages, with the title dropped, the candidate returns an empty text on
-640 pages and the shipped mini on 557. trafilatura returns an empty text on 59.
+On the 7,177 Common Crawl pages, with the title dropped and repeated lines removed, the 0.3.0
+mini returns an empty text on 637 pages. trafilatura returns an empty text on 59.
 
 Most of the gap is not a model failure:
 - 322 pages are bot-challenge or JavaScript-wall interstitials. They were captured by the crawler
   in place of the page.
 - trafilatura extracts the challenge line, typically "Please wait while your request is being
   verified..." (13 tokens). That line passes the DCLM filter on 305 of these pages.
-- Both models return nothing on 318 to 319 of them, which is the right output.
-- The detection rule: trafilatura text of 60 tokens or fewer that contains a challenge phrase.
+- Returning nothing on them is the right output. The 0.3.0 mini does so on 319 of the 322.
+- The detection rule: trafilatura text of 60 tokens or fewer that contains a challenge phrase,
+  case-insensitive.
   The phrases are "request is being verified", "testing whether you are a human", "The requested
   URL was rejected" and "enable JavaScript".
 
-The candidate's remaining 321 empty pages are its real misses:
-- trafilatura's median text on them is 70 tokens, and 67 of them carry 200 tokens or more;
-- trafilatura passes DCLM on 52 of them (166 weighted) and Edu on 1;
-- across all 640 empty pages, 126 returned only the title when the title was kept.
+The remaining 318 empty pages (2,388 weighted) are the model's real misses. trafilatura's text on
+them is empty on 3, 20 tokens or fewer on 26, over 200 tokens on 72, median 73 tokens; it passes
+DCLM on 59 of them and Edu on 1.
 
 Whether these pages are empty by content, with trafilatura picking up a stray line, or real
 content the model drops, is not yet known. That needs a hand label per page.

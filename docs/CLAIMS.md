@@ -378,14 +378,15 @@ These are FineWeb-Edu and DCLM filter passes on 7,177 CC-MAIN-2026-43 pages, wei
 The page set is private (`koivualeksi/htmlsift-bench` @0ac5a811), so this is not a board and
 cannot be reproduced from published sources. Full tables are in `results/ccbench.md`.
 
-    python bench/ccbench.py --ckpt wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999_s1.pt --drop-title
+    python bench/ccbench.py --ckpt mini --drop-title --dedup        # with htmlsift 0.3.0 installed
 
-trafilatura passes 436 pages on Edu and 2,926 on DCLM (6,753 weighted). The candidate, with the
-title dropped, against trafilatura:
-- Edu pages -0.7 % [-6.3, +5.5];
-- DCLM pages +5.9 % [+1.8, +10.4];
-- DCLM tokens +41.0 % [+32.0, +51.2].
+trafilatura passes 436 pages on Edu and 2,926 on DCLM (6,753 weighted). With the title dropped and
+repeated lines removed, against trafilatura:
+
+| extractor | Edu pages | DCLM pages | DCLM tokens |
+|---|---|---|---|
+| mini 0.3.0 (r=128, s2) | +0.0 % [-5.6, +6.3] | +3.1 % [-0.8, +7.3] | +40.4 % [+31.9, +50.7] |
 
 322 of the pages are bot-challenge interstitials. Their one line passes DCLM for trafilatura on
-305 of them, which is 15 % of its weighted DCLM passes. With those pages removed, the candidate's
-DCLM page gain is +25.3 % [+20.7, +30.3].
+305 of them, which is 15 % of its weighted DCLM passes. The 0.3.0 mini returns nothing on 319 of
+them. With those pages removed, its DCLM pages against trafilatura are +22.0 % [+17.7, +26.7].
