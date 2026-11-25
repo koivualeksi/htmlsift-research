@@ -2,7 +2,7 @@ WCXB val -- CPU accuracy vs third-party extractors.
 
 CPU: AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD.
 Pins: onnxruntime==1.22.0 lxml==6.1.1 trafilatura==2.2.0 resiliparse==1.0.9 readability-lxml==0.9.
-mini: shipped int8 ONNX (data/onnx), seed s1.
+mini: the 0.2.x int8 ONNX (data/onnx), seed s1.
 
 One population: the 1497 block-scored pages. Metric = word-F1 over each extractor's text output (trafilatura/resiliparse native, readability flattened via html_to_text); empty output scores 0. mini is its canonical selection score; heuristics via score_text. Regenerate: `python bench/accuracy/heuristics.py --board wcxb`.
 
