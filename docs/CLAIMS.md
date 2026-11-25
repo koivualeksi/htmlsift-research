@@ -226,8 +226,10 @@ two boards' annotation policies disagree on list-shaped pages, not on prose.
 ### Heuristics on WCXB and DAnIEL (zero-shot)
 
 The same third-party extractors scored on the two boards outside the WMB training policy, so
-the accuracy claim can be read off-policy. Our models are 3-seed keepers from the
-generalization ledger (scored on their selected-block text); the heuristics are single
+the accuracy claim can be read off-policy. The mini rows are the delivered table above (the
+package's `output="text"`, one shipped seed); the 311m-10 row is the 3-seed arm from the
+generalization ledger (scored on its selected-block text), since the delivered base is not yet
+measured on these boards through the package. The heuristics are single
 deterministic runs of their native text output, except readability, which has no text mode and
 is flattened (`vendors/shared/html_text.py`). One population per board, the block-scored pages;
 an empty return scores 0. Comparable down a column, never across.
@@ -239,19 +241,22 @@ WCXB test511 (word-F1, n=511) and DAnIEL 1,689 (ROUGE-L, macro over five languag
 
 | extractor | WCXB | DAnIEL |
 |---|---|---|
-| base (311m-10, 3 seeds) | 0.8633±0.0016 | 0.9175±0.0027 |
-| mini (int8 table, 3 seeds) | 0.8474±0.0089 | 0.8797±0.0025 |
-| trafilatura | 0.8584 | 0.8265 |
-| readability | 0.7653 | 0.8925 |
+| 311m-10 arm (3 seeds, research path) | 0.8633±0.0016 | 0.9175±0.0027 |
+| mini 0.3.0 (s2, package) | 0.8529 | 0.8925 |
+| mini 0.2.x (s1, today's package) | 0.8528 | 0.8818 |
+| trafilatura | 0.8584 | 0.8255 |
+| readability | 0.7653 | 0.8904 |
 | resiliparse | 0.7909 | 0.7094 |
 
 resiliparse empty on 10/511 (WCXB) and 1/1,689 (DAnIEL), scored 0; trafilatura empty on 3/511
-(WCXB). base clears every heuristic on both boards. Each heuristic tops one board and drops on
-the other: trafilatura leads WCXB and is next-to-last on DAnIEL, readability the reverse. mini
-sits just behind the board leader on each and ahead of the other two. Dev cross-check
-(`results/heuristics-wcxb-dev.md`): our trafilatura 0.8132 and resiliparse 0.7711 land within
-~2-3 pt of the public WCXB leaderboard (0.791 / 0.797), a version and metric-detail gap. Full
-tables and pins in `results/heuristics-wcxb.md` and `results/heuristics-daniel.md`.
+(WCXB). The 311m-10 arm clears every heuristic on both boards. Each heuristic tops one board and
+drops on the other: trafilatura leads WCXB and is next-to-last on DAnIEL, readability the
+reverse. The 0.3.0 mini is ~0.6 pt behind trafilatura on WCXB (0.8529 vs 0.8584) and ~0.2 pt
+ahead of readability on DAnIEL (0.8925 vs 0.8904), ahead of the other two on each. Dev
+cross-check (`results/heuristics-wcxb-dev.md`): our trafilatura 0.8132 and resiliparse 0.7711 land within
+~2-3 pt of the public WCXB leaderboard (0.791 / 0.797), a version and metric-detail gap. Heuristic
+tables and pins in `results/heuristics-wcxb.md` and `results/heuristics-daniel.md`; their mini
+row is still the 0.2.x ONNX until `bench/accuracy/heuristics.py` scores the package.
 
 ### CPU speed + F1 vs third-party extractors
 

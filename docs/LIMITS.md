@@ -84,11 +84,13 @@ blended factor: the published figure is the measured ratio with its population a
 size-dependence. The encoder arms are slower than the table; GPU is a separate regime
 with its own paragraph below.
 
-**The F1 win is in-domain; off-policy it narrows.** The 0.8994-vs-0.7525 margin above is WMB,
-the training policy. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`, `results/heuristics-wcxb.md`,
-`results/heuristics-daniel.md`), the gap closes: base stays ahead of every heuristic on both
-boards, while mini lands just behind the strongest heuristic on each (trafilatura on WCXB,
-readability on DAnIEL) and ahead of the other two. No heuristic is strong on both boards; each
+**The F1 win is in-domain; off-policy it narrows.** The ~16-pt margin above is WMB, the training
+policy. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`; heuristic rows in
+`results/heuristics-wcxb.md` and `results/heuristics-daniel.md`), the gap closes: the 311m-10 arm
+(3 seeds, research path; the delivered base is not measured there through the package) stays
+ahead of every heuristic on both boards, while the 0.3.0 mini is ~0.6 pt behind trafilatura on
+WCXB (0.8529 vs 0.8584), ~0.2 pt ahead of readability on DAnIEL (0.8925 vs 0.8904), and ahead of the other
+two on each. No heuristic is strong on both boards; each
 encodes a policy, so the ranking moves with the board (`annotation-divergence.md`).
 
 **Threads do not change the tier.** The mini's ONNX forward parallelizes with ORT intra-op
