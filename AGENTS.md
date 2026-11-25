@@ -70,7 +70,10 @@ package release, run `tools/fingerprint.py` against it (install the branch from 
 - Fingerprint unchanged (an output-only or speed-only change): package only. The
   current bundle stays.
 - Fingerprint changed (the model input changed): a new package version and a bundle
-  retrained on it, released together. Record the new fingerprint here.
+  retrained on it, released together. Record the new fingerprint here. Exception: if the
+  current bundle scores identically to 4 dp on every board on the rebuilt data, record
+  the fingerprint and keep the bundle (0.3.0: the C0 strip changed 10 DAnIEL/WCXB pages,
+  no score moved).
 - New weights on the same inputs: this repo builds the bundle; the package pins its
   SHA.
 
