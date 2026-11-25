@@ -88,7 +88,7 @@ def n_workers():
 
 
 _EX = None          # the extractor, set before the fork so workers share it copy-on-write
-_DROP_TITLE = False
+_OPTS = {}          # Extractor.extract keyword options: drop_title, dedup
 
 
 def _init_worker():
@@ -97,15 +97,15 @@ def _init_worker():
 
 def _extract(html):
     try:
-        return _EX.extract(html, drop_title=_DROP_TITLE) or "", None
+        return _EX.extract(html, **_OPTS) or "", None
     except Exception as e:  # noqa: BLE001 -- a failing page scores as empty text, as the reference
         return "", type(e).__name__
 
 
-def extract_all(ex, pages, drop_title):
+def extract_all(ex, pages, opts):
     """(text, error) per page, in page order, over a forked worker pool."""
-    global _EX, _DROP_TITLE
-    _EX, _DROP_TITLE = ex, drop_title
+    global _EX, _OPTS
+    _EX, _OPTS = ex, opts
     n = n_workers()
     print(f"  extracting on {n} CPU workers", flush=True)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -159,8 +159,8 @@ class Scorer:
         return out
 
 
-def score_pages(ex, scorer, pages, out_path, drop_title):
-    extracted = extract_all(ex, pages, drop_title)
+def score_pages(ex, scorer, pages, out_path, opts):
+    extracted = extract_all(ex, pages, opts)
     rows = []
     with open(out_path, "w", encoding="utf-8") as f:
         for k in range(0, len(pages), CHUNK):
@@ -240,19 +240,22 @@ def main():
     ap.add_argument("--drop-title", action="store_true",
                     help="extract with drop_title=True, as trafilatura keeps the title out of its "
                          "text; off reproduces the stored scores/mini.jsonl")
+    ap.add_argument("--dedup", action="store_true",
+                    help="extract with dedup=True, dropping repeated lines")
     args = ap.parse_args()
+    opts = {"drop_title": args.drop_title, "dedup": args.dedup}
     DATA.mkdir(parents=True, exist_ok=True)
     meta, pages, base = load_bench()
     pages = pages[:args.limit]
     stem = Path(args.ckpt).stem
     dev = torch.device(args.device)
     print(f"ccbench: {stem}, {len(pages)} pages, Edu on {dev}", flush=True)
-    out = DATA / f"{stem}{'-droptitle' if args.drop_title else ''}.jsonl"
-    rows = score_pages(extractor(args.ckpt), Scorer(dev), pages, out, args.drop_title)
+    suffix = "".join("-" + k.replace("_", "") for k, v in opts.items() if v)
+    out = DATA / f"{stem}{suffix}.jsonl"
+    rows = score_pages(extractor(args.ckpt), Scorer(dev), pages, out, opts)
     new = {r["id"]: r for r in rows}
     res = compare(new, base, {i: meta[i] for i in new})
-    res.update(n=len(rows), errors=sum("error" in r for r in rows), revision=REVISION,
-               drop_title=args.drop_title)
+    res.update(n=len(rows), errors=sum("error" in r for r in rows), revision=REVISION, **opts)
     print(f"{stem}  vs trafilatura, {len(rows)} pages, weighted to {POOL} CC pages\n"
           f"  Edu passing pages     {fmt(res['edu_pages'])}\n"
           f"  DCLM passing pages    {fmt(res['dclm_pages'])}\n"
