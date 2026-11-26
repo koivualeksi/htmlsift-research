@@ -274,8 +274,8 @@ def concept():
     s.text(190, cy + 104, "1.000", 12, MUTED, mono=True)
     s.text(340, cy + 104, "1.000", 12, MUTED, mono=True)
     s.text(56, cy + 130, "htmlsift lines", 11.5, INK, weight=600)
-    s.rich(190, cy + 130, [("0.992", INK, 700, True), ("  -0.8 pt", RED, 700, True)], 12)
-    s.rich(340, cy + 130, [("0.978", INK, 700, True), ("  -2.2 pt", RED, 700, True)], 12)
+    s.rich(190, cy + 130, [("0.991", INK, 700, True), ("  -0.9 pt", RED, 700, True)], 12)
+    s.rich(340, cy + 130, [("0.977", INK, 700, True), ("  -2.3 pt", RED, 700, True)], 12)
 
     s.card(490, cy, 430, ch)
     s.rect(506, cy + 18, 10, 10, GREEN, rx=2)
@@ -411,15 +411,15 @@ def architecture():
     lane("base", BLUE, BLUE_T, "base", "encoder",
          ["granite-311m, 10 of 22 layers, fp32", "whole page in one 8,192-token window", "tokens attend across the page", "fine-tuned on WMB, text only"])
     lane("mini", AMBER, AMBER_T, "mini", "embedding table",
-         ["the backbone's token table, nothing else", "262,152 x 768, int8: 202 MB", "a lookup, no attention, frozen", "+ 33 structural features per line"])
+         ["the backbone's token table, rank 128", "262,152 x 128, int8: 34.6 MB", "a lookup, no attention, frozen", "+ 33 structural features per line"])
 
     x, w = cols[2]
     for key in ("base", "mini"):
         y = lane_y[key]
         s.card(x, y, w, lane_h)
         s.text(x + 14, y + 28, "mean-pool", 13, INK, weight=700)
-        bullets(x + 14, y + 52, ["one 768-d vector", "  per line"] +
-                ([("+ 33 features", AMBER), ("= 801-d", AMBER)] if key == "mini" else ["no features"]))
+        bullets(x + 14, y + 52, [f"one {128 if key == 'mini' else 768}-d vector", "  per line"] +
+                ([("+ 33 features", AMBER), ("= 161-d", AMBER)] if key == "mini" else ["no features"]))
 
     x, w = cols[3]
     for key in ("base", "mini"):
@@ -442,7 +442,7 @@ def architecture():
 
     s.footer(lane_y["mini"] + lane_h + 30, "No token-by-token decode.",
              "One forward pass (or one table lookup) and one recurrent sweep per page, then a threshold.",
-             "source: core/model.py, htmlsift.core.features, export/infer.py, docs/PROTOCOL.md; 202 MB from the export build")
+             "source: core/model.py, core/quant.py, htmlsift.core.features, export/infer.py, docs/PROTOCOL.md; 34.6 MB = mini-table-int8.onnx at HF tag v0.3.0")
     s.save("architecture.svg")
 
 
@@ -483,25 +483,25 @@ def tiers():
             s.text(x + 20, top + H - 14, note, 9.5, FAINT, italic=True)
 
     tier(40, AMBER, AMBER_T, "mini", "default install, torch-free",
-         [("WHAT", "int8 embedding table + BiGRU head, ONNX", None),
-          ("SIZE", "202 MB + 6.5 MB", None),
+         [("WHAT", "rank-128 int8 embedding table + BiGRU head, ONNX", None),
+          ("SIZE", "34.6 MB + 2.6 MB", None),
           ("RUNTIME", "onnxruntime, tokenizers, lxml, numpy", None),
-          ("SPEED", "CPU 36.1 ms / page median", "Ryzen 5 3600, single thread, 544 pages")],
-         [("WMB test545, ROUGE-5", "0.9010", "in-domain, int8, 3 seeds"),
-          ("WCXB test511, word-F1", "0.8474", "zero-shot, int8, 3 seeds"),
-          ("DAnIEL 1,689, ROUGE-L", "0.8797", "zero-shot, int8, 3 seeds")],
+          ("SPEED", "CPU 32.9 ms / page median", "i7-6820HQ, 2 vCPU / 4 GB container, single thread, 544 pages")],
+         [("WMB test545, ROUGE-5", "0.9114", "in-domain, shipped s2"),
+          ("WCXB test511, word-F1", "0.8529", "zero-shot, shipped s2"),
+          ("DAnIEL 1,689, ROUGE-L", "0.8925", "zero-shot, shipped s2")],
          "")
     tier(490, BLUE, BLUE_T, "base", "full install, torch",
          [("WHAT", "granite-311m encoder, 10 of 22 layers, fine-tuned", None),
           ("SIZE", "~1.0 GB fp32 checkpoint", None),
           ("RUNTIME", "+ torch, transformers", None),
           ("SPEED", "GPU 24.6 pages / s, full pipeline", "RTX 4090, band attention; 7.4 ms p50 batch-1, model only")],
-         [("WMB test545, ROUGE-5", "0.9311", "± 0.0027, in-domain, 3 seeds"),
-          ("WCXB test511, word-F1", "0.8633", "± 0.0016, zero-shot, 3 seeds"),
-          ("DAnIEL 1,689, ROUGE-L", "0.9175", "± 0.0027, zero-shot, 3 seeds")],
-         "")
+         [("WMB test545, ROUGE-5", "0.9288", "in-domain, shipped s1"),
+          ("WCXB test511, word-F1", "0.8633", "zero-shot, 311m-10 arm *"),
+          ("DAnIEL 1,689, ROUGE-L", "0.9175", "zero-shot, 311m-10 arm *")],
+         "* the research arm's 3-seed mean; the shipped seed is not yet scored here")
 
-    s.b.append("<!-- source: results/generalization.md, results/speed-wmb.md, results/speed-wmb-311m-10.md; GPU: results/throughput-wmb.md (311m-10, RTX 4090, 2026-09-18) -->")
+    s.b.append("<!-- source: docs/CLAIMS.md (delivered models through the package; 311m-10 arm from results/generalization.md), results/speed-wmb.md (mini 0.3.0, 2 vCPU / 4 GB container); GPU: results/throughput-wmb.md (311m-10, RTX 4090) -->")
     s.end_y = top + H
     s.save("tiers.svg")
 
@@ -716,10 +716,10 @@ LADDERS = [  # label, color, [(mean, std)] per PAGES, best-epoch val732, 3 seeds
      [(0.8349, 0.0060), (0.8614, 0.0037), (0.8690, 0.0034), (0.8829, 0.0032), (0.8887, 0.0029), (0.8972, 0.0017), (0.9024, 0.0035)]),
     ("97m encoder, 6 layers, int8 QAT", PURPLE,
      [(0.8060, 0.0074), (0.8362, 0.0037), (0.8479, 0.0070), (0.8620, 0.0025), (0.8743, 0.0014), (0.8799, 0.0008), (0.8821, 0.0030)]),
-    ("311m table + features (mini)", AMBER,
+    ("311m table + features (0.2.x mini)", AMBER,
      [(0.7188, 0.0407), (0.7820, 0.0023), (0.8053, 0.0063), (0.8243, 0.0078), (0.8406, 0.0014), (0.8528, 0.0030), (0.8597, 0.0024)]),
 ]
-FLOOR_VAL, CEIL_VAL = 0.6359, 0.9784
+FLOOR_VAL, CEIL_VAL = 0.6337, 0.9772   # docs/CLAIMS.md, the package's pruner
 TRAFI_VAL = 0.6649   # trafilatura 2.2.0 ROUGE-5 on WMB val732 (NOT test545's 0.7525)
 
 
@@ -738,13 +738,13 @@ def data_efficiency():
         s.text(lx(n), py1 + 18, f"{n:,}", 10.5, FAINT, "middle")
     s.text((px0 + px1) / 2, py1 + 38, "training pages (log scale); 6,548 = the full train split", 11, MUTED, "middle")
     s.line(px0, y_of(CEIL_VAL), px1, y_of(CEIL_VAL), GREEN, 1.2, dash="5 4")
-    s.text(px1 - 4, y_of(CEIL_VAL) - 6, "DOM oracle ceiling  0.978", 10.5, GREEN, "end")
+    s.text(px1 - 4, y_of(CEIL_VAL) - 6, f"DOM oracle ceiling  {CEIL_VAL:.3f}", 10.5, GREEN, "end")
     # trafilatura and the floor are close; label trafilatura above its line and the floor below
     # its line so neither the two lines nor their labels collide
     s.line(px0, y_of(TRAFI_VAL), px1, y_of(TRAFI_VAL), RED, 1.2, dash="5 4")
     s.text(px1 - 4, y_of(TRAFI_VAL) - 6, "trafilatura (val732)  0.665", 10.5, RED, "end")
     s.line(px0, y_of(FLOOR_VAL), px1, y_of(FLOOR_VAL), MUTED, 1.2, dash="5 4")
-    s.text(px1 - 4, y_of(FLOOR_VAL) + 15, "select-all floor  0.636", 10.5, MUTED, "end")
+    s.text(px1 - 4, y_of(FLOOR_VAL) + 15, f"select-all floor  {FLOOR_VAL:.3f}", 10.5, MUTED, "end")
     for label, color, vals in LADDERS:
         up = [(lx(n), y_of(m + sd)) for n, (m, sd) in zip(PAGES, vals)]
         dn = [(lx(n), y_of(m - sd)) for n, (m, sd) in reversed(list(zip(PAGES, vals)))]
@@ -774,7 +774,7 @@ def data_efficiency():
             s.text(cx0 + j * step + step / 2, y, f"{m:.3f}", 11, INK, "middle", mono=True)
 
     s.footer(gy + gh + 30, "Most of the gain arrives in the first few hundred pages.",
-             "With 125 pages the 311m encoder already clears the select-all floor by 20 points and 500 pages come within 3.3 of the full pool. The 97m needs about 4x the pages for the same score, and the no-encoder table needs the whole pool to reach what the 311m has at 250.",
+             "With 125 pages the 311m encoder already clears the select-all floor by 20 points and 500 pages come within 3.3 of the full pool. The 97m needs about 4x the pages for the same score, and the no-encoder table needs the whole pool to reach what the 311m has at 250. The table line is the 0.2.x mini's recipe; on the full pool the 0.3.0 mini (rank-128 table) scores 0.870, against 0.861 for the 0.2.x mini (shipped seeds, through the package).",
              "source: results/wmb-finetune.md, results/wmb-finetune-qat.md, results/wmb-frozen.md (training-set size, val best-epoch); floor and ceiling docs/CLAIMS.md")
     s.save("data-efficiency.svg")
 
@@ -782,17 +782,18 @@ def data_efficiency():
 # =====================================================================================
 # 9. cpu_speed_accuracy.svg -- one row per tool, two bars
 # =====================================================================================
-# htmlsift F1 = 3-seed test mean (results/generalization.md); the deterministic heuristics are one run (= mean)
-SPEED = [("htmlsift mini", 36.1, 79.7, 0.9010, AMBER), ("readability", 19.3, 33.7, 0.8016, "#6b7480"),
-         ("trafilatura", 31.2, 70.8, 0.7525, "#6b7480"), ("resiliparse", 1.9, 4.5, 0.7135, "#6b7480")]
-SIZE_DEP = [("<1k", 140, 1.3), ("1k-4k", 248, 1.2), ("4k-16k", 120, 1.0), ("16k-32k", 21, 0.9), (">32k", 15, 0.6)]
-FLOOR_TEST, CEIL_TEST = 0.7156, 0.9918
+# results/speed-wmb.md (2 vCPU / 4 GB container): (median ms, mean ms, F1); htmlsift = mini 0.3.0, shipped seed s2
+SPEED = [("htmlsift mini", 32.9, 69.8, 0.9114, AMBER), ("readability", 31.1, 57.1, 0.8016, "#6b7480"),
+         ("trafilatura", 44.0, 99.6, 0.7525, "#6b7480"), ("resiliparse", 2.2, 5.5, 0.7135, "#6b7480")]
+SIZE_DEP = [("<1k", 140, 2.2), ("1k-4k", 248, 1.8), ("4k-16k", 120, 1.5), ("16k-32k", 21, 1.4), (">32k", 15, 0.9)]
+FLOOR_TEST, CEIL_TEST = 0.7147, 0.9914   # docs/CLAIMS.md, the package's pruner
 
 
 def cpu_speed_accuracy():
     s = SVG(616)
     y0 = s.frame("htmlsift mini vs heuristic extractors",
-                 "WMB test545, 544 pages, CPU single thread (Ryzen 5 3600). Time one run, extraction only; htmlsift F1 = 3-seed test mean (seeds 0-2).")
+                 ["WMB test545, 544 pages, one thread in a 2 vCPU / 4 GB container (Intel i7-6820HQ). Extraction only,",
+                  "methods timed page by page in rotating order; htmlsift = the 0.3.0 mini, shipped seed s2, through the package."])
     top = y0 + 12
     rowh = 58
     main_h = 4 * rowh + 70
@@ -802,7 +803,7 @@ def cpu_speed_accuracy():
     tx0, tx1 = 640, 880      # time bars
     flo, fhi = 0.60, 1.0
     f_of = lambda v: fx0 + (v - flo) / (fhi - flo) * (fx1 - fx0)
-    t_of = lambda ms: tx0 + ms / 40 * (tx1 - tx0)
+    t_of = lambda ms: tx0 + ms / 50 * (tx1 - tx0)
     s.text(fx0, top + 26, "ROUGE-5 F1", 10, FAINT, weight=700, ls=0.6)
     s.text(fx1, top + 26, "higher is better", 9.5, FAINT, "end")
     s.text(tx0, top + 26, "MEDIAN MS PER PAGE", 10, FAINT, weight=700, ls=0.6)
@@ -816,14 +817,14 @@ def cpu_speed_accuracy():
         s.text(f_of(f1) + 8, y + 4, f"{f1:.3f}", 11, INK, "start", 700 if ours else None, mono=True)
         # time bar
         s.rect(tx0, y - 9, t_of(p50) - tx0, 18, color, rx=4)
-        s.text(t_of(p50) + 8, y + 4, f"{p50:g} ms", 11, INK, "start", 700 if ours else None, mono=True)
-        s.text(tx1, y + 18, f"mean {mean:g} ms", 9.5, FAINT, "end", mono=True)
+        s.text(t_of(p50) + 8, y + 4, f"{p50:.1f} ms", 11, INK, "start", 700 if ours else None, mono=True)
+        s.text(tx1, y + 18, f"mean {mean:.1f} ms", 9.5, FAINT, "end", mono=True)
     # floor / ceiling markers on the F1 column
     yb0, yb1 = top + 40, top + 44 + 4 * rowh - 6
-    for v, lab, c in ((FLOOR_TEST, "select-all floor 0.716", MUTED), (CEIL_TEST, "oracle ceiling 0.992", GREEN)):
+    for v, lab, c in ((FLOOR_TEST, f"select-all floor {FLOOR_TEST:.3f}", MUTED), (CEIL_TEST, f"oracle ceiling {CEIL_TEST:.3f}", GREEN)):
         s.line(f_of(v), yb0, f_of(v), yb1, c, 1.2, dash="4 3")
         s.text(f_of(v) - 6, yb1 + 14, lab, 9.5, c, "end", mono=True)
-    s.text(tx0, yb1 + 14, "heuristics deterministic: one run = mean", 9.5, FAINT)
+    s.text(tx0, yb1 + 14, "one timing run per method", 9.5, FAINT)
 
     # size dependence strip
     sy = top + main_h + 16
@@ -840,10 +841,10 @@ def cpu_speed_accuracy():
         s.text(x + cw - 22, sy + 76, f"{r:.1f}x", 12, INK, "end", 700, mono=True)
         s.text(x + 10, sy + 94, f"n = {n}", 9, FAINT, mono=True)
 
-    s.footer(sy + strip_h + 20, "14.9 F1 points over trafilatura, in a similar speed tier.",
+    s.footer(sy + strip_h + 20, "15.9 F1 points over trafilatura, in a similar speed tier.",
              "",
-             "source: results/speed-wmb.md (mini = 311m-table-bigru-fABC int8 ONNX, one-run timing); "
-             "F1 = 3-seed test mean results/generalization.md; trafilatura 2.2.0, readability-lxml 0.9, resiliparse 1.0.9; docs/CLAIMS.md")
+             "source: results/speed-wmb.md (mini 0.3.0 = 311m-table-bigru-fABC-nb1-pf4-ema0.999-r128_s2 bundle through the package, "
+             "one-run timing); trafilatura 2.2.0, readability-lxml 0.9, resiliparse 1.0.9; docs/CLAIMS.md")
     s.save("cpu_speed_accuracy.svg")
 
 
@@ -856,17 +857,20 @@ XB = [
     ("311m-10 encoder", "WCXB", BLUE, {"wmb": (0.8479, 0.0107), "wcxb": (0.9209, 0.0007), "daniel": (0.8826, 0.0027)}),
     ("97m-6 int8 QAT", "WMB", PURPLE, {"wmb": (0.9256, 0.0048), "wcxb": (0.8507, 0.0030), "daniel": (0.8915, 0.0082)}),
     ("97m-6 int8 QAT", "WCXB", PURPLE, {"wmb": (0.8339, 0.0034), "wcxb": (0.9081, 0.0020), "daniel": (0.8700, 0.0082)}),
-    ("311m table\n+ features, int8", "WMB", AMBER, {"wmb": (0.9010, 0.0031), "wcxb": (0.8474, 0.0089), "daniel": (0.8797, 0.0025)}),
+    # WMB-trained: the 0.3.0 mini, shipped seed s2, through the package (docs/CLAIMS.md), sd None = one seed.
+    # WCXB-trained: the 0.2.x table recipe, int8, 3 seeds (no 0.3.0 objective on WCXB).
+    ("311m table\n+ features, int8", "WMB", AMBER, {"wmb": (0.9114, None), "wcxb": (0.8529, None), "daniel": (0.8925, None)}),
     ("311m table\n+ features, int8", "WCXB", AMBER, {"wmb": (0.8387, 0.0108), "wcxb": (0.8876, 0.0046), "daniel": (0.7653, 0.0186)}),
 ]
-XB_COLS = [("wmb", "WMB test545", "ROUGE-5", 0.7156, 0.9918), ("wcxb", "WCXB test511", "word-F1", 0.7201, 0.9933),
+XB_COLS = [("wmb", "WMB test545", "ROUGE-5", 0.7147, 0.9914), ("wcxb", "WCXB test511", "word-F1", 0.7201, 0.9933),
            ("daniel", "DAnIEL 1,689", "ROUGE-L macro", 0.4984, 0.9816)]
 
 
 def cross_board():
     s = SVG(600)
     y0 = s.frame("Trained on one board, scored on all three",
-                 "Each column is that board's own metric with its floor and ceiling: read down a column, never across a row. Test folds, 3 seeds, mean ± std.")
+                 ["Each column is that board's own metric with its floor and ceiling: read down a column, never across a row.",
+                  "Test folds, 3 seeds, mean ± std; the WMB-trained table row is the shipped 0.3.0 mini, one seed (s2)."])
     top = y0 + 12
     s.card(40, top, 880, 392)
     cx = [(300, 190), (505, 190), (710, 190)]
@@ -892,14 +896,15 @@ def cross_board():
             v_of = lambda v: bar_x0 + (v - floor) / (ceil - floor) * (bar_x1 - bar_x0)
             s.rect(bar_x0, y + 4, bar_x1 - bar_x0, 8, GRAY_T, rx=4)
             s.rect(bar_x0, y + 4, max(v_of(m) - bar_x0, 0), 8, color, rx=4, op=1 if indom else 0.45)
-            s.text(bar_x0, y + 28, f"{m:.4f} ± {sd:.4f}", 10.5, INK, "start", 700 if indom else None, mono=True)
+            s.text(bar_x0, y + 28, f"{m:.4f} ± {sd:.4f}" if sd is not None else f"{m:.4f}, s2", 10.5, INK,
+                   "start", 700 if indom else None, mono=True)
             if indom:
                 s.text(bar_x1, y + 28, "in-domain", 9.5, color, "end", 700)
     ny = hy + 44 + 6 * rowh + 2
     s.text(56, ny, "bar = position between that board's select-all floor (left end) and oracle ceiling (right end); faded = zero-shot", 10, FAINT)
     s.footer(top + 392 + 30, "Crossing boards costs 6 to 8 points either way.",
-             "A WMB-trained encoder loses 5.8 pt onto WCXB; a WCXB-trained one loses 8.3 pt onto WMB, and the WMB-trained model leads on the neutral third board. The table arm without an encoder transfers worst to DAnIEL.",
-             "source: results/generalization.md (test F1 per board, 3 seeds); floors and ceilings docs/CLAIMS.md")
+             "A WMB-trained encoder loses 5.8 pt onto WCXB; a WCXB-trained one loses 8.3 pt onto WMB, and the WMB-trained model leads on the neutral third board. The WCXB-trained table arm transfers worst to DAnIEL.",
+             "source: results/generalization.md (test F1 per board, 3 seeds); mini 0.3.0 docs/CLAIMS.md (delivered models); floors and ceilings docs/CLAIMS.md")
     s.save("cross-board.svg")
 
 
@@ -954,23 +959,26 @@ def daniel_lolo():
 # =====================================================================================
 GRAYC = "#6b7480"                                  # competitor gray (matches the SPEED baselines)
 # (label, sustained pages/s full pipeline, ratio vs MinerU or "", F1, colour, band-outline).
-# Throughput is one seed-0 run (results/throughput-wmb.md); F1 is the 3-seed predict ledger.
+# Throughput is one seed-0 run (results/throughput-wmb.md); F1 of 311m-10 is the delivered base
+# (s1, docs/CLAIMS.md), of 97m-6-qat the 3-seed predict ledger.
 GPU_MINERU = ("MinerU-HTML v1.1", 1.16, "", 0.9306, GRAYC, False)
 GPU_RESEARCH = [GPU_MINERU,
-                ("htmlsift 311m-10", 18.4, "16×", 0.9311, BLUE, False),
-                ("311m-10 + band", 24.6, "21×", 0.9311, BLUE, True),
+                ("htmlsift 311m-10", 18.4, "16×", 0.9288, BLUE, False),
+                ("311m-10 + band", 24.6, "21×", 0.9288, BLUE, True),
                 ("htmlsift 97m-6-qat", 30.2, "26×", 0.9256, PURPLE, False)]
 GPU_PKG = [GPU_MINERU,
-           ("htmlsift 311m-10 (band)", 24.6, "21×", 0.9311, BLUE, False)]
+           ("htmlsift 311m-10 (band)", 24.6, "21×", 0.9288, BLUE, False)]
 GPU_SOURCE = ("source: results/throughput-wmb.md, results/dripper-wmb.md (RTX 4090, seed-0 keeper); "
-              "F1 = 3-seed predict ledger results/generalization.md; docs/CLAIMS.md")
+              "F1 base = delivered s1 docs/CLAIMS.md, 97m-6-qat = 3-seed predict ledger results/generalization.md")
+GPU_F1_NOTE_FULL = "base shipped seed s1; 97m-6-qat 3-seed mean; MinerU one run"
+GPU_F1_NOTE_LITE = "base shipped seed s1; MinerU one run"
 # one (lead, rest) per green-box pointer; lead is bold, rest muted
-GPU_FOOT_LITE = [("21x faster than MinerU-HTML v1.1 at the same accuracy.", "")]
-GPU_FOOT_FULL = [("311m-10 + band: 21x faster than MinerU-HTML v1.1 at the same accuracy.", ""),
+GPU_FOOT_LITE = [("21x faster than MinerU-HTML v1.1 at near-equal accuracy, within 0.2 F1 pt.", "")]
+GPU_FOOT_FULL = [("311m-10 + band: 21x faster than MinerU-HTML v1.1 at near-equal accuracy, within 0.2 F1 pt.", ""),
                  ("97m-6-qat: 26x faster, within 0.5 F1 pt.", "")]
 
 
-def _gpu_cut(fname, subtitle, rows, foots):
+def _gpu_cut(fname, subtitle, rows, foots, f1_note):
     s = SVG(620)
     y0 = s.frame("htmlsift base vs MinerU-HTML v1.1", subtitle)
     top = y0 + 12
@@ -983,7 +991,7 @@ def _gpu_cut(fname, subtitle, rows, foots):
     axis_y = plot_top + len(rows) * rowh
     s.text(bx0, top + 32, "SUSTAINED PAGES / S", 10, FAINT, weight=700, ls=0.6)
     s.text(904, top + 32, "ROUGE-5 F1", 10, FAINT, "end", weight=700, ls=0.6)
-    s.text(904, top + 46, "htmlsift 3-seed mean; MinerU one run", 9, FAINT, "end")
+    s.text(904, top + 46, f1_note, 9, FAINT, "end")
     for p in (0, 10, 20, 30):
         s.line(t_of(p), plot_top, t_of(p), axis_y, GRID, 1)
         s.text(t_of(p), axis_y + 18, str(p), 10, FAINT, "middle", mono=True)
@@ -1010,13 +1018,13 @@ def _gpu_cut(fname, subtitle, rows, foots):
 def gpu_speed_accuracy_full():
     _gpu_cut("gpu_speed_accuracy_full.svg",
              "WMB test545, RTX 4090. All arms against MinerU-HTML v1.1; band is the bit-identical speed variant of 311m-10.",
-             GPU_RESEARCH, GPU_FOOT_FULL)
+             GPU_RESEARCH, GPU_FOOT_FULL, GPU_F1_NOTE_FULL)
 
 
 def gpu_speed_accuracy_lite():
     _gpu_cut("gpu_speed_accuracy_lite.svg",
              "WMB test545, RTX 4090. Shipped model (311m-10, band attention) against MinerU-HTML v1.1.",
-             GPU_PKG, GPU_FOOT_LITE)
+             GPU_PKG, GPU_FOOT_LITE, GPU_F1_NOTE_LITE)
 
 
 if __name__ == "__main__":

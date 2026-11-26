@@ -10,25 +10,25 @@
 <text x="60" y="136" font-size="18" fill="#1b1f24" font-weight="700">mini</text>
 <text x="109.6" y="136" font-size="11.5" fill="#c17d11" font-weight="600">default install, torch-free</text>
 <text x="60" y="186" font-size="10.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">WHAT</text>
-<text x="150" y="186" font-size="11.5" fill="#1b1f24">int8 embedding table + BiGRU head, ONNX</text>
+<text x="150" y="186" font-size="11.5" fill="#1b1f24">rank-128 int8 embedding table + BiGRU head, ONNX</text>
 <text x="60" y="208" font-size="10.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">SIZE</text>
-<text x="150" y="208" font-size="11.5" fill="#1b1f24" class="m">202 MB + 6.5 MB</text>
+<text x="150" y="208" font-size="11.5" fill="#1b1f24" class="m">34.6 MB + 2.6 MB</text>
 <text x="60" y="230" font-size="10.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">RUNTIME</text>
 <text x="150" y="230" font-size="11.5" fill="#1b1f24">onnxruntime, tokenizers, lxml, numpy</text>
 <text x="60" y="252" font-size="10.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">SPEED</text>
-<text x="150" y="252" font-size="11.5" fill="#1b1f24" class="m">CPU 36.1 ms / page median</text>
-<text x="150" y="267" font-size="10" fill="#8a9199">Ryzen 5 3600, single thread, 544 pages</text>
+<text x="150" y="252" font-size="11.5" fill="#1b1f24" class="m">CPU 32.9 ms / page median</text>
+<text x="150" y="267" font-size="10" fill="#8a9199">i7-6820HQ, 2 vCPU / 4 GB container, single thread, 544 pages</text>
 <line x1="60" y1="283" x2="450" y2="283" stroke="#e9ecef" stroke-width="1"/>
 <text x="60" y="303" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">F1 ON THE TEST FOLDS</text>
 <text x="60" y="327" font-size="11.5" fill="#565d66">WMB test545, ROUGE-5</text>
-<text x="258" y="327" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.9010</text>
-<text x="332" y="327" font-size="10" fill="#8a9199">in-domain, int8, 3 seeds</text>
+<text x="258" y="327" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.9114</text>
+<text x="332" y="327" font-size="10" fill="#8a9199">in-domain, shipped s2</text>
 <text x="60" y="348" font-size="11.5" fill="#565d66">WCXB test511, word-F1</text>
-<text x="258" y="348" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.8474</text>
-<text x="332" y="348" font-size="10" fill="#8a9199">zero-shot, int8, 3 seeds</text>
+<text x="258" y="348" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.8529</text>
+<text x="332" y="348" font-size="10" fill="#8a9199">zero-shot, shipped s2</text>
 <text x="60" y="369" font-size="11.5" fill="#565d66">DAnIEL 1,689, ROUGE-L</text>
-<text x="258" y="369" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.8797</text>
-<text x="332" y="369" font-size="10" fill="#8a9199">zero-shot, int8, 3 seeds</text>
+<text x="258" y="369" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.8925</text>
+<text x="332" y="369" font-size="10" fill="#8a9199">zero-shot, shipped s2</text>
 <rect x="490" y="102" width="430" height="316" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
 <rect x="490" y="102" width="430" height="56" fill="#e3ebf6" rx="10"/>
 <rect x="490" y="148" width="430" height="10" fill="#e3ebf6"/>
@@ -46,13 +46,14 @@
 <line x1="510" y1="283" x2="900" y2="283" stroke="#e9ecef" stroke-width="1"/>
 <text x="510" y="303" font-size="9.5" fill="#8a9199" font-weight="700" letter-spacing="0.6">F1 ON THE TEST FOLDS</text>
 <text x="510" y="327" font-size="11.5" fill="#565d66">WMB test545, ROUGE-5</text>
-<text x="708" y="327" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.9311</text>
-<text x="782" y="327" font-size="10" fill="#8a9199">± 0.0027, in-domain, 3 seeds</text>
+<text x="708" y="327" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.9288</text>
+<text x="782" y="327" font-size="10" fill="#8a9199">in-domain, shipped s1</text>
 <text x="510" y="348" font-size="11.5" fill="#565d66">WCXB test511, word-F1</text>
 <text x="708" y="348" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.8633</text>
-<text x="782" y="348" font-size="10" fill="#8a9199">± 0.0016, zero-shot, 3 seeds</text>
+<text x="782" y="348" font-size="10" fill="#8a9199">zero-shot, 311m-10 arm *</text>
 <text x="510" y="369" font-size="11.5" fill="#565d66">DAnIEL 1,689, ROUGE-L</text>
 <text x="708" y="369" font-size="12.5" fill="#1b1f24" font-weight="700" class="m">0.9175</text>
-<text x="782" y="369" font-size="10" fill="#8a9199">± 0.0027, zero-shot, 3 seeds</text>
-<!-- source: results/generalization.md, results/speed-wmb.md, results/speed-wmb-311m-10.md; GPU: results/throughput-wmb.md (311m-10, RTX 4090, 2026-09-18) -->
+<text x="782" y="369" font-size="10" fill="#8a9199">zero-shot, 311m-10 arm *</text>
+<text x="510" y="404" font-size="9.5" fill="#8a9199" font-style="italic">* the research arm's 3-seed mean; the shipped seed is not yet scored here</text>
+<!-- source: docs/CLAIMS.md (delivered models through the package; 311m-10 arm from results/generalization.md), results/speed-wmb.md (mini 0.3.0, 2 vCPU / 4 GB container); GPU: results/throughput-wmb.md (311m-10, RTX 4090) -->
 </svg>

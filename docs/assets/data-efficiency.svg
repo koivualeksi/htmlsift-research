@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 714" width="960" height="714" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" width="960" height="720" fill="#1b1f24" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif">
 <style>.m{font-family:'Cascadia Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;}</style>
-<rect x="0" y="0" width="960" height="714" fill="#f1f3f5"/>
-<rect x="0.5" y="0.5" width="959" height="713" fill="none" stroke="#d7dbe0" stroke-width="1"/>
+<rect x="0" y="0" width="960" height="720" fill="#f1f3f5"/>
+<rect x="0.5" y="0.5" width="959" height="719" fill="none" stroke="#d7dbe0" stroke-width="1"/>
 <text x="40" y="46" font-size="22" fill="#1b1f24" font-weight="700">The labeling policy is learned from a few hundred pages</text>
 <text x="40" y="70" font-size="13" fill="#565d66">WMB val732 ROUGE-5 F1 as the training set grows. Stratified nested prefixes of the 6,548-page train split; 3 seeds, best-epoch, mean ± std.</text>
 <rect x="40" y="104" width="880" height="380" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
@@ -31,12 +31,12 @@
 <text x="784.131" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">4,000</text>
 <text x="880" y="446" font-size="10.5" fill="#8a9199" text-anchor="middle">6,548</text>
 <text x="495" y="466" font-size="11" fill="#565d66" text-anchor="middle">training pages (log scale); 6,548 = the full train split</text>
-<line x1="110" y1="149.876" x2="880" y2="149.876" stroke="#15663c" stroke-width="1.2" stroke-dasharray="5 4"/>
-<text x="876" y="143.876" font-size="10.5" fill="#15663c" text-anchor="end">DOM oracle ceiling  0.978</text>
+<line x1="110" y1="150.758" x2="880" y2="150.758" stroke="#15663c" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="876" y="144.758" font-size="10.5" fill="#15663c" text-anchor="end">DOM oracle ceiling  0.977</text>
 <line x1="110" y1="380.298" x2="880" y2="380.298" stroke="#b3261e" stroke-width="1.2" stroke-dasharray="5 4"/>
 <text x="876" y="374.298" font-size="10.5" fill="#b3261e" text-anchor="end">trafilatura (val732)  0.665</text>
-<line x1="110" y1="401.613" x2="880" y2="401.613" stroke="#565d66" stroke-width="1.2" stroke-dasharray="5 4"/>
-<text x="876" y="416.613" font-size="10.5" fill="#565d66" text-anchor="end">select-all floor  0.636</text>
+<line x1="110" y1="403.23" x2="880" y2="403.23" stroke="#565d66" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="876" y="418.23" font-size="10.5" fill="#565d66" text-anchor="end">select-all floor  0.634</text>
 <polygon points="110.0,250.9 244.8,233.2 379.7,227.8 514.5,217.7 649.3,213.7 784.1,208.3 880.0,203.2 880.0,208.3 784.1,210.8 649.3,217.9 514.5,222.4 379.7,232.8 244.8,238.6 110.0,259.8" fill="#3d6fb4" opacity="0.12"/>
 <polyline points="110.0,255.3 244.8,235.9 379.7,230.3 514.5,220.1 649.3,215.8 784.1,209.6 880.0,205.7" fill="none" stroke="#3d6fb4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="110" cy="255.349" r="4.5" fill="#3d6fb4" stroke="#ffffff" stroke-width="2"/>
@@ -75,7 +75,7 @@
 <line x1="273.5" y1="174.1" x2="287.5" y2="174.1" stroke="#6a4c9c" stroke-width="2.5"/>
 <text x="292.5" y="178.1" font-size="11" fill="#565d66">97m encoder, 6 layers, int8 QAT</text>
 <line x1="479" y1="174.1" x2="493" y2="174.1" stroke="#c17d11" stroke-width="2.5"/>
-<text x="498" y="178.1" font-size="11" fill="#565d66">311m table + features (mini)</text>
+<text x="498" y="178.1" font-size="11" fill="#565d66">311m table + features (0.2.x mini)</text>
 <rect x="40" y="500" width="880" height="118" fill="#ffffff" rx="10" stroke="#d7dbe0" stroke-width="1"/>
 <text x="56" y="524" font-size="10" fill="#8a9199" font-weight="700" letter-spacing="0.5">best-epoch F1, mean over 3 seeds</text>
 <text x="342.857" y="524" font-size="10.5" fill="#8a9199" text-anchor="middle" font-weight="700" class="m">125</text>
@@ -105,7 +105,7 @@
 <text x="771.429" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.880</text>
 <text x="857.143" y="582" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.882</text>
 <circle cx="62" cy="604" r="4.5" fill="#c17d11" stroke="#ffffff" stroke-width="2"/>
-<text x="74" y="608" font-size="11" fill="#1b1f24">311m table + features (mini)</text>
+<text x="74" y="608" font-size="11" fill="#1b1f24">311m table + features (0.2.x mini)</text>
 <text x="342.857" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.719</text>
 <text x="428.571" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.782</text>
 <text x="514.286" y="608" font-size="11" fill="#1b1f24" text-anchor="middle" class="m">0.805</text>
@@ -116,6 +116,7 @@
 <rect x="40" y="639" width="10" height="10" fill="#15663c" rx="2"/>
 <text x="58" y="648" font-size="12.5"><tspan fill="#1b1f24" font-weight="700">Most of the gain arrives in the first few hundred pages. </tspan><tspan fill="#565d66">With 125 pages the 311m encoder already clears the select-all floor by 20 points</tspan></text>
 <text x="58" y="666" font-size="12.5" fill="#565d66">and 500 pages come within 3.3 of the full pool. The 97m needs about 4x the pages for the same score, and the no-encoder table needs the</text>
-<text x="58" y="684" font-size="12.5" fill="#565d66">whole pool to reach what the 311m has at 250.</text>
+<text x="58" y="684" font-size="12.5" fill="#565d66">whole pool to reach what the 311m has at 250. The table line is the 0.2.x mini's recipe; on the full pool the 0.3.0 mini (rank-128 table)</text>
+<text x="58" y="702" font-size="12.5" fill="#565d66">scores 0.870, against 0.861 for the 0.2.x mini (shipped seeds, through the package).</text>
 <!-- source: results/wmb-finetune.md, results/wmb-finetune-qat.md, results/wmb-frozen.md (training-set size, val best-epoch); floor and ceiling docs/CLAIMS.md -->
 </svg>
