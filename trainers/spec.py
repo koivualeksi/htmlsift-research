@@ -16,7 +16,7 @@ import yaml
 # run's config, so a run.yaml stays complete if a default here later changes.
 DEFAULTS = {
     "finetune": {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "cap": 0,
-                 "hidden": 256, "epochs": 4, "train_limit": None, "holdout": None,
+                 "hidden": 256, "epochs": 4, "steps": None, "train_limit": None, "holdout": None,
                  "qat_w8a8": False, "quant_eval": False,
                  "export_test": True, "keep": False},
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
@@ -81,6 +81,9 @@ def check(cfg):
     if cfg.get("quant_eval") and cfg.get("qat_w8a8"):
         raise ValueError("quant_eval scores int8 variants against the fp32 model; "
                          "incompatible with qat_w8a8")
+    st = cfg.get("steps")
+    if st is not None and not (isinstance(st, int) and not isinstance(st, bool) and st >= 1):
+        raise ValueError(f"steps must be a positive int (it replaces epochs), got {st!r}")
     if cfg["recipe"] == "table":
         if cfg["emb"] not in EMBS:
             raise ValueError(f"unknown emb {cfg['emb']!r}; one of {EMBS}")
@@ -124,9 +127,6 @@ def check(cfg):
                 and (td + fd == 0 or cfg["feats"])):
             raise ValueError(f"text_drop and feat_drop must be >= 0 with sum <= 1, and need "
                              f"feats; got {td!r}, {fd!r}, feats {cfg['feats']!r}")
-        st = cfg["steps"]
-        if st is not None and not (isinstance(st, int) and not isinstance(st, bool) and st >= 1):
-            raise ValueError(f"steps must be a positive int (it replaces epochs), got {st!r}")
         if not isinstance(cfg["plain"], bool):
             raise ValueError(f"plain must be true or false, got {cfg['plain']!r}")
         if cfg["plain"] and (cfg["board"] != "wmb" or cfg["extra"] is not None):

@@ -31,11 +31,13 @@ def _eval(encoder, head, val_pages, score_val, dev, autocast):
 
 def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
                   epochs=4, enc_lr=2e-5, head_lr=1e-3, wd=0.01, warmup=200,
-                  grad_clip=1.0, seed=0, out_path=None, meta=None):
+                  grad_clip=1.0, seed=0, out_path=None, meta=None, steps=None):
     """Fine-tune encoder+head on train_pages, selecting on
     score_val(val_pages, probs) (higher is better). Leaves encoder+head holding
     the best-val weights and returns {best_val, best_epoch, history}. A checkpoint
-    is written only when out_path is given (keep), since these are large."""
+    is written only when out_path is given (keep), since these are large. steps, as in
+    train_head, replaces epochs with a budget of at least that many steps, scored 4 times:
+    4 epochs of a few pages end before the 200-step warmup does."""
     torch.manual_seed(seed)
     autocast = dev.type == "cuda"
 
@@ -58,6 +60,10 @@ def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
          "lr": enc_lr, "weight_decay": 0.0},
         {"params": list(head.parameters()), "lr": head_lr, "weight_decay": 0.0},
     ])
+    every = 1
+    if steps is not None:
+        epochs = -(-steps // len(samples))
+        every = -(-epochs // 4)
     total_steps = len(samples) * epochs
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda step: min((step + 1) / max(warmup, 1),
@@ -88,8 +94,11 @@ def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
             sched.step()
             total_loss += float(loss.detach())
 
+        if epoch % every and epoch != epochs:
+            continue
         m = _eval(encoder, head, val_pages, score_val, dev, autocast)
         m["loss"] = total_loss / len(samples)
+        m["epoch"] = epoch
         history.append(m)
         star = ""
         if m["val"] > best["val"]:
@@ -217,7 +226,7 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
                 for r, k in enumerate(idx):
                     probs[k] = p[r][:len(val_x[k])]
         v = score_val(val_pages, probs)
-        history.append({"val": v, "loss": total_loss / len(batches)})
+        history.append({"epoch": epoch, "val": v, "loss": total_loss / len(batches)})
         if v > best["val"]:
             best = {"val": v, "epoch": epoch}
             best_state = {k: t.cpu().clone() for k, t in scored.state_dict().items()}

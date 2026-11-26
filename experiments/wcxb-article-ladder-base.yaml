@@ -1,0 +1,10 @@
+# The base encoder (311m-10, the shipped base recipe) on the wcxb-article ladder, for a
+# direct comparison with wcxb-article-ladder (the mini). 2,300 steps is 4 epochs of the
+# whole 513-page pool, so the top rung is the shipped schedule and every smaller rung
+# gets the same compute instead of ending inside the 200-step warmup.
+name: wcxb-article-ladder-base
+recipe: finetune
+board: wcxb-article
+steps: 2300
+sweep:
+  train_limit: [25, 50, 100, 200, 400, null]
