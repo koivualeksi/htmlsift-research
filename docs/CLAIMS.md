@@ -92,9 +92,10 @@ score the package's `output="text"` as-is with their vendored scorers (`PROTOCOL
 | base — `311m-10_s1` | **0.9288** | not measured | not measured |
 
     python bench/speed/cpu_compare.py --bundle data/bundles/mini --fold test --threads 1   # WMB, a mini bundle
+    python bench/accuracy/heuristics.py --board daniel --bundle data/bundles/mini         # DAnIEL, output="text"
+    python bench/accuracy/heuristics.py --board wcxb --bundle data/bundles/mini           # WCXB, output="text"
 
-No committed harness yet scores the package's `output="text"` on DAnIEL and WCXB, or the base
-through the package; `bench/accuracy/heuristics.py` still loads the 0.2.x ONNX.
+No committed harness yet scores the base through the package.
 
 The 0.2.x row is the 0.2.x bundle run through today's package, so the two mini rows share one
 pipeline: 0.2.x to 0.3.0 is +1.4 pt on WMB, +1.1 pt on DAnIEL and level on WCXB (+0.0001). The
@@ -234,8 +235,8 @@ deterministic runs of their native text output, except readability, which has no
 is flattened (`vendors/shared/html_text.py`). One population per board, the block-scored pages;
 an empty return scores 0. Comparable down a column, never across.
 
-    python bench/accuracy/heuristics.py --board wcxb
-    python bench/accuracy/heuristics.py --board daniel
+    python bench/accuracy/heuristics.py --board wcxb --bundle data/bundles/mini --bundle <0.2.x bundle>
+    python bench/accuracy/heuristics.py --board daniel --bundle data/bundles/mini --bundle <0.2.x bundle>
 
 WCXB test511 (word-F1, n=511) and DAnIEL 1,689 (ROUGE-L, macro over five languages):
 
@@ -255,8 +256,8 @@ reverse. The 0.3.0 mini is ~0.6 pt behind trafilatura on WCXB (0.8529 vs 0.8584)
 ahead of readability on DAnIEL (0.8925 vs 0.8904), ahead of the other two on each. Dev
 cross-check (`results/heuristics-wcxb-dev.md`): our trafilatura 0.8132 and resiliparse 0.7711 land within
 ~2-3 pt of the public WCXB leaderboard (0.791 / 0.797), a version and metric-detail gap. Heuristic
-tables and pins in `results/heuristics-wcxb.md` and `results/heuristics-daniel.md`; their mini
-row is still the 0.2.x ONNX until `bench/accuracy/heuristics.py` scores the package.
+tables and pins, with both mini rows through the package, in `results/heuristics-wcxb.md` and
+`results/heuristics-daniel.md`.
 
 ### CPU speed + F1 vs third-party extractors
 
@@ -368,7 +369,7 @@ WCXB and DAnIEL are not measured at full width for s2.
 
 **Size.** Table 202.4 → 34.6 MB, head 6.5 → 2.6 MB: the two graphs 208.9 → 37.2 MB. The bundle
 also carries granite's tokenizer, now gzipped (`tokenizer.json.gz`, 33.4 → 5.4 MB, byte-reproducible;
-`python -m tools.release mini`): the download 242.3 MB with the plain tokenizer → 42.6 MB. The plain
+`python tools/release.py mini`): the download 242.3 MB with the plain tokenizer → 42.6 MB. The plain
 `tokenizer.json` stays in the release repo as the fallback for a bundle without the `.gz`.
 
 **Parity.** The built r=128 graphs, through the shipped forward, reproduce the torch r=128 model on

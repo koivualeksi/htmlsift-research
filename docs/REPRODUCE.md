@@ -132,8 +132,8 @@ render: the factor is fit on WMB train renders), then build, gate and publish th
     python -m trainers.train experiments/wmb-mini-pf-confirm.yaml
     python tools/promote.py <run-id>               # the feat_drop 0.0 runs of seeds 0, 1, 2
     python -m vendors.wmb.adapter.lowrank 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128 --push
-    python -m tools.release mini                   # build + gate under data/bundles/mini
-    python -m tools.release mini --push            # + upload to koivualeksi/htmlsift-release
+    python tools/release.py mini                   # build + gate under data/bundles/mini
+    python tools/release.py mini --push            # + upload to koivualeksi/htmlsift-release
 
 The bundle `htmlsift` 0.3.0 pins is seed 2, release commit `a86f08a` (tag `v0.3.0`).
 
@@ -308,25 +308,29 @@ published figure is the **ratio** with its size dependence, never an absolute: a
 CPU cap fixes the thread count, not the host microarchitecture, so absolute ms does not
 carry across machines. On CPU we are not faster than the heuristics (`LIMITS.md`); the
 ratio is reported honestly and size-bucketed. The mini is timed through the installed
-package on a bundle directory (`--bundle`); the published speed figure is still the 0.2.x
-mini's, from an earlier form of the harness (`CLAIMS.md`), and the 0.3.0 run is not yet done.
-An encoder keeper via `--ckpt`/`--model` is slower and not the CPU competitor.
+package on a bundle directory (`--bundle`); the published figures are the 0.3.0 mini's, from
+the two container runs below (`CLAIMS.md`). Methods are timed page by page in rotating
+order, and `--memory` records each method's resident memory in its own process. An encoder
+keeper via `--ckpt`/`--model` is slower and not the CPU competitor.
 
 Run it in the pinned container so the render stack (Python 3.13 + lxml 6.1.1, the §4
 render-gate versions) and the extractor versions are fixed, and the report records the
-CPU model, the visible core count and the pinned versions it ran on:
+CPU model, the visible core count and the pinned versions it ran on. The published runs, on
+Linux from the repo root:
 
     docker build -f deploy/docker/Dockerfile -t htmlsift-bench .
-    docker run --rm --cpus=2 --cpuset-cpus=0,1 -v "$PWD/vendors/wmb/data:/repo/vendors/wmb/data" -v "$PWD/311m-10_s0.pt:/repo/ckpt.pt" htmlsift-bench --ckpt /repo/ckpt.pt --fold test --threads 2
+    python tools/release.py mini                   # the bundle, under data/bundles/mini
+    sh deploy/docker/cpu_speed.sh                  # 2 vCPU / 4 GB and 1 vCPU / 2 GB, one thread
 
-Data and the keeper `.pt` mount at run time, never baked (§2); on Git Bash prefix
-`MSYS_NO_PATHCONV=1` and use forward-slash host paths. `--cpuset-cpus` pins which cores
-and `--cpus` how many. The vCPU count is part of the claim, not just hygiene: our ONNX
-forward gains on more cores (ORT intra-op) while a single trafilatura call cannot (GIL-bound),
-so handing ORT more threads than trafilatura would manufacture an unfair win (§7) — pin the
-same low count for both. A modest 2 is the conservative choice; the single-threaded lxml
-render+prep floor caps the end-to-end gain regardless. The run writes `results/speed-wmb.md`
-for the `--bundle` mini, or `results/speed-wmb-<model>.md` for an encoder keeper.
+Data and the bundle mount read-only at run time, never baked (§2), and nothing is fetched
+(`HF_HUB_OFFLINE=1`). `--cpuset-cpus` pins which cores, `--cpus` how many and `--memory`
+the RAM. The thread count is part of the claim, not just hygiene: our ONNX forward gains on
+more cores (ORT intra-op) while a single trafilatura call cannot (GIL-bound), so handing ORT
+more threads than trafilatura would manufacture an unfair win (§7). Both published runs
+pin ORT to one thread (`--threads 1`), as trafilatura runs; the single-threaded lxml
+render+prep floor caps any threaded gain regardless. The runs write `results/speed-wmb.md`
+(2 vCPU) and `results/speed-wmb-1vcpu.md` (1 vCPU); an encoder keeper via `--ckpt` writes
+`results/speed-wmb-<model>.md`.
 
 ## GPU throughput vs MinerU-HTML v1.1 (§7)
 
