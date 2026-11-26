@@ -36,12 +36,14 @@ VAL_PAGES = 200
 
 class WCXBBenchmark:
     holdout_groups = ()
-    supports_train_limit = True
 
     def __init__(self, page_type=None):
         if page_type not in (None, *PAGE_TYPES):
             raise ValueError(f"unknown WCXB page type {page_type!r}; one of {PAGE_TYPES}")
         self.page_type = page_type
+        # only a single-type board carves a val; on the full board val is the training
+        # set, so a ladder would select each rung's epochs on its own training pages
+        self.supports_train_limit = page_type is not None
         self.name = "wcxb" if page_type is None else f"wcxb-{page_type}"
         self._feats = None        # raw feats.jsonl {tid: [n, K]}, loaded once
         self._rows = {}           # split -> {tid: (blocks, labels|None, ref)}, cached

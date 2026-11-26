@@ -88,6 +88,11 @@ def test_all_types_board_unchanged(data):
     assert "dev-9999" in b._fold_rows("train")
 
 
+def test_train_limit_only_with_a_carved_val():
+    assert wb.WCXBBenchmark("article").supports_train_limit
+    assert not wb.WCXBBenchmark().supports_train_limit
+
+
 def test_unknown_type_raises():
     with pytest.raises(ValueError):
         wb.WCXBBenchmark("recipe")

@@ -10,7 +10,7 @@ from typing import Protocol
 class Benchmark(Protocol):
     name: str                                    # "wmb" / "wcxb" -- for result paths + messages
     holdout_groups: tuple                        # leave-one-out training groups (DAnIEL langs); () = unsupported
-    supports_train_limit: bool                   # the data-efficiency ladder (WMB pool prefixes)
+    supports_train_limit: bool                   # the data-efficiency ladder (nested pool subsets)
 
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None) -> list[dict]:
         """This board's fold -> prepared pages: empty renders dropped, z-scored
