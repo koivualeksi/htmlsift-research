@@ -1,0 +1,14 @@
+# Data-efficiency ladder for the mini on one page type: the 0.3.0 recipe trained from
+# scratch on nested subsets of WCXB dev articles (test twins dropped, a 200-page
+# domain-held-out val), scored on all 257 test articles. null is the whole pool (513).
+# steps holds the optimiser-step budget near the shipped WMB run's (~3,276), so the
+# per-step EMA is trained at every rung.
+name: wcxb-article-ladder
+recipe: table
+board: wcxb-article
+ema: 0.999
+smooth_weight: 1.0
+page_f1: 4.0
+steps: 3300
+sweep:
+  train_limit: [25, 50, 100, 200, 400, null]
