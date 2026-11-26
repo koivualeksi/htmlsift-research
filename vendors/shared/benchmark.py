@@ -59,9 +59,9 @@ def load_benchmark(name, holdout=None, plain=False):
     if name == "wmb":
         from vendors.wmb.adapter.benchmark import WMBBenchmark
         return WMBBenchmark(plain)
-    if name == "wcxb":
+    if name == "wcxb" or name.startswith("wcxb-"):
         from vendors.wcxb.adapter.benchmark import WCXBBenchmark
-        return WCXBBenchmark()
+        return WCXBBenchmark(name.partition("-")[2] or None)
     if name == "daniel":
         from vendors.daniel.adapter.benchmark import DanielBenchmark
         return DanielBenchmark(holdout=holdout)
