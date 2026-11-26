@@ -20,7 +20,7 @@ DEFAULTS = {
                  "qat_w8a8": False, "quant_eval": False,
                  "export_test": True, "keep": False},
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
-              "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
+              "hidden": 256, "epochs": 4, "steps": None, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
@@ -124,6 +124,9 @@ def check(cfg):
                 and (td + fd == 0 or cfg["feats"])):
             raise ValueError(f"text_drop and feat_drop must be >= 0 with sum <= 1, and need "
                              f"feats; got {td!r}, {fd!r}, feats {cfg['feats']!r}")
+        st = cfg["steps"]
+        if st is not None and not (isinstance(st, int) and not isinstance(st, bool) and st >= 1):
+            raise ValueError(f"steps must be a positive int (it replaces epochs), got {st!r}")
         if not isinstance(cfg["plain"], bool):
             raise ValueError(f"plain must be true or false, got {cfg['plain']!r}")
         if cfg["plain"] and (cfg["board"] != "wmb" or cfg["extra"] is not None):

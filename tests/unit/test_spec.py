@@ -36,7 +36,7 @@ def test_load_and_expand(tmp_path):
         [(x, s) for x in (0, 1, 5) for s in range(3)]          # seeds innermost
     assert runs[0] == {"recipe": "table", "board": "wmb",
                        "model": "97m", "emb": "fp32", "head": "bigru", "feats": "ABC",
-                       "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
+                       "hidden": 256, "epochs": 4, "steps": None, "batch_size": 8, "head_lr": 2.0e-3,
                        "train_limit": None, "extra": "custom", "extra_repeat": 0,
                        "len_cap": None, "len_floor": None, "len_side": "both",
                        "page_norm": False, "fp_weight": 1.0, "fp_box": None,
@@ -119,6 +119,8 @@ def test_unknown_top_level_key(tmp_path):
     (dict(fixed={"box_mass": 1.0, "fp_box": 3, "extra": "custom"}), "only WMB"),
     (dict(fixed={"ema": 1.0}), "ema must"),
     (dict(fixed={"ema": -0.1}), "ema must"),
+    (dict(fixed={"steps": 0}), "steps must"),
+    (dict(sweep={"steps": [100, True]}), "steps must"),
     (dict(fixed={"text_drop": 0.6, "feat_drop": 0.6}), "sum <= 1"),
     (dict(fixed={"feat_drop": -0.1}), "sum <= 1"),
     (dict(fixed={"text_drop": 0.3, "feats": None}), "need feats"),
@@ -160,5 +162,5 @@ def test_run_yaml_from_before_a_key_passes_check():
     old = {k: v for k, v in S.expand(table())[0].items()
            if k not in ("len_cap", "len_floor", "len_side", "page_norm", "fp_weight",
                         "fp_box", "focal_gamma", "label_smooth", "smooth_weight", "box_mass",
-                        "ema", "text_drop", "feat_drop", "plain")}
+                        "ema", "text_drop", "feat_drop", "plain", "steps")}
     S.check(old)
