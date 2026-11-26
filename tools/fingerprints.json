@@ -22,5 +22,17 @@
       "wcxb": "48cfe8a5180cd0c0"
     },
     "total": "de3d2754e2c3ec53"
+  },
+  {
+    "htmlsift": "0.3.0",
+    "source": "pypi",
+    "lxml": "6.1.1",
+    "libxml2": "2.14.6",
+    "boards": {
+      "wmb": "a7c4eb1dac7f8029",
+      "daniel": "b37d3ec298f22afc",
+      "wcxb": "48cfe8a5180cd0c0"
+    },
+    "total": "de3d2754e2c3ec53"
   }
 ]
