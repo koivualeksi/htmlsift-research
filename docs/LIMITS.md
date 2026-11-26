@@ -171,6 +171,31 @@ of test); a model trained on dev has seen them. We use the benchmark as-is
 (upstream issues filed) and do not de-contaminate the board — every leaderboard
 entry eats the same split. `track_id` namespaces the collision.
 
+**The article ladder is one page type across many sites, not one site.** It supports
+"trained on N articles from other sites, scores X on unseen sites' articles"; it says
+nothing about learning one site or one template from a few of its pages, which no board
+here can test (WCXB has at most three pages per domain). Articles are also the type where
+the heuristics are strongest: trafilatura beats both shipped models zero-shot on them
+(0.9370 vs mini 0.9176 / base 0.9343), so the ladder's gains are measured against the
+hardest baseline WCXB has, and a ladder on another type could land differently.
+
+**What the ladder protocol removes and what it keeps.** 79 of the 257 test articles have a
+byte-identical twin among the dev articles; the ladder drops those twins from its training
+pool and its val, so no rung trains on a test page. Domain overlap is kept in test and
+reported beside it: 102 test articles come from a domain with dev articles, and the
+disjoint column scores the other 155. No row scores more than 0.0011 lower on the disjoint
+subset than on all of test, and most score higher, so the overlap does not inflate the
+trained numbers. The published WCXB test511 numbers above
+are unaffected: they train on the full dev, twins included, as every leaderboard entry
+does.
+
+**Base columns are one seed.** The mini's seed spread on the ladder is 0.001-0.007, so a
+single-seed gap under about 0.01 is not resolvable; the base columns are read for their
+level, not to rank scratch against arm A. Arm A starts every seed from one shipped seed
+(mini s2, base s1), so its seeds vary data order, not the starting model. The step budget
+is one number per ladder, not tuned per rung; most rungs select an early scoring point, so
+a smaller budget would likely score the same.
+
 **Ceilings are lower bounds.** The 0.9890 / 0.9933 ceilings are hill-climb
 fixpoints — the best word-F1 block selection found, a lower bound on the exact
 knapsack optimum, not a proven maximum.

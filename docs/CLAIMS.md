@@ -190,6 +190,54 @@ row is the same arm on the full split at the same epoch budget: 0.8966±0.0035 e
 | 2000 | 0.8824±0.0016 | 0.8887±0.0029 |
 | 4000 | 0.8868±0.0044 | 0.8972±0.0017 |
 
+### Data efficiency on one page type — WCXB articles, word-F1
+
+Trained on N articles from many sites, scored on articles from other sites. The board is
+`wcxb-article`: WCXB dev articles minus the 79 whose html is byte-identical to a test article,
+split by registrable domain into a 200-page val and a 513-page training pool; rungs are
+nested seeded subsets of the pool. Test is all 257 test articles; disjoint is the 155 of them
+whose domain no dev article has. Scratch trains from a random head (mini) or the pretrained
+backbone (base); arm A starts from the shipped model, so its 0-page row is that model's
+zero-shot score and scratch has none. The mini is scored at rank 128 with its int8 table, the
+shipped form (the harness reproduces the package's zero-shot mini to 4 dp: test 0.9176,
+package 0.9175); the base as its pod scored it. Every rung of a ladder gets the same
+optimiser-step budget (mini 3,300, base 2,300 = 4 epochs of the full pool).
+
+    python -m trainers.train experiments/wcxb-article-ladder.yaml               # mini, scratch, 3 seeds
+    python -m trainers.train experiments/wcxb-article-ladder-init.yaml          # mini, arm A, 3 seeds
+    python -m trainers.train experiments/wcxb-article-ladder-base.yaml          # base, scratch, 1 seed
+    python -m trainers.train experiments/wcxb-article-ladder-base-init.yaml     # base, arm A, 1 seed
+    python bench/accuracy/ladder.py                    # -> results/wcxb-article-ladder.md (+ val)
+
+Test (n=257) / disjoint (n=155):
+
+| train pages | mini, scratch | mini, arm A | base, scratch | base, arm A |
+|---|---|---|---|---|
+| 0 | — | 0.9176 / 0.9209 | — | 0.9343 / 0.9332 |
+| 25 | 0.8974±0.0032 / 0.9155±0.0031 | 0.9275±0.0010 / 0.9297±0.0017 | 0.9481 / 0.9517 | 0.9369 / 0.9364 |
+| 50 | 0.9147±0.0070 / 0.9316±0.0058 | 0.9401±0.0015 / 0.9461±0.0044 | 0.9557 / 0.9612 | 0.9409 / 0.9403 |
+| 100 | 0.9168±0.0031 / 0.9359±0.0018 | 0.9444±0.0029 / 0.9489±0.0033 | 0.9557 / 0.9620 | 0.9546 / 0.9570 |
+| 200 | 0.9291±0.0045 / 0.9505±0.0034 | 0.9483±0.0012 / 0.9530±0.0026 | 0.9564 / 0.9592 | 0.9519 / 0.9521 |
+| 400 | 0.9479±0.0008 / 0.9545±0.0019 | 0.9537±0.0039 / 0.9539±0.0044 | 0.9587 / 0.9621 | 0.9607 / 0.9633 |
+| 513 | 0.9513±0.0016 / 0.9577±0.0024 | 0.9562±0.0008 / 0.9580±0.0020 | 0.9666 / 0.9731 | 0.9602 / 0.9618 |
+
+The same pages through `bench/accuracy/heuristics.py --board wcxb-article`
+(`results/heuristics-wcxb-article.md`): trafilatura 0.9370 / 0.9413, readability
+0.9280 / 0.9532, resiliparse 0.8147 / 0.8819.
+
+**The mini adapts from a few dozen pages when it starts from the shipped model.** Arm A
+gains at every rung: 25 articles lift it from 0.9176 to 0.9275 on test, 50 put it past
+trafilatura (0.9401), and from 200 it is level with readability on the disjoint sites
+(0.9530). Trained from scratch, the mini is no better than the shipped mini's zero-shot
+score up to 100 pages, and needs about 400 for what arm A reaches with 100-200. The base learns faster: from scratch,
+25 articles score 0.9481 and 50 reach about 0.956, after which test is flat to 400
+pages. Starting the base from the shipped model is no help on test below 100 pages
+(0.9369 vs 0.9481 at 25) and level from 100; on val it is ahead at every rung
+(`results/wcxb-article-ladder.md`), so on one seed the two columns are read as level, not
+ranked. Both models flatten from about 100-200 articles. No row scores more than 0.0011 lower on
+the disjoint sites than on all of test, and most score higher, so the 102 test articles
+from sites with dev articles do not flatter the trained rows.
+
 ### DAnIEL leave-one-language-out — ROUGE-L F1, 311m-10, 4 epochs
 
 Train on four languages, score the fifth, so n is that language's page count and the
