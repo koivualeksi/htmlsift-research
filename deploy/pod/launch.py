@@ -120,7 +120,8 @@ def train_env(path, smoke, launch, git):
     if extras:
         (env["EXTRA"],) = extras                 # one extra source exists: custom
     name = f"{s.name}-{launch}" + ("-smoke" if smoke else "")
-    return name, ",".join(sorted({c["board"] for c in configs})), env
+    # a single-type board (wcxb-article) is built from its base board's source
+    return name, ",".join(sorted({c["board"].partition("-")[0] for c in configs})), env
 
 
 def candidates(gpus):
