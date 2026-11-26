@@ -1,11 +1,13 @@
 """Recipe finetune: fine-tune an encoder+head on one board, select the epoch on val, then
-optionally score test (export_test) and post-hoc int8 variants (quant_eval).
+optionally score test (export_test) and post-hoc int8 variants (quant_eval). init starts
+encoder+head from an encoder keeper instead of the pretrained backbone and a random head.
 """
 import copy
 
 import torch
 from transformers import AutoTokenizer
 
+from core.loader import resolve_ckpt
 from core.model import build_encoder, build_head, infer_page
 from core.quant import emb_int8_fakequant, patch_qat_w8a8, ptq_dynamic
 from core.training import feature_dim
@@ -109,6 +111,15 @@ def run(cfg, ctx):
     tok, pages, fz = _pages(ctx, cfg, arm)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     enc, head = build_model(arm, ctx.dev)
+    if cfg.get("init") is not None:
+        ck = resolve_ckpt(cfg["init"], ctx.dev)
+        keys = ("model", "layers", "head", "cap", "feats", "hidden")
+        if ck.get("kind") is not None or any(ck.get(k) != arm.get(k) for k in keys):
+            raise ValueError(f"init {cfg['init']}: needs an encoder keeper of arm "
+                             f"{ {k: arm.get(k) for k in keys} }, got { {k: ck.get(k) for k in keys} }")
+        enc.load_state_dict(ck["encoder"])
+        head.load_state_dict(ck["head_state"])
+        del ck
     if cfg["qat_w8a8"]:
         patch_qat_w8a8(enc)
     ckpt = ctx.folder / "ckpt.pt" if cfg["keep"] else None

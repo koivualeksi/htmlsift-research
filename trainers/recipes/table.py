@@ -5,6 +5,9 @@ ckpt.pt; export_test reloads it through the keeper loader and scores val + test.
 
 extra: custom adds vendors/custom's pages to the train fold only, repeated extra_repeat
 times (0 is the same run without them).
+
+init: start the head from a full-width table keeper instead of a random init, and use the
+z-score it carries (never refit), so its features mean what they meant when it trained.
 """
 import numpy as np
 import torch
@@ -12,7 +15,7 @@ from transformers import AutoTokenizer
 
 from htmlsift.core.features import apply_zscore
 from htmlsift.extractor import THRESHOLD
-from core.loader import build_infer
+from core.loader import build_infer, resolve_ckpt
 from core.model import build_head, build_table_embedder, pool_table_pages
 from core.training import zscore_stats
 from trainers.loop import train_head
@@ -84,6 +87,18 @@ def _pooled(ctx, cfg, train_p, val_p, ext_p):
     return cached(ctx, "pooled", key, build)
 
 
+def _init(cfg):
+    """The keeper an init run starts from, refused unless its head fits this config."""
+    ck = resolve_ckpt(cfg["init"], torch.device("cpu"))
+    want = {"kind": "table", "model": MODELS[cfg["model"]][0], "int8": cfg["emb"] == "int8",
+            "head": cfg["head"], "feats": cfg["feats"], "hidden": cfg["hidden"]}
+    got = {k: ck.get(k) for k in want}
+    if got != want or "proj" in ck:
+        raise ValueError(f"init {cfg['init']}: needs a full-width keeper {want}, got {got}"
+                         + (" (low-rank)" if "proj" in ck else ""))
+    return ck
+
+
 def _feats(ctx, cfg, b, train_p_s):
     """(z-scored features {track_id: [n, F]}, the full-layout stats the ckpt carries),
     or (None, None) for text-only. A train_limit refits the z-score on those N pages, and
@@ -92,6 +107,9 @@ def _feats(ctx, cfg, b, train_p_s):
     g = cfg["feats"]
     if not g:
         return None, None
+    if cfg.get("init") is not None:
+        ck = _init(cfg)
+        return bench_ops.carried_features(b, ck), ck["zscore"]
     raw, z = cached(ctx, "feats", (cfg["board"], cfg.get("holdout"), g),
                     lambda: b.load_features(g))
     if cfg["train_limit"] is not None:
@@ -161,6 +179,8 @@ def run(cfg, ctx):
     tx, vx = cat(tp, et), cat(val_p, eva)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
+    if cfg.get("init") is not None:
+        head.load_state_dict(_init(cfg)["head_state"])
     s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev,
                    Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev,
                              [p["box"] for p in tp]),
