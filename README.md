@@ -8,7 +8,7 @@ and footers stripped) by labelling rendered *lines*, not DOM elements. Three mod
 trained here on [WebMainBench][wmb] (WMB). 7,825 labelled pages, custom split 6,548 train / 732 val / 545 test. 
 
 Two of the three models are published:
-- small int8 `mini` intended for CPU use
+- small `mini` (a rank-128 int8 embedding table) intended for CPU use
 - 311M `base` encoder intended for GPU use
 
 ![The two shipped tiers: mini and base, with size, speed, and F1 on the three boards](docs/assets/tiers.svg)
@@ -40,7 +40,7 @@ Rebuilding the WMB data from source checks itself at each step:
 - the 7,809-page corpus renders to `convert_main_content` byte-for-byte
 - all 7,825 pages get exact DOM-provenance labels, with no fallback matcher
 - the domain split shares no page between train and test
-- the DOM oracle ceiling comes out at 0.9918 on test, 0.9784 on val
+- the DOM oracle ceiling comes out at 0.9914 on test, 0.9772 on val
 
 ## Reproduction
 
@@ -84,7 +84,8 @@ only what differs from the shipped config; one command runs it:
 
 ```bash
 python -m trainers.train experiments/wmb-base.yaml           # the shipped base, 3 seeds
-python -m trainers.train experiments/wmb-mini.yaml           # the shipped mini, 3 seeds
+python -m trainers.train experiments/wmb-mini-pf-confirm.yaml  # the 0.3.0 mini's recipe (its feat_drop 0 cell)
+python -m trainers.train experiments/wmb-mini.yaml           # the 0.2.x mini, 3 seeds
 python -m trainers.train experiments/wmb-lite.yaml --smoke   # 20 pages, 1 epoch, seed 0
 ```
 
@@ -127,8 +128,9 @@ by re-running its experiment, not by downloading.
 
 The `table` recipe is the published `mini`: there is no encoder to fine-tune, so it pools
 the backbone's frozen token-embedding table per line and trains only the head. It is
-trained on the fp32 table and shipped with the table quantized to int8; `export_test` scores
-the kept checkpoint both ways and records the int8 score as `test_int8_f1`.
+trained on the fp32 table. For 0.3.0 the trained table is then factored to rank 128
+(`python -m vendors.wmb.adapter.lowrank <arm> --rank 128`) and shipped int8; `export_test` scores
+the kept checkpoint in fp32 and int8 and records the int8 score as `test_int8_f1`.
 
 **The frozen screen.** No fine-tuning: encode once per layer and train only the head. This
 is the layer screen behind *Cut the encoder in half*, val-only, one record per (model,
@@ -159,10 +161,13 @@ python -X utf8 vendors/wcxb/adapter/evaluate.py --split test --oracle
 
 ### Speed, and on a pod
 
-The CPU speed-vs-accuracy sheet against the third-party extractors needs `[repro,bench]`:
+The CPU speed-vs-accuracy sheet against the third-party extractors needs `[repro,bench]`. The
+published numbers come from two pinned containers, built from `deploy/docker/Dockerfile`, with
+the mini's bundle from `tools/release.py mini`:
 
 ```bash
-python bench/speed/cpu_compare.py
+python bench/speed/cpu_compare.py --bundle data/bundles/mini --fold test --threads 1 --memory
+sh deploy/docker/cpu_speed.sh      # the published runs: 2 vCPU / 4 GB and 1 vCPU / 2 GB
 ```
 
 Nothing here needs a rented machine, but the author ran the sweeps on RunPod.
@@ -232,7 +237,7 @@ layers**, at no measured cost on val. (int8 QAT is accuracy-neutral; details in
 
 Most of the accuracy arrives in the first few hundred labelled pages. The model learns a
 benchmark's labelling policy quickly, so retraining on your own labels is cheap. On 311m-10 only 125 pages
-already clear the select-all floor by 20 points (0.835 vs 0.636, best-epoch val732); 500 come
+already clear the select-all floor by 20 points (0.835 vs 0.634, best-epoch val732); 500 come
 within 3.3 points of the full 6,548-page train split (0.869 vs 0.902).
 
 ## "Main content" is a policy, not a fact
@@ -263,21 +268,24 @@ WCXB. resiliparse trails on both. None of them is broken. Each fits one policy a
 another, the same split the benchmarks show.
 
 Because our models learn the policy instead of hard-coding it, they hold up across both.
-Trained on WMB and run zero-shot, base scores above every heuristic on each board; mini, the
-CPU model, lands just behind the strongest heuristic on each and clears the other two. So it
-never tops a board it was not trained on, but it is the consistent one, and when the policy
-does not match yours you retrain it (see [Retraining on your own data](#retraining-on-your-own-data)).
+Trained on WMB and run zero-shot, the 311m-10 arm (the base recipe) scores above every
+heuristic on each board. mini, the CPU model, is ~0.6 pt behind trafilatura on WCXB and ~0.2 pt
+ahead of readability on DAnIEL, and clears the other two on each. No heuristic is strong on
+both boards; mini is, and when the policy does not match yours you retrain it (see
+[Retraining on your own data](#retraining-on-your-own-data)).
 
 | model | WCXB, word-F1 | DAnIEL, ROUGE-L |
 |---|---|---|
-| base (311m-10) | 0.8633 | 0.9175 |
-| mini (int8 table) | 0.8474 | 0.8797 |
-| trafilatura | 0.8584 | 0.8265 |
-| readability | 0.7653 | 0.8925 |
+| 311m-10 arm, 3 seeds | 0.8633 | 0.9175 |
+| mini 0.3.0 | 0.8529 | 0.8925 |
+| trafilatura | 0.8584 | 0.8255 |
+| readability | 0.7653 | 0.8904 |
 | resiliparse | 0.7909 | 0.7094 |
 
-WCXB test511, DAnIEL 1,689 (macro over five languages), zero-shot. Read down each column,
-not across: the two metrics differ. Regenerate with `bench/accuracy/heuristics.py`.
+WCXB test511, DAnIEL 1,689 (macro over five languages), zero-shot. mini is the shipped seed
+through the package's text output; the 311m-10 row is the research arm's 3-seed mean. Read down
+each column, not across: the two metrics differ. Regenerate with
+`bench/accuracy/heuristics.py --board <wcxb|daniel> --bundle <dir>`.
 
 Two things follow, and the rest of this repo depends on them: cross-board numbers are
 policy comparisons, not model rankings; and no model is trained on a board it is scored
@@ -286,49 +294,56 @@ treatment in [`docs/annotation-divergence.md`](docs/annotation-divergence.md).
 
 ## Results
 
-| model | desc | WMB test F1 | seeds | CPU (pages/s) | GPU (pages/s) |
+| model | desc | WMB test F1 | seed | CPU (pages/s) | GPU (pages/s) |
 |---|---|---|---|---|---|
-| `base` | 311m-10 | **0.9311 ± 0.0027** | 3 | 0.4 | 24.6 |
-| lite (unpublished) | 97m-6, int8 QAT | 0.9256 ± 0.0048 | 3 | 0.9 | 30.2 |
-| `mini` | int8 table | 0.9010 ± 0.0031 | 3 | **27.7** | — |
+| `base` | 311m-10 | **0.9288** | s1, shipped | — | 24.6 |
+| `mini` | rank-128 int8 table | 0.9114 | s2, shipped | **30.4** | — |
+| lite (unpublished) | 97m-6, int8 QAT | 0.9256 ± 0.0048 | 3-seed mean | — | 30.2 |
 
-WMB test545, ROUGE-5 F1 against `convert_main_content`, n=544, threshold 0.5, 3-seed
-means. Read against the select-all floor 0.7156 and the DOM oracle ceiling 0.9918.
-GPU = RTX 4090; CPU = Ryzen 5 3600, single thread. The full arm sweep (encoder depth, QAT,
+WMB test545, ROUGE-5 F1 against `convert_main_content`, n=544, threshold 0.5. The published
+models are scored at their shipped seed through the `htmlsift` package (its html output through
+WMB's html2text); lite is unpublished, so a research 3-seed mean. Read against the select-all
+floor 0.7147 and the DOM oracle ceiling 0.9914. GPU = RTX 4090. CPU = one thread in a
+2 vCPU / 4 GB container on an Intel i7-6820HQ; the encoder models are GPU models and are not
+timed there. The full arm sweep (encoder depth, QAT,
 features) is in [`docs/CLAIMS.md`](docs/CLAIMS.md).
 
 ### On CPU
 
 ![htmlsift mini vs trafilatura, readability, resiliparse: F1 and ms/page on one CPU core](docs/assets/cpu_speed_accuracy.svg)
 
-One CPU core, WMB test (544 pages), extraction only. `mini` gets close to trafilatura's
-per-page time (36 vs 31 ms median) and scores ~15 F1 points higher. readability and
-resiliparse are faster but markedly less accurate. It is **not** a speed win; the win is
-accuracy at the heuristic tier (see [Scope & honesty](#scope--honesty)).
+One CPU core, WMB test (544 pages), extraction only, all four methods in the same pinned
+container (2 vCPU / 4 GB, Intel i7-6820HQ), timed page by page in rotating order. `mini` scores
+~16 F1 points above trafilatura. On time it sits at the heuristic tier: on the same pages
+trafilatura takes 1.3x mini's median time (44.0 vs 32.9 ms), readability is about level, and
+resiliparse takes ~0.1x. The ratios are one host's. The win is accuracy at the heuristic tier,
+not speed (see [Scope & honesty](#scope--honesty)).
 
 <details>
 <summary>Per-method CPU numbers</summary>
 
-| method | median ms | pages/s | F1 |
-|---|---|---|---|
-| **htmlsift (mini)** | 36.1 | 27.7 | **0.8994** |
-| trafilatura | 31.2 | 32.0 | 0.7525 |
-| readability | 19.3 | 51.7 | 0.8016 |
-| resiliparse | 1.9 | 522.5 | 0.7135 |
+| method | median ms | pages/s | F1 | RAM loaded MB | worst page MB |
+|---|---|---|---|---|---|
+| **htmlsift (mini)** | 32.9 | 30.4 | **0.9114** | 401 | 576 |
+| trafilatura | 44.0 | 22.7 | 0.7525 | 48 | 285 |
+| readability | 31.1 | 32.2 | 0.8016 | 34 | 134 |
+| resiliparse | 2.2 | 453.6 | 0.7135 | 26 | 87 |
 
-mini's F1 here is the seed-1 ONNX keeper (the single model timed in this run); its 3-seed
-accuracy mean is 0.9010 ± 0.0031, in the Results table above.
+RAM loaded is the resident memory of a process holding only that method, after loading it and
+one page; worst page is the largest single-page peak over the fold. In a 1 vCPU / 2 GB container
+the ratios are the same (`results/speed-wmb-1vcpu.md`).
 
 </details>
 
 ### On GPU
 
-![htmlsift base sustains 21x the throughput of MinerU-HTML at matched F1 on an RTX 4090](docs/assets/gpu_speed_accuracy_full.svg)
+![htmlsift base sustains 21x the throughput of MinerU-HTML at near-equal F1 on an RTX 4090](docs/assets/gpu_speed_accuracy_full.svg)
 
 RTX 4090, WMB test. Throughput is over all 545 pages; one page has no
-`convert_main_content` reference, so the F1 is the 3-seed mean over the other 544. `base`
+`convert_main_content` reference, so the F1 is over the other 544, at the shipped seed. `base`
 ships with band attention (bit-identical output, just faster) and sustains 24.6 pages/s
-against MinerU-HTML v1.1's 1.16, a 21x gap at matched accuracy (F1 0.9311 vs 0.9306). The
+against MinerU-HTML v1.1's 1.16, a 21x gap at near-equal accuracy: F1 0.9288 vs 0.9306, within
+~0.2 pt (one MinerU run). The
 median-latency ratio (~126x) is larger, and is *not* the throughput ratio: a few whale
 pages set the sustained rate. Batch-1 latency is model-only for us and whole-call for
 MinerU, so the columns are shown, not divided.
@@ -339,9 +354,9 @@ MinerU, so the columns are shown, not divided.
 | system | sustained pg/s | batch-1 p50 | batch-1 p90 | F1 |
 |---|---|---|---|---|
 | MinerU-HTML v1.1 | 1.16 | 844 ms | 3,343 ms | 0.9306 |
-| **htmlsift 311m-10** (band, shipped) | 24.6 | 7.4 ms | 45.2 ms | **0.9311 ± 0.0027** |
+| **htmlsift 311m-10** (band, shipped) | 24.6 | 7.4 ms | 45.2 ms | 0.9288 (s1) |
 | 311m-10, no band | 18.4 | 6.7 ms | 73.6 ms | same weights, bit-identical |
-| 97m-6-qat (fp32 forward) | 30.2 | 4.2 ms | 37.8 ms | 0.9256 ± 0.0048 |
+| 97m-6-qat (fp32 forward, unpublished) | 30.2 | 4.2 ms | 37.8 ms | 0.9256 ± 0.0048 (3 seeds) |
 
 </details>
 
@@ -359,8 +374,8 @@ across a row.
 
 | model | WMB (ROUGE-5) | WCXB (word-F1) | DAnIEL (ROUGE-L) |
 |---|---|---|---|
-| `base` (311m-10) | 0.9311 | 0.8633 | 0.9175 |
-| `mini` (int8) | 0.9010 | 0.8474 | 0.8797 |
+| 311m-10 arm, 3 seeds | 0.9311 | 0.8633 | 0.9175 |
+| `mini` 0.3.0 | 0.9114 | 0.8529 | 0.8925 |
 
 </details>
 
@@ -396,9 +411,10 @@ macro floor 0.4984 and ceiling 0.9816.
 
 ### What we tried
 
-Roughly 500 runs in total (seed-expanded). Most are the frozen screen, which probed every layer
-(22 on 311m, 12 on 97m) against four heads (BiGRU, linear, transformer, XGBoost) and two feature
-sets; the rest are the fine-tune, cross-board, data-efficiency and speed runs the table below draws on.
+Roughly 900 runs in total (seed-expanded). About 270 are the frozen screen, which probed every
+layer (22 on 311m, 12 on 97m) against four heads (BiGRU, linear, transformer, XGBoost) and two
+feature sets; about 150 are the mini's objective screens; the rest are the fine-tune, cross-board,
+data-efficiency and speed runs the table below draws on.
 
 val732 best-epoch unless a row says test545; 3 seeds where a spread is shown, else a single screen seed.
 
@@ -416,7 +432,9 @@ val732 best-epoch unless a row says test545; 3 seeds where a spread is shown, el
 | width cap | truncate long blocks before windowing | 97m-6 none 0.890 vs cap64 0.896 (1 seed) | speed/width lever, not accuracy |
 | band attention | chunked band attention, bit-identical weights | GPU 18.4 -> 24.6 pg/s (311m-10) | speed lever, same accuracy |
 | data efficiency | train on 125 -> 6,548 pages | 125 pages already 0.835 vs 0.902 full | policy learns from a few hundred pages |
-| embedding table (mini) | drop the encoder: embeddings + BiGRU + feats | test 0.9010 vs 0.9311 encoder | ~3 pt under, fastest CPU, so the mini artifact |
+| embedding table (mini) | drop the encoder: embeddings + BiGRU + feats | test 0.9114 vs 0.9288 encoder (shipped seeds) | ~1.7 pt under at the CPU tier, so the mini artifact |
+| training objective (mini) | EMA 0.999 + neighbour smoothing + a page-level soft-F1 loss, vs BCE alone | val 0.8739 vs 0.8613 (9 and 3 seeds) | +1.3 pt val; the 0.3.0 mini (`docs/objective.md`) |
+| rank-128 table (mini) | factor the trained table to rank 128, no retraining | test 0.9114 vs 0.9122 full width (s2); table 34.6 MB vs 202.4 MB | -0.08 pt for a 5.8x smaller table; ships in 0.3.0 |
 
 ## Retraining on your own data
 
@@ -445,21 +463,25 @@ The per-board metric, split, and labelling contract are in
 - [`docs/CLAIMS.md`](docs/CLAIMS.md): every published number and the command that regenerates it.
 - [`docs/REPRODUCE.md`](docs/REPRODUCE.md): corpus acquisition, environment, run order.
 - [`docs/LIMITS.md`](docs/LIMITS.md): scope, caveats and retractions.
+- [`docs/annotation-divergence.md`](docs/annotation-divergence.md): where the boards' labelling policies disagree.
+- [`docs/objective.md`](docs/objective.md): the mini's objective changes and what each did.
+- [`docs/mini-error-groups.md`](docs/mini-error-groups.md): where the mini still fails, on WMB val.
 
 ## Scope & honesty
 
 The load-bearing caveats, in full in [`docs/LIMITS.md`](docs/LIMITS.md):
 
-- **Not faster than trafilatura or resiliparse on CPU.** The win is accuracy; the speed
-  sits at the heuristic tier. The one speed win is GPU throughput against MinerU-HTML,
-  above.
+- **CPU speed is the heuristic tier, not a speed claim.** On one host, in one container,
+  trafilatura takes ~1.3x mini's median time and resiliparse ~0.1x; another CPU moves the
+  ratios, so no absolute "faster than". The win is accuracy. The one speed claim is GPU
+  throughput against MinerU-HTML, above.
 - **The accuracy win is in-domain, not universal.** On WMB our models clear the heuristics
-  by a wide margin. Zero-shot on other annotation policies the margin shrinks: base still
-  edges every heuristic on WCXB and DAnIEL, while mini lands just behind the board leader on
-  each and ahead of the rest. Full table under [Main content is a policy](#main-content-is-a-policy-not-a-fact).
+  by a wide margin. Zero-shot on other annotation policies the margin shrinks: the 311m-10 arm
+  still edges every heuristic on WCXB and DAnIEL, while mini is ~0.6 pt behind trafilatura on
+  WCXB, ~0.2 pt ahead of readability on DAnIEL, and ahead of the rest. Full table under [Main content is a policy](#main-content-is-a-policy-not-a-fact).
 - **311m encoder depth is not decision-grade on test.** 311m-22 beats 311m-10 by 0.37,
   inside the seed noise, so no depth claim either way. The 97m half is flat 6 → 12.
-- **The GPU claim is sustained throughput at matched accuracy**, on one card type against
+- **The GPU claim is sustained throughput at near-equal accuracy** (F1 within ~0.2 pt), on one card type against
   one competitor. Never the ~126x median-latency ratio, and never across cards or against a
   CPU tool.
 - **No full-set WMB number.** Training uses 6,548 of 7,809; published full-set boards are
