@@ -29,7 +29,7 @@ def test_plain_rows_align_with_blocks():
     blocks, labels, _box, plain = wmb_blocks.label_page(PAGE)
     assert blocks == ["# Header", "Some **bold** text.", "| a | b |", "| --- | --- |",
                       "| 1 | 2 |"]
-    assert plain == ["Header", "Some bold text.", "a | b", "", "1 | 2"]
+    assert plain == ["Header", "Some bold text.", "| a | b |", "| --- | --- |", "| 1 | 2 |"]
     assert labels == [1, 1, 0, 0, 0]
 
 

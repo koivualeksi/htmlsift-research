@@ -78,13 +78,14 @@ The same split shows up in off-the-shelf extractors, which is the practical form
 argument. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`, `results/heuristics-wcxb.md`,
 `results/heuristics-daniel.md`), each heuristic is a specialist. trafilatura, built for
 articles, is the top heuristic on WCXB (0.8584 word-F1) and drops to next-to-last on DAnIEL's
-multilingual news (0.8265 ROUGE-L). readability does the reverse, first on DAnIEL (0.8925) and
+multilingual news (0.8255 ROUGE-L). readability does the reverse, first on DAnIEL (0.8904) and
 last on WCXB (0.7653). resiliparse trails on both. None is wrong; each fits one policy. A
-learned policy is what generalizes: base clears every heuristic on both boards, and mini sits
-just behind the leader on each while staying consistent.
+learned policy is what generalizes: the 311m-10 arm clears every heuristic on both boards, and
+the 0.3.0 mini is ~0.6 pt behind the leader on WCXB (0.8529) and ~0.2 pt ahead of it on DAnIEL (0.8925)
+while staying consistent.
 
-The transfer is directional, and our own models show it too. A WMB-trained encoder carried to
-DAnIEL scores 0.9175 macro; a WCXB-trained one scores 0.8826 (`CLAIMS.md`). Training on one
+The transfer is directional, and our own models show it too. A WMB-trained 311m-10 encoder carried
+to DAnIEL scores 0.9175 macro; a WCXB-trained one scores 0.8826 (3 seeds each, `CLAIMS.md`). Training on one
 policy and moving to a third board is not free, the same effect measured on collections above,
 now across languages.
 

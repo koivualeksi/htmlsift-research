@@ -52,7 +52,7 @@ until its invariant passes on this repo's own run.
 | labels | DOM-provenance labels for every page, 0 fallbacks, no matcher; harvested before sanitization strips the selection marker. |
 | sanitize | applied symmetrically to model input and label generation; eval references stay verbatim. |
 | split | domain-grouped, fixed seed, zero domain overlap asserted. |
-| eval | ROUGE vendored, never reimplemented; oracle DOM ceiling asserted (test 0.9918 / val 0.9784). |
+| eval | ROUGE vendored, never reimplemented; predictions are the package's own pruned html (`htmlsift.core.prune`, imported) through WMB's html2text; oracle ceiling asserted (test 0.9914 / val 0.9772). |
 | model | encoder dtype resolves to fp32; every run prints its resolved parameter dtype. |
 | bench | speed comparisons run only over pages both sides measured; the harness refuses otherwise. |
 | export (mini) | ONNX parity reproduces the torch mini bit-for-bit through the shipped forward: 0 flips at the 0.5 threshold. |
@@ -70,7 +70,10 @@ package release, run `tools/fingerprint.py` against it (install the branch from 
 - Fingerprint unchanged (an output-only or speed-only change): package only. The
   current bundle stays.
 - Fingerprint changed (the model input changed): a new package version and a bundle
-  retrained on it, released together. Record the new fingerprint here.
+  retrained on it, released together. Record the new fingerprint here. Exception: if the
+  current bundle scores identically to 4 dp on every board on the rebuilt data, record
+  the fingerprint and keep the bundle (0.3.0: the C0 strip changed 10 DAnIEL/WCXB pages,
+  no score moved).
 - New weights on the same inputs: this repo builds the bundle; the package pins its
   SHA.
 
@@ -100,7 +103,7 @@ package release, run `tools/fingerprint.py` against it (install the branch from 
 | corpus acquisition, environment, run order | `docs/REPRODUCE.md` |
 | scope limits, caveats, and retractions | `docs/LIMITS.md` |
 | the mini's objective changes and what each did | `docs/objective.md` |
-| where the mini still fails, on WMB val and Common Crawl | `docs/mini-error-groups.md` |
+| where the mini still fails, on WMB val | `docs/mini-error-groups.md` |
 
 ## Licence
 

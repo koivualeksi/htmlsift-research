@@ -15,6 +15,9 @@ The package (0.3.0+) reads tokenizer.json.gz and falls back to the plain file, s
     python tools/release.py base            # bake + self-check the base bundle
     python tools/release.py base --push     # + upload it to base/
 
+Run it from an editable install of this repo (pip install -e ".[repro,train,bench]"): a plain
+checkout has no import path to core/ and export/ from tools/.
+
 The manifest schema is intentionally duplicated here rather than imported from the package:
 the two repos stay decoupled (research imports nothing from htmlsift). Keep the fields in sync
 with htmlsift.Manifest by hand -- they are few and stable (mode, feats, hidden, window, cap,

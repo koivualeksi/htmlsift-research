@@ -1,6 +1,6 @@
 # Objective changes on the mini
 
-The shipped mini (`experiments/wmb-mini.yaml`) trains with one loss: masked BCE over rows, with
+The 0.2.x mini (`experiments/wmb-mini.yaml`) trains with one loss: masked BCE over rows, with
 pos_weight balancing the classes by character weight. The WMB metric is something else: a per-page
 ROUGE-5 F1 over characters, averaged over pages. A row-level loss treats a stray 2,000-character
 block the same on a page with 300 gold characters as on a page with 20,000, while the metric
@@ -25,7 +25,7 @@ Each arm is one spec under `experiments/`:
 - **Seeds.** A screen runs 3 seeds. An arm that leads at 3 seeds is confirmed at 6 or more
   before it is called a result.
 - **Greedy order.** Changes are stacked one at a time on the best base so far. Each arm is
-  compared against the base it was added to, not against the shipped mini.
+  compared against the base it was added to, not against the 0.2.x mini.
 
 ## What was tried
 
@@ -39,22 +39,25 @@ Each arm is one spec under `experiments/`:
 | `len_cap` / `len_floor` | Weights each row's loss by its length, clipped. | Loses. |
 | `page_norm` | Makes the BCE a mean over pages. | Ties. |
 | `label_smooth` 0.05 | BCE targets 0.975 / 0.025. | Ties alone and with EMA. |
-| `feat_drop` 0.3 | Zeroes the feature columns on 30 % of pages per epoch. | Ties: no measurable effect with or without `page_f1` at 6 seeds. |
+| `feat_drop` 0.3 | Zeroes the feature columns on 30 % of pages per epoch. | Ties: no measurable effect, at 9 seeds with `page_f1` and 3 without. |
 | `text_drop` 0.3 | Zeroes the text columns on 30 % of pages per epoch. | Loses. |
 | `head_lr` 5e-4 / 1e-3 / 4e-3 | Learning rate, against the 2e-3 default. | All lose. |
 | `epochs` 6, `ema` 0.9995 | A longer horizon for the average. | Ties: no gain. |
 
 ## Result
 
-The chosen arm is `ema 0.999 + smooth_weight 1 + page_f1 4`. ROUGE-5 F1, mean ± std over seeds:
+The chosen arm is `ema 0.999 + smooth_weight 1 + page_f1 4`. ROUGE-5 F1 on val732, the selection
+fold, mean ± std over seeds:
 
-| arm | seeds | val | test | test int8 |
-|---|---|---|---|---|
-| shipped mini | 3 | 0.8613±0.0026 | 0.9004±0.0007 | 0.9005±0.0006 |
-| ema 0.999 + smooth_weight 1 | 6 | 0.8706±0.0026 | 0.9086±0.0016 | 0.9086±0.0016 |
-| + page_f1 4 | 9 | 0.8739±0.0023 | 0.9130±0.0020 | 0.9129±0.0020 |
+| arm | seeds | val |
+|---|---|---|
+| 0.2.x recipe | 3 | 0.8613±0.0026 |
+| ema 0.999 + smooth_weight 1 | 6 | 0.8706±0.0026 |
+| + page_f1 4 | 9 | 0.8739±0.0023 |
 
-The gain over the shipped mini is +1.3 pt val and +1.3 pt test.
+The gain over the 0.2.x recipe is +1.3 pt val. On test545 the change is read off the delivered
+models, both through today's package (`CLAIMS.md`): the 0.2.x mini 0.8975 against the 0.3.0 mini
+0.9114, +1.4 pt. That difference also carries the rank-128 table and a different seed.
 
 Why `page_f1` helps:
 - It is the only change that sees the page. BCE charges each row on its own, so it cannot tell
@@ -64,34 +67,33 @@ Why `page_f1` helps:
 
 Why the gain is real:
 - At 9 seeds, every seed of the chosen arm is above the 6-seed base's mean on val.
-- On test, 8 of the 9 seeds are above that mean and the lowest equals it.
-- The int8 table loses nothing, so the gain survives the shipped numerics.
+- On test545 (`results/wmb-mini-objective.md`), 8 of the 9 seeds are above that base's test mean
+  and the lowest equals it.
+- The int8 table loses nothing, so the gain survives the 0.2.x numerics. The 0.3.0 numerics, the
+  table factored to rank 128, cost 0.0008 on WMB test at the shipped seed (`CLAIMS.md`).
 
-The arm was selected on WMB alone. The gain also holds on the boards it was not selected on, as
-the next section shows.
+The arm was selected on WMB alone. Off WMB the delivered 0.3.0 mini gains on DAnIEL and is level
+on WCXB, as the next section shows.
 
 ## Off-board checks
 
 The checkpoints are `wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999_s{0,1,2}.pt` in the models
-repo. They were scored zero-shot with the int8 table over 3 seeds (`results/generalization.md`,
-row `wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-int8`):
+repo. Off WMB the change is read off the delivered models, zero-shot, both through today's package
+(`output="text"`, `CLAIMS.md`):
 
-| board | shipped mini | candidate |
+| board | 0.2.x mini (s1) | 0.3.0 mini (s2) |
 |---|---|---|
-| WCXB test511, word-F1 | 0.8474±0.0089 | 0.8518±0.0019 |
-| DAnIEL 1,689, ROUGE-L macro | 0.8797±0.0025 | 0.8905±0.0037 |
+| WCXB test511, word-F1 | 0.8528 | 0.8529 |
+| DAnIEL 1,689, ROUGE-L macro | 0.8818 | 0.8925 |
 
-- **WCXB.** The gain holds on forum, listing and collection pages.
-- **DAnIEL.** The gain is mostly Russian.
-- **Common Crawl.** Yield is in `results/ccbench.md`. With the title dropped, the candidate
-  passes 3.0 % more pages through DCLM than the shipped mini [+0.4, +5.8].
+- **WCXB.** Level (+0.0001).
+- **DAnIEL.** +1.1 pt.
 
 ## Limits
 
 - **One recipe.** Every arm is the table + BiGRU recipe. Whether `page_f1` helps the encoder
   arms is untested.
 - **Selection on WMB.** The objective was chosen on WMB val. The off-board checks are
-  single-checkpoint-family evaluations, not a second selection.
-- **The candidate is not shipped yet.** The `htmlsift` package still bundles the shipped mini.
-  The model input is unchanged (the fingerprint matches), so releasing the candidate needs a new
-  bundle only, not a new package version.
+  single-seed evaluations of the delivered models, not a second selection.
+- **Shipped at rank 128.** `htmlsift` 0.3.0 ships this arm, seed 2, with its table factored to
+  rank 128 (`CLAIMS.md`). The val numbers in this document are the full-width table (`CLAIMS.md`).

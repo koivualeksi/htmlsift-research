@@ -20,6 +20,12 @@ runs and drives this loop; each board's data and val metric reach it through tha
 board's `Benchmark` (`vendors/<board>/adapter/benchmark.py`)
 (`REPRODUCE.md`).
 
+**Delivered models.** A claim about a delivered model (the 0.3.0 mini, `base`, the 0.2.x mini) is
+its one shipped seed run through the `htmlsift` package, never a seed mean. WMB takes the
+package's `output="html"` through WMB's own html2text (below); DAnIEL and WCXB take its
+`output="text"` as-is into their vendored scorers (DAnIEL macro over its five languages, WCXB
+per-page word-F1). Seed means are kept for research arms that are not delivered.
+
 ## WMB
 
 **Metric.** ROUGE-5 F1 against `convert_main_content`, their `calc_rouge_n_score`
@@ -28,7 +34,11 @@ with `jieba.lcut`, n=5, arithmetic mean over records. The reference is rendered
 markdown: `html2text==2025.4.15` (the scorer) over the stored `main_html`, reproduced
 byte-for-byte by the `repopulate` render gate (7,809/7,809; `REPRODUCE.md`). Test is
 n=544, not 545, because one board page (`2fe1c202`) carries no `cmc` reference and the
-scorer reads `r.get('cmc')` and skips it.
+scorer reads `r.get('cmc')` and skips it. A prediction is the package's own pruned html
+(`htmlsift.core.prune`, imported) through that same html2text with WMB's parameters, so research
+and package give identical numbers and the package's lxml markdown renderer never enters the
+score. Earlier research tables scored WMB with WMB's whole-element pruner (`extract_main_html`),
+about 0.001 higher; comparisons within one table are unaffected.
 
 **Split.** Domain-grouped so no domain spans folds. `tldextract` (offline snapshot)
 groups the pool by registered domain, seed 20260815, 10% to val (545 domains / 732
@@ -57,8 +67,8 @@ input, and follows the rule htmlsift-data's annotator uses to mark boxes, so the
 two cannot diverge. Eval references stay verbatim, since they define the score.
 
 **Ceiling.** The oracle (gold labels through the DOM serializer to ROUGE-5) bounds
-every model result and is the eval gate, frozen and asserted: test 0.991769, val
-0.978383 (`REPRODUCE.md`). Drift in the render config, the `offset_mapping` mean-pool,
+every model result and is the eval gate, frozen and asserted: test 0.991384, val
+0.977170 (`REPRODUCE.md`). Drift in the render config, the `offset_mapping` mean-pool,
 the window boundaries, the 0.5 threshold or the serializer trips it.
 
 ## WCXB

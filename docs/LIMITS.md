@@ -10,14 +10,14 @@ competitor and carries one regime-matched claim (below); the mini targets the CP
 regime, and CPU/GPU numbers are never interchanged.
 
 **Read against the select-all floor.** Word-F1 (WCXB) and ROUGE-5 (WMB) forgive
-boilerplate: selecting every rendered block already scores test 0.7156 / 0.7201
+boilerplate: selecting every rendered block already scores test 0.7147 / 0.7201
 (WMB / WCXB), so a board number is read as its margin over that floor, never in the
 absolute (floors and per-type/-language spread in `CLAIMS.md`). DAnIEL's ROUGE-L
 floor is far lower (macro 0.4984) because its LCS metric is broken by interleaved
 boilerplate, making it the board that discriminates a select-everything model. The
-no-encoder table-embedding arm is the one to watch (the shipped `mini` is its int8
-`fABC` keeper): it can collapse to select-all and still post ~0.72 on the first-class
-boards.
+no-encoder table-embedding arm is the one to watch (the `mini` is its `fABC` keeper:
+an int8 table in 0.2.x, a rank-128 table in 0.3.0): it can collapse to select-all and
+still post ~0.72 on the first-class boards.
 
 **Selection is val-only, and 311m depth is not decision-grade.** Architecture is chosen on val
 (WMB val732); the 545 test is spent on the arms re-run with `--export-test` — a ledgered
@@ -26,7 +26,7 @@ inside 0.25 pt on epoch-mean, 0.58 pt on best-epoch, well under the sub-1-pt bar
 flatness is exactly the pattern whose archive version was refuted on test, so it is not
 a result. On test the 97m half is settled: 97m-6 0.9215±0.0046 against 97m-12
 0.9224±0.0038 (n=544, 3 seeds each) — flat, so the small encoder is depth-saturated. The
-311m half is now 3 seeds too: 311m-22 0.9348±0.0043 against 311m-10's 0.9311±0.0027
+311m half is now 3 seeds too: 311m-22 0.9348±0.0043 against the 311m-10 arm's 0.9311±0.0027
 (+0.37, n=544), but the seed spreads overlap and a gap that size is inside the noise, so
 **no 311m depth claim is made in either direction** — neither "flat" nor "deeper wins".
 The archive's +2.09 deep-advantage is not reproduced.
@@ -64,27 +64,34 @@ both backbones (`CLAIMS.md`), while remaining worth 1.5-3 pt frozen.
 **The r=128 mini is an approximation, checked only where it was scored.** Its factor is weighted
 by C, the spread of pooled block vectors on WMB train alone; pages whose blocks fall outside that
 spread, in other languages or layouts, are where the approximation error can grow, and no board
-measures that directly. The boards move both ways (`CLAIMS.md`): DAnIEL macro +0.0012, WCXB −0.0020
-on every seed, forum and listing pages most. The shipped seed was picked on the test boards, by the
-cross-board mean, with s0 and s2 within 0.0003, so the published figure is the 3-seed mean, not
-the shipped seed's. Its speed and memory are the package's measurements, not this repo's.
+measures that directly. Its cost is measured on WMB test545 only, at the shipped seed: 0.0008
+against the full-width table (`CLAIMS.md`); WCXB and DAnIEL are not measured at full width for
+that seed. The 0.3.0 seed was picked on the test boards, by the cross-board mean, with s0 and s2
+within 0.0003, so the shipped seed's figure, which every claim uses, is the best of three on
+those boards. Its speed and memory are measured through the package (`CLAIMS.md`).
+
+**The 0.2.x mini's published WMB figure does not reproduce.** It was published as 0.8994; its s1
+bundle through today's package scores 0.8975. That ledger predates this repo and cannot be traced.
 
 **The CPU speed number is a ratio at the heuristic tier — not a speed win.**
-`bench/speed/cpu_compare.py` times the shipped mini (int8 table, ONNX) against trafilatura,
+`bench/speed/cpu_compare.py` timed the 0.3.0 mini through the package against trafilatura,
 readability and resiliparse over WMB test545 (544 cmc-scored pages, one population on both
-axes, CPU single-thread); `results/speed-wmb.md` and `CLAIMS.md` carry the figure. Ours
-wins on F1 (0.8994 vs trafilatura's 0.7525) and sits at trafilatura's speed tier —
-level-to-slightly-slower on the p50, ahead on pages under ~4k tokens, behind on the >32k
-whales. Never "faster than trafilatura / resiliparse" in the absolute, and never a single
+axes, single-thread, two pinned containers on one Intel i7-6820HQ host); `results/speed-wmb.md`,
+`results/speed-wmb-1vcpu.md` and `CLAIMS.md` carry the figures. On F1 the 0.3.0 mini is ~16 pt
+over trafilatura (0.9114 vs 0.7525); on speed it sits at the heuristic tier — trafilatura takes
+1.3× its median time, readability is about level, resiliparse takes ~0.1×, and on the >32k
+whales trafilatura is the quicker one. The ratios are one host's; another CPU moves them. Never "faster than trafilatura / resiliparse" in the absolute, and never a single
 blended factor: the published figure is the measured ratio with its population and its
 size-dependence. The encoder arms are slower than the table; GPU is a separate regime
 with its own paragraph below.
 
-**The F1 win is in-domain; off-policy it narrows.** The 0.8994-vs-0.7525 margin above is WMB,
-the training policy. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`, `results/heuristics-wcxb.md`,
-`results/heuristics-daniel.md`), the gap closes: base stays ahead of every heuristic on both
-boards, while mini lands just behind the strongest heuristic on each (trafilatura on WCXB,
-readability on DAnIEL) and ahead of the other two. No heuristic is strong on both boards; each
+**The F1 win is in-domain; off-policy it narrows.** The ~16-pt margin above is WMB, the training
+policy. Scored zero-shot on WCXB and DAnIEL (`CLAIMS.md`; heuristic rows in
+`results/heuristics-wcxb.md` and `results/heuristics-daniel.md`), the gap closes: the 311m-10 arm
+(3 seeds, research path; the delivered base is not measured there through the package) stays
+ahead of every heuristic on both boards, while the 0.3.0 mini is ~0.6 pt behind trafilatura on
+WCXB (0.8529 vs 0.8584), ~0.2 pt ahead of readability on DAnIEL (0.8925 vs 0.8904), and ahead of the other
+two on each. No heuristic is strong on both boards; each
 encodes a policy, so the ranking moves with the board (`annotation-divergence.md`).
 
 **Threads do not change the tier.** The mini's ONNX forward parallelizes with ORT intra-op
@@ -97,19 +104,19 @@ trafilatura is level or ahead. Giving ORT more threads while pinning trafilatura
 the §7 landmine; the comparison is fair only at an equal core budget, which is why the
 harness pins a low thread count. Threading is a latency lever, not a speed win.
 
-**The GPU number is sustained throughput at matched accuracy, not the median-latency
+**The GPU number is sustained throughput at near-equal accuracy, not the median-latency
 ratio.** One comparison exists: the encoder keepers against MinerU-HTML v1.1 on the same
 card type (RTX 4090), same 545 pages, both scored html-mode (`CLAIMS.md`,
-`results/throughput-wmb.md`, `results/dripper-wmb.md`). 311m-10 ties it on F1 (0.9311±0.0027
-against 0.9306) at 16× its sustained rate, 21× with band attention. Three caveats travel
+`results/throughput-wmb.md`, `results/dripper-wmb.md`). Base is within ~0.2 pt of it on F1
+(0.9288 vs 0.9306, one MinerU run) at 16× its sustained rate, 21× with band attention. Three caveats travel
 with that figure. (1) The median-latency ratio is ~126× and is not the throughput ratio:
 pages over the 8,192-token window are encoded window by window at batch one, so a few
 whales set the sustained rate — our p90 is 11× our p50 where MinerU's is 4×. An earlier "~50×" scoping was the median
 figure read as throughput; it is withdrawn. (2) Our batch-1 latency is model-only (the
 CPU render and prep are timed apart) while MinerU's is the whole HTML-to-HTML call, so
 the latency columns are shown, never ratioed. (3) Speed rows are one run of the seed-0
-keeper with fp32 weights under bf16 autocast; band attention is bit-identical and so
-shares the fp32 F1, and GPU int8 is unmeasured. No GPU figure is compared across card
+keeper with fp32 weights under bf16 autocast, while the F1 is the shipped seed s1 through the
+package; band attention is bit-identical and so shares the fp32 F1, and GPU int8 is unmeasured. No GPU figure is compared across card
 types or against a CPU extractor.
 
 ## WMB
@@ -134,7 +141,7 @@ model input and label generation alike, so no htmlsift model ever sees it, and t
 references are untouched. A competitor fed the raw html does see it: MinerU-HTML keeps
 class attributes, so its 0.9306 (`CLAIMS.md`) is measured on input that carries the
 label. The archive measured the marker's effect on MinerU at +0.22 pt with a confidence
-interval spanning zero; it is not re-measured here, and the F1 tie is read with that in
+interval spanning zero; it is not re-measured here, and the ~0.2-pt F1 gap is read with that in
 mind.
 
 ## WCXB
@@ -163,6 +170,31 @@ modes cap the test board (forum .979).
 of test); a model trained on dev has seen them. We use the benchmark as-is
 (upstream issues filed) and do not de-contaminate the board — every leaderboard
 entry eats the same split. `track_id` namespaces the collision.
+
+**The article ladder is one page type across many sites, not one site.** It supports
+"trained on N articles from other sites, scores X on unseen sites' articles"; it says
+nothing about learning one site or one template from a few of its pages, which no board
+here can test (WCXB has at most three pages per domain). Articles are also the type where
+the heuristics are strongest: trafilatura beats both shipped models zero-shot on them
+(0.9370 vs mini 0.9176 / base 0.9343), so the ladder's gains are measured against the
+hardest baseline WCXB has, and a ladder on another type could land differently.
+
+**What the ladder protocol removes and what it keeps.** 79 of the 257 test articles have a
+byte-identical twin among the dev articles; the ladder drops those twins from its training
+pool and its val, so no rung trains on a test page. Domain overlap is kept in test and
+reported beside it: 102 test articles come from a domain with dev articles, and the
+disjoint column scores the other 155. No row scores more than 0.0011 lower on the disjoint
+subset than on all of test, and most score higher, so the overlap does not inflate the
+trained numbers. The published WCXB test511 numbers above
+are unaffected: they train on the full dev, twins included, as every leaderboard entry
+does.
+
+**Base columns are one seed.** The mini's seed spread on the ladder is 0.001-0.007, so a
+single-seed gap under about 0.01 is not resolvable; the base columns are read for their
+level, not to rank scratch against arm A. Arm A starts every seed from one shipped seed
+(mini s2, base s1), so its seeds vary data order, not the starting model. The step budget
+is one number per ladder, not tuned per rung; most rungs select an early scoring point, so
+a smaller budget would likely score the same.
 
 **Ceilings are lower bounds.** The 0.9890 / 0.9933 ceilings are hill-climb
 fixpoints — the best word-F1 block selection found, a lower bound on the exact

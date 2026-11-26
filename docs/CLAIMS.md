@@ -10,19 +10,21 @@ count on every row.
 The 545 board metric is ROUGE-5 F1 against `convert_main_content` (their
 `calc_rouge_n_score`, vendored). The oracle is gold DOM labels through the
 serializer — not a hill-climb — so it bounds every model result and is the eval
-gate. Frozen from this repo's run of the lxml provenance pipeline:
+gate. Frozen from this repo's run of the lxml provenance pipeline, predictions pruned by the
+package's own pruner (`PROTOCOL.md`):
 
-**Test DOM oracle: F1 0.991769** (test545, n=544 — `2fe1c202` carries no `cmc`).
-P 0.9901 / R 0.9945.
+**Test DOM oracle: F1 0.991384** (P 0.9888 / R 0.9947; test545, n=544 — `2fe1c202` carries no `cmc`).
 
     python vendors/wmb/adapter/eval.py            # test fold
 
-**Val DOM oracle: F1 0.978383** (val732, n=732). P 0.9753 / R 0.9858.
+**Val DOM oracle: F1 0.977170** (P 0.9721 / R 0.9856; val732, n=732).
 
     python vendors/wmb/adapter/eval.py --fold val
 
-The html2text-pipeline baseline was 0.994356 / 0.982753; the lxml renderer costs
--0.26% test / -0.44% val.
+Under WMB's whole-element pruner, which earlier tables used, the oracle was 0.991769 (P 0.9901 /
+R 0.9945) / 0.978383 (P 0.9753 / R 0.9858). The html2text-pipeline baseline was 0.994356 /
+0.982753; against it the lxml renderer cost -0.26% test / -0.44% val, measured with the
+whole-element pruner.
 
 ## WCXB ceilings
 
@@ -50,8 +52,8 @@ the page carries. A baseline, not a gate — no assertion.
 
 | board | population | n | P | R | F1 |
 |---|---|---|---|---|---|
-| WMB — ROUGE-5 vs `convert_main_content` | test545 | 544 | 0.6218 | 0.9873 | **0.7156** |
-| WMB | val732 | 732 | 0.5265 | 0.9776 | **0.6359** |
+| WMB — ROUGE-5 vs `convert_main_content` | test545 | 544 | 0.6209 | 0.9876 | **0.7147** |
+| WMB | val732 | 732 | 0.5242 | 0.9776 | **0.6337** |
 | WCXB — word-F1 | test511 | 511 | 0.6094 | 0.9886 | **0.7201** |
 | WCXB | dev1497 | 1497 | 0.5871 | 0.9782 | **0.6971** |
 | DAnIEL — ROUGE-L macro | daniel1689 | 1689 | 0.3626 | 0.9825 | **0.4984** |
@@ -76,24 +78,53 @@ number below is this repo's own run. The full sweeps regenerate into `results/`:
 
     python tools/render_tables.py
 
+### Delivered models — through the package, test folds
+
+A claim about a delivered model is its one shipped seed run through the `htmlsift` package, never
+a seed mean. WMB scores the package's `output="html"` through WMB's own html2text with WMB's
+parameters, so the package's lxml markdown renderer does not enter the score; DAnIEL and WCXB
+score the package's `output="text"` as-is with their vendored scorers (`PROTOCOL.md`).
+
+| model | WMB test545, n=544 | DAnIEL macro, n=1,689 | WCXB test511, n=511 |
+|---|---|---|---|
+| mini 0.3.0 — `311m-table-bigru-fABC-nb1-pf4-ema0.999-r128_s2` | **0.9114** (P 0.9001, R 0.9542) | 0.8925 | 0.8529 (P 0.8679, R 0.8913) |
+| mini 0.2.x — `311m-table-bigru-fABC_s1`, today's package | 0.8975 (P 0.8759, R 0.9596) | 0.8818 | 0.8528 |
+| base — `311m-10_s1` | **0.9288** | not measured | not measured |
+
+    python bench/speed/cpu_compare.py --bundle data/bundles/mini --fold test --threads 1   # WMB, a mini bundle
+    python bench/accuracy/heuristics.py --board daniel --bundle data/bundles/mini         # DAnIEL, output="text"
+    python bench/accuracy/heuristics.py --board wcxb --bundle data/bundles/mini           # WCXB, output="text"
+
+No committed harness yet scores the base through the package.
+
+The 0.2.x row is the 0.2.x bundle run through today's package, so the two mini rows share one
+pipeline: 0.2.x to 0.3.0 is +1.4 pt on WMB, +1.1 pt on DAnIEL and level on WCXB (+0.0001). The
+0.2.x WMB figure published before does not reproduce (`LIMITS.md`). On WMB, base is within
+~0.2 pt of MinerU-HTML v1.1 (0.9288 vs 0.9306, one MinerU run); the 0.3.0 mini is ~1.9 pt under
+it (0.9114 vs 0.9306) and ~16 pt over trafilatura (0.9114 vs 0.7525). Read against the select-all
+floor 0.7147 and the oracle ceiling 0.9914.
+
 ### WMB test545 — ROUGE-5 F1 vs `convert_main_content`, n=544
+
+Research arms, seed means, scored with WMB's whole-element pruner (`PROTOCOL.md`).
 
 | arm | epochs | seeds | F1 | P | R |
 |---|---|---|---|---|---|
-| 311m-10 | 4 | 3 | **0.9311±0.0027** | 0.9306 | 0.9573 |
+| 311m-10 | 4 | 3 | 0.9311±0.0027 | 0.9306 | 0.9573 |
 | 311m-10 | 8 | 3 | 0.9308±0.0022 | 0.9305 | 0.9577 |
 | 311m-22 | 8 | 3 | 0.9348±0.0043 | 0.9363 | 0.9590 |
 | 97m-6 | 8 | 3 | 0.9215±0.0046 | 0.9233 | 0.9507 |
 | 97m-6-qat (W8A8) | 4 | 3 | 0.9256±0.0048 | — | — |
 | 97m-12 | 8 | 3 | 0.9224±0.0038 | 0.9222 | 0.9526 |
-| mini — 311m-table-bigru-fABC (int8 table) | — | 3 | 0.9010±0.0031 | — | — |
 
-Read against the select-all floor 0.7156 and the DOM oracle ceiling 0.9918 above.
-Every row is the arm's own `--export-test` run except the 97m-6-qat and mini rows,
-whose numbers come from the `bench/accuracy/predict.py` ledger over the saved keeper
-(pod render, 3 seeds; `results/generalization.md`). That ledger reports F1 only, so
-P and R are shown only on the `--export-test` rows. The published models are `base`
-(311m-10) and the mini; 97m-6-qat is the unpublished lite arm. The QAT training export read 0.9261±0.0046 on the same W8A8
+Read against the floor and ceiling under the same whole-element pruner: select-all 0.7156, oracle
+0.9918.
+Every row is the arm's own `--export-test` run except the 97m-6-qat row, whose number comes
+from the `bench/accuracy/predict.py` ledger over the saved keeper (Linux render, pod or WSL,
+3 seeds; `results/generalization.md`). That ledger reports F1 only, so P and R are shown only
+on the `--export-test` rows. The 311m-10 row is the base arm's seed mean, kept for the arm
+comparisons; the delivered base is its s1 through the package, in the table above. 97m-6-qat
+is the unpublished lite arm. The QAT training export read 0.9261±0.0046 on the same W8A8
 weights; the 0.05 pt gap is run-to-run GPU noise, and only the predict figure is cited.
 97m-12 against 97m-6 is +0.09 pt at 3 seeds each — flat. 311m-22 at 3 seeds is
 0.9348±0.0043, +0.37 over 311m-10 but with overlapping spreads — not decision-grade;
@@ -159,6 +190,54 @@ row is the same arm on the full split at the same epoch budget: 0.8966±0.0035 e
 | 2000 | 0.8824±0.0016 | 0.8887±0.0029 |
 | 4000 | 0.8868±0.0044 | 0.8972±0.0017 |
 
+### Data efficiency on one page type — WCXB articles, word-F1
+
+Trained on N articles from many sites, scored on articles from other sites. The board is
+`wcxb-article`: WCXB dev articles minus the 79 whose html is byte-identical to a test article,
+split by registrable domain into a 200-page val and a 513-page training pool; rungs are
+nested seeded subsets of the pool. Test is all 257 test articles; disjoint is the 155 of them
+whose domain no dev article has. Scratch trains from a random head (mini) or the pretrained
+backbone (base); arm A starts from the shipped model, so its 0-page row is that model's
+zero-shot score and scratch has none. The mini is scored at rank 128 with its int8 table, the
+shipped form (the harness reproduces the package's zero-shot mini to 4 dp: test 0.9176,
+package 0.9175); the base as its pod scored it. Every rung of a ladder gets the same
+optimiser-step budget (mini 3,300, base 2,300 = 4 epochs of the full pool).
+
+    python -m trainers.train experiments/wcxb-article-ladder.yaml               # mini, scratch, 3 seeds
+    python -m trainers.train experiments/wcxb-article-ladder-init.yaml          # mini, arm A, 3 seeds
+    python -m trainers.train experiments/wcxb-article-ladder-base.yaml          # base, scratch, 1 seed
+    python -m trainers.train experiments/wcxb-article-ladder-base-init.yaml     # base, arm A, 1 seed
+    python bench/accuracy/ladder.py                    # -> results/wcxb-article-ladder.md (+ val)
+
+Test (n=257) / disjoint (n=155):
+
+| train pages | mini, scratch | mini, arm A | base, scratch | base, arm A |
+|---|---|---|---|---|
+| 0 | — | 0.9176 / 0.9209 | — | 0.9343 / 0.9332 |
+| 25 | 0.8974±0.0032 / 0.9155±0.0031 | 0.9275±0.0010 / 0.9297±0.0017 | 0.9481 / 0.9517 | 0.9369 / 0.9364 |
+| 50 | 0.9147±0.0070 / 0.9316±0.0058 | 0.9401±0.0015 / 0.9461±0.0044 | 0.9557 / 0.9612 | 0.9409 / 0.9403 |
+| 100 | 0.9168±0.0031 / 0.9359±0.0018 | 0.9444±0.0029 / 0.9489±0.0033 | 0.9557 / 0.9620 | 0.9546 / 0.9570 |
+| 200 | 0.9291±0.0045 / 0.9505±0.0034 | 0.9483±0.0012 / 0.9530±0.0026 | 0.9564 / 0.9592 | 0.9519 / 0.9521 |
+| 400 | 0.9479±0.0008 / 0.9545±0.0019 | 0.9537±0.0039 / 0.9539±0.0044 | 0.9587 / 0.9621 | 0.9607 / 0.9633 |
+| 513 | 0.9513±0.0016 / 0.9577±0.0024 | 0.9562±0.0008 / 0.9580±0.0020 | 0.9666 / 0.9731 | 0.9602 / 0.9618 |
+
+The same pages through `bench/accuracy/heuristics.py --board wcxb-article`
+(`results/heuristics-wcxb-article.md`): trafilatura 0.9370 / 0.9413, readability
+0.9280 / 0.9532, resiliparse 0.8147 / 0.8819.
+
+**The mini adapts from a few dozen pages when it starts from the shipped model.** Arm A
+gains at every rung: 25 articles lift it from 0.9176 to 0.9275 on test, 50 put it past
+trafilatura (0.9401), and from 200 it is level with readability on the disjoint sites
+(0.9530). Trained from scratch, the mini is no better than the shipped mini's zero-shot
+score up to 100 pages, and needs about 400 for what arm A reaches with 100-200. The base learns faster: from scratch,
+25 articles score 0.9481 and 50 reach about 0.956, after which test is flat to 400
+pages. Starting the base from the shipped model is no help on test below 100 pages
+(0.9369 vs 0.9481 at 25) and level from 100; on val it is ahead at every rung
+(`results/wcxb-article-ladder.md`), so on one seed the two columns are read as level, not
+ranked. Both models flatten from about 100-200 articles. No row scores more than 0.0011 lower on
+the disjoint sites than on all of test, and most score higher, so the 102 test articles
+from sites with dev articles do not flatter the trained rows.
+
 ### DAnIEL leave-one-language-out — ROUGE-L F1, 311m-10, 4 epochs
 
 Train on four languages, score the fifth, so n is that language's page count and the
@@ -181,7 +260,8 @@ rather than reading it here:
     python bench/accuracy/predict.py --model wmb-311m-10 --boards wmb,wcxb,daniel --push
     python tools/render_tables.py               # -> results/generalization.md
 
-Headline, test folds, 3 seeds: `wmb-311m-10` scores WMB 0.9311±0.0027, WCXB
+Arm comparison, test folds, 3 seeds, research path (not the delivered base, which is in the
+table above): `wmb-311m-10` scores WMB 0.9311±0.0027, WCXB
 0.8633±0.0016, DAnIEL macro 0.9175±0.0027. Trained the other way round, `wcxb-311m-10`
 scores WCXB 0.9209±0.0007, WMB 0.8479±0.0107, DAnIEL 0.8826±0.0027 — a WMB-trained
 model loses 5.76 pt moving onto WCXB, a WCXB-trained one loses 8.32 pt moving onto WMB,
@@ -195,52 +275,66 @@ two boards' annotation policies disagree on list-shaped pages, not on prose.
 ### Heuristics on WCXB and DAnIEL (zero-shot)
 
 The same third-party extractors scored on the two boards outside the WMB training policy, so
-the accuracy claim can be read off-policy. Our models are 3-seed keepers from the
-generalization ledger (scored on their selected-block text); the heuristics are single
+the accuracy claim can be read off-policy. The mini rows are the delivered table above (the
+package's `output="text"`, one shipped seed); the 311m-10 row is the 3-seed arm from the
+generalization ledger (scored on its selected-block text), since the delivered base is not yet
+measured on these boards through the package. The heuristics are single
 deterministic runs of their native text output, except readability, which has no text mode and
 is flattened (`vendors/shared/html_text.py`). One population per board, the block-scored pages;
 an empty return scores 0. Comparable down a column, never across.
 
-    python bench/accuracy/heuristics.py --board wcxb
-    python bench/accuracy/heuristics.py --board daniel
+    python bench/accuracy/heuristics.py --board wcxb --bundle data/bundles/mini --bundle <0.2.x bundle>
+    python bench/accuracy/heuristics.py --board daniel --bundle data/bundles/mini --bundle <0.2.x bundle>
 
 WCXB test511 (word-F1, n=511) and DAnIEL 1,689 (ROUGE-L, macro over five languages):
 
 | extractor | WCXB | DAnIEL |
 |---|---|---|
-| base (311m-10, 3 seeds) | 0.8633±0.0016 | 0.9175±0.0027 |
-| mini (int8 table, 3 seeds) | 0.8474±0.0089 | 0.8797±0.0025 |
-| trafilatura | 0.8584 | 0.8265 |
-| readability | 0.7653 | 0.8925 |
+| 311m-10 arm (3 seeds, research path) | 0.8633±0.0016 | 0.9175±0.0027 |
+| mini 0.3.0 (s2, package) | 0.8529 | 0.8925 |
+| mini 0.2.x (s1, today's package) | 0.8528 | 0.8818 |
+| trafilatura | 0.8584 | 0.8255 |
+| readability | 0.7653 | 0.8904 |
 | resiliparse | 0.7909 | 0.7094 |
 
 resiliparse empty on 10/511 (WCXB) and 1/1,689 (DAnIEL), scored 0; trafilatura empty on 3/511
-(WCXB). base clears every heuristic on both boards. Each heuristic tops one board and drops on
-the other: trafilatura leads WCXB and is next-to-last on DAnIEL, readability the reverse. mini
-sits just behind the board leader on each and ahead of the other two. Dev cross-check
-(`results/heuristics-wcxb-dev.md`): our trafilatura 0.8132 and resiliparse 0.7711 land within
-~2-3 pt of the public WCXB leaderboard (0.791 / 0.797), a version and metric-detail gap. Full
-tables and pins in `results/heuristics-wcxb.md` and `results/heuristics-daniel.md`.
+(WCXB). The 311m-10 arm clears every heuristic on both boards. Each heuristic tops one board and
+drops on the other: trafilatura leads WCXB and is next-to-last on DAnIEL, readability the
+reverse. The 0.3.0 mini is ~0.6 pt behind trafilatura on WCXB (0.8529 vs 0.8584) and ~0.2 pt
+ahead of readability on DAnIEL (0.8925 vs 0.8904), ahead of the other two on each. Dev
+cross-check (`results/heuristics-wcxb-dev.md`): our trafilatura 0.8132 and resiliparse 0.7711 land within
+~2-3 pt of the public WCXB leaderboard (0.791 / 0.797), a version and metric-detail gap. Heuristic
+tables and pins, with both mini rows through the package, in `results/heuristics-wcxb.md` and
+`results/heuristics-daniel.md`.
 
 ### CPU speed + F1 vs third-party extractors
 
-The shipped mini (`311m-table-bigru-fABC` s1, int8 table + BiGRU head, ONNX) against
-trafilatura, readability and resiliparse — CPU single-thread (`onnxruntime intra=1`), WMB
-test545. One population, the 544 cmc-scored pages, on both speed and F1: an empty return is
-timed and scores as an empty prediction (F1 0 vs non-empty gold); only a crash is excluded.
-Full table, pins and size-dependence in `results/speed-wmb.md`:
+The mini against trafilatura, readability and resiliparse — CPU single-thread
+(`onnxruntime intra=1`), WMB test545. One population, the 544 cmc-scored pages, on both speed
+and F1: an empty return is timed and scores as an empty prediction (F1 0 vs non-empty gold);
+only a crash is excluded. The mini is the 0.3.0 bundle through the `htmlsift` package, in two
+containers of one pinned image (2 vCPU / 4 GB and 1 vCPU / 2 GB), on one Intel i7-6820HQ host;
+methods are timed page by page in rotating order. Full tables, pins and size-dependence in
+`results/speed-wmb.md` and `results/speed-wmb-1vcpu.md`:
 
-    python bench/speed/cpu_compare.py --onnx --model 311m-table-bigru-fABC --seed 1 --fold test --threads 1
+    sh deploy/docker/cpu_speed.sh
 
 **Accuracy is the win.** ROUGE-5 F1 (the board metric, html2text of each extractor's HTML):
-ours **0.8994**, readability 0.8016, trafilatura 0.7525, resiliparse 0.7135 (empty on 4 of
-544, scored 0) — +14.7 pt over trafilatura, the strongest heuristic on speed.
+mini 0.3.0 **0.9114** (delivered table above), readability 0.8016, trafilatura 0.7525,
+resiliparse 0.7135 (empty on 4 of 544, scored 0) — ~16 pt over trafilatura, the strongest
+heuristic on speed.
 
-**Speed is the heuristic tier, not faster than it.** On the p50 ours sits level with
-trafilatura and a shade slower (trafilatura ≈0.9× our time); readability is ~1.7-2× and
-resiliparse ~15-20× faster, both far behind on F1. The ratio is size-dependent: ours beats
-trafilatura on pages under ~4k tokens and trafilatura pulls ahead on the >32k whales. No
-absolute "N× faster" claim — see `LIMITS.md` / §7. The encoder arms are slower than the
+**Speed is the heuristic tier.** On the same pages in the same container, trafilatura takes
+1.3× the mini's median time and 1.4× its mean (2 vCPU: mini p50 32.9 ms, trafilatura 44.0 ms;
+1 vCPU: 31.3 / 41.5 ms). readability is about level (0.9× on the p50, 0.8× on the mean) and
+resiliparse takes ~0.1× the mini's time, both far behind on F1. The ratio is size-dependent:
+trafilatura takes ~2× the mini's time on pages under 1k tokens and 0.9× on the 15 pages over
+32k. No absolute "N× faster" claim — see `LIMITS.md` / §7.
+
+**Memory.** Resident memory of a process holding only that method, after loading it and one
+page: the mini 401 MB (2 vCPU) / 369 MB (1 vCPU), trafilatura 48 MB, readability 34 MB,
+resiliparse 26-27 MB. The largest single-page peak over the fold: the mini 576 / 627 MB,
+trafilatura 285 MB, readability 134 MB, resiliparse 87 MB. The mini fits the 2 GB container. The encoder arms are slower than the
 table and are not the CPU competitor.
 
 The figures above are single-thread (`--threads 1`). ORT intra-op threads speed the forward
@@ -253,7 +347,8 @@ run. Threading is a latency lever, not a tier change (`LIMITS.md`).
 The encoder keepers against MinerU-HTML v1.1 (HunYuan 0.5B, the Dripper lineage, vLLM
 0.11.1, max context 131,072), both on an RTX 4090 over the same 545 pages, both scored
 html-mode through `WMB.score_text`. Speed rows are one run of the seed-0 keeper (fp32
-weights, bf16 autocast, batch ≤64, B×T cap 8,192); the F1 beside each is the 3-seed
+weights, bf16 autocast, batch ≤64, B×T cap 8,192). The F1 beside 311m-10 is the delivered base
+(s1, through the package); beside 97m-6-qat, the unpublished lite arm, it is the 3-seed
 predict ledger above. Full pipeline is CPU render + prep + GPU model, serial; MinerU's
 call is HTML in, HTML out and cannot be split, so only the full-pipeline rows compare.
 Tables and regenerate lines in `results/throughput-wmb.md` and `results/dripper-wmb.md`:
@@ -265,12 +360,12 @@ Tables and regenerate lines in `results/throughput-wmb.md` and `results/dripper-
 | system | sustained pg/s, full pipeline | batch-1 p50 | batch-1 p90 | F1 |
 |---|---|---|---|---|
 | MinerU-HTML v1.1 | 1.16 | 844 ms | 3,343 ms | 0.9306 (1 run) |
-| 311m-10 | 18.4 | 6.7 ms, model only | 73.6 ms | 0.9311±0.0027 |
+| 311m-10 (base) | 18.4 | 6.7 ms, model only | 73.6 ms | 0.9288 (s1) |
 | 311m-10, band attention | 24.6 | 7.4 ms, model only | 45.2 ms | same weights, bit-identical |
 | 97m-6-qat (fp32 forward) | 30.2 | 4.2 ms, model only | 37.8 ms | 0.9256±0.0048 |
 
-**Throughput at matched accuracy is the claim.** 311m-10 ties MinerU-HTML on F1 (0.9311
-against 0.9306, inside one seed spread) at 16× its sustained rate, 21× with band. The
+**Throughput at near-equal accuracy is the claim.** Base is within ~0.2 pt of MinerU-HTML on
+F1 (0.9288 vs 0.9306, one MinerU run) at 16× its sustained rate, 21× with band. The
 median-latency ratio (~126×) is not quoted as a throughput figure: whale pages set the
 sustained rate — pages over the 8,192-token window are encoded window by window, our p90
 is 11× our p50 where theirs is 4×. Our batch-1 latency is model-only and theirs is the whole call,
@@ -278,49 +373,47 @@ so the latency columns are shown side by side and not ratioed. The 97m-6-qat run
 masters here (int8 is a CPU lever; GPU int8 is unmeasured). Same card type is the
 condition: no GPU number is compared across cards or against a CPU extractor.
 
-### Mini objective — WMB val732 / test545, ROUGE-5 F1
+### Mini objective — WMB val732, ROUGE-5 F1
 
-Changes to the mini's training objective, with the model, features and data fixed. The method and
-every arm are in `docs/objective.md`; every seed is in `results/wmb-mini-objective.md`.
+Changes to the mini's training objective, with the model, features and data fixed. Selection is
+on val; the method and every arm are in `docs/objective.md`, every seed in
+`results/wmb-mini-objective.md`.
 
     python -m trainers.train experiments/wmb-mini-pf-confirm.yaml
     python tools/render_tables.py               # -> results/wmb-mini-objective.md
 
-| arm | seeds | val | test | test int8 |
-|---|---|---|---|---|
-| shipped mini | 3 | 0.8613±0.0026 | 0.9004±0.0007 | 0.9005±0.0006 |
-| candidate: ema 0.999 + smooth_weight 1 + page_f1 4 | 9 | 0.8739±0.0023 | 0.9130±0.0020 | 0.9129±0.0020 |
+| arm | seeds | val |
+|---|---|---|
+| 0.2.x recipe | 3 | 0.8613±0.0026 |
+| ema 0.999 + smooth_weight 1 + page_f1 4 | 9 | 0.8739±0.0023 |
 
-The candidate's zero-shot rows (int8 table, 3 seeds) are
-`wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-int8` in `results/generalization.md`:
-WCXB 0.8518±0.0019 against the shipped mini's 0.8474±0.0089, and DAnIEL macro 0.8905±0.0037 against
-0.8797±0.0025. The candidate is not shipped yet: the `htmlsift` package still bundles the
-shipped mini. The next release ships it in its r=128 form (below).
+The arm's effect on test is read off the delivered models above, both through today's package:
+the 0.2.x mini 0.8975 against the 0.3.0 mini 0.9114 on WMB, 0.8818 against 0.8925 on DAnIEL,
+0.8528 against 0.8529 on WCXB. `htmlsift` 0.3.0 ships this arm in its r=128 form (below).
 
-### Reduced-rank mini — r=128, no retraining
+### Reduced-rank mini — r=128, no retraining: the 0.3.0 mini
 
 The head sees a pooled block vector only through its input weights, and mean pooling is linear, so
 a rank-128 factor of those weights moves into the token table. The factor is an SVD weighted by the
 second moment of pooled int8-table block vectors on WMB train (C, 1,268,929 blocks, never val or
 test); the table stores int8 rows 128 wide with LayerNorm folded in, and the head's input becomes
 128 + 33. Same trained head on both sides, so each seed's difference is approximation error alone.
-Code in `core/quant.py`; the r=128 keepers are derived from the candidate's three:
+Code in `core/quant.py`; the r=128 keepers are derived from the arm's three seeds:
 
-    python vendors/wmb/adapter/lowrank.py 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128
-    python bench/accuracy/predict.py --model wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999-r128
-    python bench/accuracy/predict.py --model wmb-311m-table-bigru-fABC-nb1-pf4-ema0.999 --table-int8
+    python -m vendors.wmb.adapter.lowrank 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128
     python -m export.gate wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999-r128_s2.pt --benchmark wmb --fold test
 
-| arm, 3 seeds | WMB test | WCXB | DAnIEL macro |
-|---|---|---|---|
-| candidate, int8 table | 0.9134±0.0012 | 0.8518±0.0019 | 0.8905±0.0037 |
-| candidate, r=128 | 0.9120±0.0022 | 0.8498±0.0028 | 0.8917±0.0023 |
-| paired difference | −0.0014 | −0.0020 | +0.0012 |
+**Full-width** names the `nb1-pf4-ema0.999` arm (`311m-table-bigru-fABC-nb1-pf4-ema0.999`) before
+its table is factored to rank 128. It is not delivered; it appears only as research context, at
+the shipped seed s2, to show what the factor costs on WMB test545:
 
-Every difference is inside the −0.003 per-board bar set before the run. WMB val (`predict.py
---ckpt <keeper> --benchmark wmb --fold val`) moves −0.0002. WCXB is lower on all three seeds, most
-on forum (−0.0072) and listing (−0.0058) pages. Per-language and per-type rows are in
-`results/generalization.md`.
+| s2 | WMB test |
+|---|---|
+| full-width | 0.9122 |
+| r=128 (mini 0.3.0) | 0.9114 |
+| rank-128 cost | −0.0008 |
+
+WCXB and DAnIEL are not measured at full width for s2.
 
 **Size.** Table 202.4 → 34.6 MB, head 6.5 → 2.6 MB: the two graphs 208.9 → 37.2 MB. The bundle
 also carries granite's tokenizer, now gzipped (`tokenizer.json.gz`, 33.4 → 5.4 MB, byte-reproducible;
@@ -331,24 +424,8 @@ also carries granite's tokenizer, now gzipped (`tokenizer.json.gz`, 33.4 → 5.4
 all three seeds: 0/386 flips on random inputs and 0/154,523 over all 545 WMB test pages, max |dp|
 ≤ 2.0e-5.
 
-The shipped seed is s2, the best equal-weight mean of WMB test, WCXB and DAnIEL macro (s0 0.8854,
-s1 0.8825, s2 0.8857); the claim is the 3-seed mean above. Speed and memory are measured in the
-`htmlsift` package, on the code that ships, and are not claimed here.
-
-### Common Crawl yield — private data, context only
-
-These are FineWeb-Edu and DCLM filter passes on 7,177 CC-MAIN-2026-43 pages, weighted to 32,399.
-The page set is private (`koivualeksi/htmlsift-bench` @0ac5a811), so this is not a board and
-cannot be reproduced from published sources. Full tables are in `results/ccbench.md`.
-
-    python bench/ccbench.py --ckpt wmb/ckpt/311m-table-bigru-fABC-nb1-pf4-ema0.999_s1.pt --drop-title
-
-trafilatura passes 436 pages on Edu and 2,926 on DCLM (6,753 weighted). The candidate, with the
-title dropped, against trafilatura:
-- Edu pages -0.7 % [-6.3, +5.5];
-- DCLM pages +5.9 % [+1.8, +10.4];
-- DCLM tokens +41.0 % [+32.0, +51.2].
-
-322 of the pages are bot-challenge interstitials. Their one line passes DCLM for trafilatura on
-305 of them, which is 15 % of its weighted DCLM passes. With those pages removed, the candidate's
-DCLM page gain is +25.3 % [+20.7, +30.3].
+`htmlsift` 0.3.0 ships seed s2 (release commit `a86f08a`, tag `v0.3.0` on
+`koivualeksi/htmlsift-release`), the best equal-weight mean of WMB test, WCXB and DAnIEL macro
+over the three r=128 seeds on the research path (s0 0.8854, s1 0.8825, s2 0.8857). Every claim
+about the 0.3.0 mini is that seed through the package (delivered table above). Its CPU speed
+and memory are in the CPU section above, measured through the package.

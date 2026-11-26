@@ -1,0 +1,11 @@
+# Arm A of the wcxb-article ladder for the base encoder: wcxb-article-ladder-base, but each
+# run starts from the shipped base keeper (311m-10 s1) instead of the pretrained backbone
+# and a random head. One seed: an indicative comparison, not a claim.
+name: wcxb-article-ladder-base-init
+recipe: finetune
+board: wcxb-article
+init: wmb/ckpt/311m-10_s1.pt
+seeds: 1
+steps: 2300
+sweep:
+  train_limit: [25, 50, 100, 200, 400, null]

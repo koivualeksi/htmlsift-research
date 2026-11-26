@@ -119,8 +119,11 @@ def train_env(path, smoke, launch, git):
     extras = {c["extra"] for c in configs if c.get("extra")}
     if extras:
         (env["EXTRA"],) = extras                 # one extra source exists: custom
+    if any(c.get("init") for c in configs):      # the keeper a run starts from
+        env["HF_MODELS_REPO"] = env_or_die("HF_MODELS_REPO")
     name = f"{s.name}-{launch}" + ("-smoke" if smoke else "")
-    return name, ",".join(sorted({c["board"] for c in configs})), env
+    # a single-type board (wcxb-article) is built from its base board's source
+    return name, ",".join(sorted({c["board"].partition("-")[0] for c in configs})), env
 
 
 def candidates(gpus):

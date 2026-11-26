@@ -114,7 +114,7 @@ below and adds `test_f1` to the run's result:
 The `table` recipe (`experiments/wmb-mini.yaml`) keeps its checkpoint as `ckpt.pt` in the
 run folder and, with `export_test`, reloads it through `core.loader.build_infer`, the same
 path `bench/accuracy/predict.py --ckpt` uses. An fp32-table run is also scored with an
-int8 table (`*_int8_f1`), the shipped mini's numerics.
+int8 table (`*_int8_f1`), the 0.2.x mini's numerics.
 
 `keep: true` saves any run's checkpoint as `ckpt.pt` in its run folder, pushed with the
 run. A kept run becomes a keeper, the checkpoint `bench/` and `tools/release.py` load from
@@ -125,6 +125,18 @@ the model repo as `<board>/ckpt/<arm>_s<seed>.pt`, only when promoted by hand:
 
 Shipping it in the package is then an edit of the keeper constants in `tools/release.py`.
 
+The 0.3.0 mini is the chosen objective arm (`docs/objective.md`) with its table factored to rank
+128, no retraining. Train it, promote each seed's run, derive the rank-128 keepers (on the Linux
+render: the factor is fit on WMB train renders), then build, gate and publish the bundle:
+
+    python -m trainers.train experiments/wmb-mini-pf-confirm.yaml
+    python tools/promote.py <run-id>               # the feat_drop 0.0 runs of seeds 0, 1, 2
+    python -m vendors.wmb.adapter.lowrank 311m-table-bigru-fABC-nb1-pf4-ema0.999 --rank 128 --push
+    python tools/release.py mini                   # build + gate under data/bundles/mini
+    python tools/release.py mini --push            # + upload to koivualeksi/htmlsift-release
+
+The bundle `htmlsift` 0.3.0 pins is seed 2, release commit `a86f08a` (tag `v0.3.0`).
+
 `train_limit` trains on stratified nested prefixes of the training pool matched to val's
 level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
 
@@ -133,19 +145,18 @@ level distribution. It is the data-efficiency ladder in `CLAIMS.md`, val-only:
 ## WMB evaluation
 
 The board metric is ROUGE-5 F1 against `convert_main_content` (their
-`calc_rouge_n_score`, vendored). Predictions are manufactured through the DOM
-serializer, so the oracle (gold labels) bounds every model result and is the
-eval gate:
+`calc_rouge_n_score`, vendored). Predictions are the package's own pruned html
+(`htmlsift.core.prune`) through WMB's html2text, so the oracle (gold labels) bounds every
+model result and is the eval gate:
 
     python vendors/wmb/adapter/eval.py            # test fold
     python vendors/wmb/adapter/eval.py --fold val # val fold
 
-Expected, frozen from this repo's run and asserted on every run:
+Expected, frozen from this repo's run and asserted on every run (the ORACLE line before each
+also prints n, P and R):
 
-    ORACLE/test545 vs convert_main_content: n=544  P 0.9901  R 0.9945  F1 0.9918
-    ceiling gate OK: 0.991769 == 0.991769
-    ORACLE/val732  vs convert_main_content: n=732  P 0.9753  R 0.9858  F1 0.9784
-    ceiling gate OK: 0.978383 == 0.978383
+    ceiling gate OK: 0.991384 == 0.991384         # test545, n=544, F1 0.9914
+    ceiling gate OK: 0.977170 == 0.977170         # val732, n=732, F1 0.9772
 
 Drift in the render config, the serializer or the scorer trips the ceiling
 assertion. A model checkpoint's exported per-block probabilities are scored the
@@ -195,9 +206,34 @@ Same recipe and run folders as WMB, fit to WCXB through its `Benchmark`
 assembly, not a DOM re-render). There is no carved val fold -- dev is both the train set
 and the selection monitor -- so the honest number is the test board below; `export_test`
 writes each run's val+test probs to `data/probs/<run_id>/` and adds test F1 to its result.
-`train_limit` is not supported here. A local CPU smoke before any GPU spend:
+`train_limit` is refused on this board, since its val is its training set. A local CPU
+smoke before any GPU spend:
 
     python -m trainers.train experiments/wcxb-depth-97m.yaml --smoke
+
+### Article ladder (`wcxb-article`)
+
+The data-efficiency ladder on one page type, in `CLAIMS.md`. Board `wcxb-article` narrows
+every fold to articles and carves its own val: dev articles byte-identical to a test article
+are dropped, the rest split by registrable domain into a 200-page val and a 513-page pool,
+and `train_limit` takes nested seeded subsets of the pool. Test is all 257 test articles,
+with the 155 from domains no dev article has scored beside it (`test_domain_disjoint_f1`).
+Each spec gives every rung the same `steps` budget; the `-init` specs start from the shipped
+keeper (`init`) instead of a fresh head or the pretrained backbone, and need
+`HF_MODELS_REPO`:
+
+    python -m trainers.train experiments/wcxb-article-ladder.yaml               # mini, scratch
+    python -m trainers.train experiments/wcxb-article-ladder-init.yaml          # mini, from shipped
+    python -m trainers.train experiments/wcxb-article-ladder-base.yaml          # base, scratch
+    python -m trainers.train experiments/wcxb-article-ladder-base-init.yaml     # base, from shipped
+
+Then score and render. The base's zero-shot row needs its probs first (a GPU model: run it
+on a pod, or wait for it on CPU); the mini runs are factored to rank 128 and scored on CPU
+by the harness; the third-party extractors are scored on the same pages:
+
+    python bench/accuracy/predict.py --ckpt wmb/ckpt/311m-10_s1.pt --benchmark wcxb-article         --fold val --out data/ladder/zero-shot-base-val.jsonl            # and --fold test
+    python bench/accuracy/ladder.py                    # -> results/wcxb-article-ladder.md
+    python bench/accuracy/heuristics.py --board wcxb-article --bundle data/bundles/mini
 
 ## WCXB evaluation
 
@@ -296,25 +332,30 @@ an empty prediction (F1 0 vs non-empty gold), only a crash is excluded (asterisk
 published figure is the **ratio** with its size dependence, never an absolute: a cgroup
 CPU cap fixes the thread count, not the host microarchitecture, so absolute ms does not
 carry across machines. On CPU we are not faster than the heuristics (`LIMITS.md`); the
-ratio is reported honestly and size-bucketed. The published figure is the shipped mini
-(`--onnx`, `CLAIMS.md`); an encoder keeper via `--ckpt`/`--model` is slower and not the
-CPU competitor.
+ratio is reported honestly and size-bucketed. The mini is timed through the installed
+package on a bundle directory (`--bundle`); the published figures are the 0.3.0 mini's, from
+the two container runs below (`CLAIMS.md`). Methods are timed page by page in rotating
+order, and `--memory` records each method's resident memory in its own process. An encoder
+keeper via `--ckpt`/`--model` is slower and not the CPU competitor.
 
 Run it in the pinned container so the render stack (Python 3.13 + lxml 6.1.1, the §4
 render-gate versions) and the extractor versions are fixed, and the report records the
-CPU model, the visible core count and the pinned versions it ran on:
+CPU model, the visible core count and the pinned versions it ran on. The published runs, on
+Linux from the repo root:
 
     docker build -f deploy/docker/Dockerfile -t htmlsift-bench .
-    docker run --rm --cpus=2 --cpuset-cpus=0,1 -v "$PWD/vendors/wmb/data:/repo/vendors/wmb/data" -v "$PWD/311m-10_s0.pt:/repo/ckpt.pt" htmlsift-bench --ckpt /repo/ckpt.pt --fold test --threads 2
+    python tools/release.py mini                   # the bundle, under data/bundles/mini
+    sh deploy/docker/cpu_speed.sh                  # 2 vCPU / 4 GB and 1 vCPU / 2 GB, one thread
 
-Data and the keeper `.pt` mount at run time, never baked (§2); on Git Bash prefix
-`MSYS_NO_PATHCONV=1` and use forward-slash host paths. `--cpuset-cpus` pins which cores
-and `--cpus` how many. The vCPU count is part of the claim, not just hygiene: our ONNX
-forward gains on more cores (ORT intra-op) while a single trafilatura call cannot (GIL-bound),
-so handing ORT more threads than trafilatura would manufacture an unfair win (§7) — pin the
-same low count for both. A modest 2 is the conservative choice; the single-threaded lxml
-render+prep floor caps the end-to-end gain regardless. The run writes `results/speed-wmb.md`
-for the `--onnx` mini, or `results/speed-wmb-<model>.md` for an encoder keeper.
+Data and the bundle mount read-only at run time, never baked (§2), and nothing is fetched
+(`HF_HUB_OFFLINE=1`). `--cpuset-cpus` pins which cores, `--cpus` how many and `--memory`
+the RAM. The thread count is part of the claim, not just hygiene: our ONNX forward gains on
+more cores (ORT intra-op) while a single trafilatura call cannot (GIL-bound), so handing ORT
+more threads than trafilatura would manufacture an unfair win (§7). Both published runs
+pin ORT to one thread (`--threads 1`), as trafilatura runs; the single-threaded lxml
+render+prep floor caps any threaded gain regardless. The runs write `results/speed-wmb.md`
+(2 vCPU) and `results/speed-wmb-1vcpu.md` (1 vCPU); an encoder keeper via `--ckpt` writes
+`results/speed-wmb-<model>.md`.
 
 ## GPU throughput vs MinerU-HTML v1.1 (§7)
 
@@ -338,8 +379,8 @@ tables into `results/throughput-wmb.md` (one row per arm; the writer merges rows
 
     python tools/pod_logs.py --run thr311      # likewise thr311b, thr97q, dripper-v11
 
-Speed rows are one run of the seed-0 keeper; the F1 beside them is the 3-seed predict ledger
-(`results/generalization.md`). Pods are metered and human-launched (§2).
+Speed rows are one run of the seed-0 keeper; the F1 beside base is its shipped seed s1 through
+the package, and beside 97m-6-qat the 3-seed predict ledger (`results/generalization.md`). Pods are metered and human-launched (§2).
 
 ## Results tables
 

@@ -31,11 +31,13 @@ def _eval(encoder, head, val_pages, score_val, dev, autocast):
 
 def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
                   epochs=4, enc_lr=2e-5, head_lr=1e-3, wd=0.01, warmup=200,
-                  grad_clip=1.0, seed=0, out_path=None, meta=None):
+                  grad_clip=1.0, seed=0, out_path=None, meta=None, steps=None):
     """Fine-tune encoder+head on train_pages, selecting on
     score_val(val_pages, probs) (higher is better). Leaves encoder+head holding
     the best-val weights and returns {best_val, best_epoch, history}. A checkpoint
-    is written only when out_path is given (keep), since these are large."""
+    is written only when out_path is given (keep), since these are large. steps, as in
+    train_head, replaces epochs with a budget of at least that many steps, scored 4 times:
+    4 epochs of a few pages end before the 200-step warmup does."""
     torch.manual_seed(seed)
     autocast = dev.type == "cuda"
 
@@ -58,6 +60,10 @@ def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
          "lr": enc_lr, "weight_decay": 0.0},
         {"params": list(head.parameters()), "lr": head_lr, "weight_decay": 0.0},
     ])
+    every = 1
+    if steps is not None:
+        epochs = -(-steps // len(samples))
+        every = -(-epochs // 4)
     total_steps = len(samples) * epochs
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda step: min((step + 1) / max(warmup, 1),
@@ -88,8 +94,11 @@ def train_encoder(encoder, head, train_pages, val_pages, score_val, dev, *,
             sched.step()
             total_loss += float(loss.detach())
 
+        if epoch % every and epoch != epochs:
+            continue
         m = _eval(encoder, head, val_pages, score_val, dev, autocast)
         m["loss"] = total_loss / len(samples)
+        m["epoch"] = epoch
         history.append(m)
         star = ""
         if m["val"] > best["val"]:
@@ -152,22 +161,29 @@ def _forward(head, xs, idx, packed, dev):
 
 def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objective,
                *, epochs=4, head_lr=1e-3, seed=0, batch_size=64,
-               max_len=2048, max_tokens=32768, ema=0.0):
+               max_len=2048, max_tokens=32768, ema=0.0, steps=None):
     """Train a per-block head on FROZEN, pre-pooled inputs, batched over pages
     (length-bucketed, padded, masked; the masked forward is per-block identical to the
     unbatched path). train_x/val_x are lists of [n_blocks, d_in] aligned with train_y /
     val_pages; objective (trainers.objective) gives the batch loss. ema > 0 scores, selects
     and keeps an exponential moving average of the weights (that decay per step) while the
-    raw weights train on. Leaves head holding the best epoch's weights and returns
-    {best_val, best_epoch, history}."""
+    raw weights train on. steps, when given, replaces epochs with a budget of at least that
+    many optimiser steps, scored 4 times as the 4-epoch run is: a per-step EMA over the
+    handful of steps a small train set gets in 4 epochs is still near its first step's
+    weights. Leaves head holding the best scored weights and returns
+    {best_val, best_epoch, history}, one history entry per scoring."""
     torch.manual_seed(seed)
     opt = torch.optim.AdamW(head.parameters(), lr=head_lr)
     by_len = sorted(range(len(train_x)), key=lambda i: len(train_x[i]))
     val_order = sorted(range(len(val_x)), key=lambda i: len(val_x[i]))
+    per_epoch = sum(1 for _ in _batches(train_x, by_len, batch_size, max_len, max_tokens))
+    if steps is not None:
+        epochs = -(-steps // per_epoch)
+    every = -(-epochs // 4) if steps is not None else 1
     # Linear LR warmup over the first 10% of steps, then hold: a 4-layer
     # transformer from a cold high-lr start diverges (val -> 0); warmup plus the
     # grad-clip below stabilise it. BiGRU/linear are unaffected.
-    n_steps = epochs * sum(1 for _ in _batches(train_x, by_len, batch_size, max_len, max_tokens))
+    n_steps = epochs * per_epoch
     warmup = max(1, n_steps // 10)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / warmup))
     rng = np.random.default_rng(seed)
@@ -200,6 +216,8 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
                 avg.update_parameters(head)
             total_loss += float(loss.detach())
 
+        if epoch % every and epoch != epochs:
+            continue
         scored.eval()
         probs = [None] * len(val_x)
         with torch.no_grad():
@@ -208,7 +226,7 @@ def train_head(head, train_x, train_y, val_x, val_pages, score_val, dev, objecti
                 for r, k in enumerate(idx):
                     probs[k] = p[r][:len(val_x[k])]
         v = score_val(val_pages, probs)
-        history.append({"val": v, "loss": total_loss / len(batches)})
+        history.append({"epoch": epoch, "val": v, "loss": total_loss / len(batches)})
         if v > best["val"]:
             best = {"val": v, "epoch": epoch}
             best_state = {k: t.cpu().clone() for k, t in scored.state_dict().items()}

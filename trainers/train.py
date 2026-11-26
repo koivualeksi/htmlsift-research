@@ -100,7 +100,8 @@ def main(argv=None):
     if smoke:
         if from_spec:
             configs = [c for c in configs if c["seed"] == 0]
-        configs = [{**c, "epochs": 1, "smoke": args.smoke} for c in configs]
+        configs = [{**c, "epochs": 1, "smoke": args.smoke}
+                   | ({"steps": None} if "steps" in c else {}) for c in configs]
     check_boards(configs)
     if args.check:
         print(f"{experiment}: {len(configs)} runs, all checks pass", flush=True)

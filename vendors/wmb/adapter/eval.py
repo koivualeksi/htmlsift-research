@@ -2,9 +2,10 @@
 
 The 545 board metric is ROUGE-5 F1 against convert_main_content (their
 calc_rouge_n_score, vendored in upstream/rouge_utils.py). Predictions are
-manufactured through serialize.py (labels -> prune-then-render), so we score the
-same kind of object the references are. Torch-free: the model forward lives in
-its own module and reaches this scorer only as a per-block-probs file.
+manufactured through serialize.py (labels -> the package's pruned html -> html2text),
+so we score the package's own output as the references were rendered. Torch-free: the
+model forward lives in its own module and reaches this scorer only as a per-block-probs
+file.
 
 Folds:
   test (default) -- the 545 board (both 529 + test-only 16). cmc n=544;
@@ -43,10 +44,10 @@ EVAL = DATA / "eval"
 POP = {"test": "test545", "val": "val732"}
 
 # Oracle DOM ceiling, ROUGE-5 F1 vs convert_main_content, frozen from this repo's
-# own run of the lxml provenance pipeline (§4, 2026-08-31). The oracle asserts it
-# and reports the fresh value. (html2text-pipeline baseline was test 0.994356 /
-# val 0.982753; the lxml renderer costs -0.26% test / -0.44% val.)
-CEILING = {"test": 0.991769, "val": 0.978383}
+# own run with the package's line pruner (htmlsift 7e3d05a, 2026-11-25). The oracle
+# asserts it and reports the fresh value. (WMB's whole-element pruner gave test
+# 0.991769 / val 0.978383; the html2text-pipeline baseline was 0.994356 / 0.982753.)
+CEILING = {"test": 0.991384, "val": 0.977170}
 
 
 calc_rouge_n_score = load(WMB / "upstream" / "rouge_utils.py", "wmb_rouge").calc_rouge_n_score

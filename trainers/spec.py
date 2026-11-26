@@ -16,11 +16,11 @@ import yaml
 # run's config, so a run.yaml stays complete if a default here later changes.
 DEFAULTS = {
     "finetune": {"model": "311m", "layers": 10, "head": "bigru", "feats": None, "cap": 0,
-                 "hidden": 256, "epochs": 4, "train_limit": None, "holdout": None,
+                 "hidden": 256, "epochs": 4, "steps": None, "init": None, "train_limit": None, "holdout": None,
                  "qat_w8a8": False, "quant_eval": False,
                  "export_test": True, "keep": False},
     "table": {"model": "311m", "emb": "fp32", "head": "bigru", "feats": "ABC",
-              "hidden": 256, "epochs": 4, "batch_size": 8, "head_lr": 2.0e-3,
+              "hidden": 256, "epochs": 4, "steps": None, "init": None, "batch_size": 8, "head_lr": 2.0e-3,
               "train_limit": None, "extra": None, "extra_repeat": None,
               "len_cap": None, "len_floor": None, "len_side": "both", "page_norm": False,
               "fp_weight": 1.0, "fp_box": None, "text_drop": 0.0, "feat_drop": 0.0,
@@ -81,6 +81,13 @@ def check(cfg):
     if cfg.get("quant_eval") and cfg.get("qat_w8a8"):
         raise ValueError("quant_eval scores int8 variants against the fp32 model; "
                          "incompatible with qat_w8a8")
+    st = cfg.get("steps")
+    if st is not None and not (isinstance(st, int) and not isinstance(st, bool) and st >= 1):
+        raise ValueError(f"steps must be a positive int (it replaces epochs), got {st!r}")
+    if cfg.get("init") is not None and (not isinstance(cfg["init"], str)
+                                        or cfg.get("extra") is not None):
+        raise ValueError(f"init must be a keeper path, and takes no extra pages; "
+                         f"got {cfg['init']!r}")
     if cfg["recipe"] == "table":
         if cfg["emb"] not in EMBS:
             raise ValueError(f"unknown emb {cfg['emb']!r}; one of {EMBS}")

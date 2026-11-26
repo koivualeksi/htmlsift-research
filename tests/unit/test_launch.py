@@ -42,6 +42,22 @@ def test_smoke_reaches_the_entry_not_the_check():
     assert env["ENTRY"].endswith(" --smoke") and env["CHECK"].endswith(" --check")
 
 
+def test_init_spec_gets_the_models_repo(monkeypatch):
+    monkeypatch.setenv("HF_MODELS_REPO", "me/models")
+    _, _, env = launch.train_env(ROOT / "experiments" / "wcxb-article-ladder-init.yaml", False,
+                                 "L1", GIT)
+    assert env["HF_MODELS_REPO"] == "me/models"
+    _, _, env = launch.train_env(ROOT / "experiments" / "wcxb-article-ladder.yaml", False,
+                                 "L1", GIT)
+    assert "HF_MODELS_REPO" not in env
+
+
+def test_single_type_board_builds_its_base_board():
+    _, boards, _ = launch.train_env(ROOT / "experiments" / "wcxb-article-ladder.yaml", False,
+                                    "L1", GIT)
+    assert boards == "wcxb"
+
+
 def test_boards_and_extra_come_from_the_configs(tmp_spec):
     p = tmp_spec("x", "name: {name}\nrecipe: table\nboard: wmb\n"
                       "extra: custom\nsweep: {{extra_repeat: [0, 1]}}\n")

@@ -10,5 +10,29 @@
       "wcxb": "5cf222b3a200471b"
     },
     "total": "db019ee6a659e194"
+  },
+  {
+    "htmlsift": "0.2.1",
+    "source": "git+https://github.com/koivualeksi/htmlsift@7e3d05a8d3dd359b13f9e667a88cdc4eac25e312",
+    "lxml": "6.1.1",
+    "libxml2": "2.14.6",
+    "boards": {
+      "wmb": "a7c4eb1dac7f8029",
+      "daniel": "b37d3ec298f22afc",
+      "wcxb": "48cfe8a5180cd0c0"
+    },
+    "total": "de3d2754e2c3ec53"
+  },
+  {
+    "htmlsift": "0.3.0",
+    "source": "pypi",
+    "lxml": "6.1.1",
+    "libxml2": "2.14.6",
+    "boards": {
+      "wmb": "a7c4eb1dac7f8029",
+      "daniel": "b37d3ec298f22afc",
+      "wcxb": "48cfe8a5180cd0c0"
+    },
+    "total": "de3d2754e2c3ec53"
   }
 ]

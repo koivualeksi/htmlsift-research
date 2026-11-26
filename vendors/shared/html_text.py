@@ -5,6 +5,7 @@ analogue of WMB's html2text inside score_text. One flattener, applied identicall
 every html-kind extractor (ours included), so no extractor gets a different text path.
 Not vendored: this conversion is ours, disclosed in docs/LIMITS.md.
 """
+from htmlsift.core.render import _C0     # the C0 controls XML forbids; libxml2 2.14 keeps them
 from lxml import html as lxml_html
 
 # block-level tags whose boundaries must survive flattening: text_content() concatenates
@@ -19,7 +20,7 @@ _BLOCK = {"p", "div", "br", "li", "tr", "td", "th", "section", "article", "heade
 def html_to_text(html: str) -> str:
     if not html or not html.strip():
         return ""
-    root = lxml_html.fromstring(html)
+    root = lxml_html.fromstring(_C0.sub("", html))
     for bad in list(root.iter("script", "style")):
         bad.drop_tree()
     for el in root.iter():

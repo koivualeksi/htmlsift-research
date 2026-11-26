@@ -144,3 +144,26 @@ def test_singleton_long_page_matches():
         b = _batched(head, xs, batch_size=8, max_len=10)   # 50-block page singletons
         for x, y in zip(a, b):
             assert np.allclose(x, y, atol=1e-4)
+
+
+def test_steps_budget_sets_epochs_and_scores_four_times():
+    # steps replaces epochs: 4 pages at batch 2 is 2 batches an epoch, so 17 steps is 9
+    # epochs (18 steps), scored at epochs 3, 6 and 9. steps=None keeps one score an epoch.
+    from trainers.loop import train_head
+    torch.manual_seed(0)
+    d = 16
+    rng = np.random.default_rng(5)
+    train_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [5, 12, 3, 20]]
+    train_y = [(rng.random(len(x)) > 0.5).astype(np.float32) for x in train_x]
+    val_x = [rng.standard_normal((n, d)).astype(np.float32) for n in [4, 9]]
+    obj = Objective({}, train_y, [np.ones(len(y)) for y in train_y], DEV)
+    for steps, epochs, n_steps, scored in ((17, 4, 18, 3), (None, 2, 4, 2)):
+        opt_steps = []
+        hook = register_optimizer_step_post_hook(lambda *_: opt_steps.append(1))
+        try:
+            s = train_head(_heads(d)["linear"], train_x, train_y, val_x,
+                           list(range(len(val_x))), lambda pages, probs: 0.0, DEV, obj,
+                           epochs=epochs, seed=0, batch_size=2, steps=steps)
+        finally:
+            hook.remove()
+        assert len(opt_steps) == n_steps and len(s["history"]) == scored

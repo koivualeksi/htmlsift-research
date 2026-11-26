@@ -1,15 +1,16 @@
 # Where the mini still fails
 
-This is an error analysis of the candidate mini (`ema 0.999 + smooth_weight 1 + page_f1 4`,
-`docs/objective.md`) on WMB val732 and on the Common Crawl page set (`results/ccbench.md`).
+This is an error analysis of the mini's training arm (`ema 0.999 + smooth_weight 1 + page_f1 4`,
+`docs/objective.md`) on WMB val732, at full width (`CLAIMS.md`). `htmlsift` 0.3.0 ships this
+arm, seed 2, with the table factored to rank 128.
 
 ## WMB val: the worst 10 % of pages
 
-Probabilities are averaged over the candidate's 3 seeds at the 0.5 threshold, which gives val F1
+Probabilities are averaged over the full-width arm's 3 seeds at the 0.5 threshold, which gives val F1
 0.8791. Pages are ranked by room, the oracle DOM F1 minus the model's F1. The 73 worst of 732
 pages hold 59 % of all room.
 
-Per seed, those 73 pages hold 58 to 60 % of the room, and the shipped mini fails on the same pages.
+Per seed, those 73 pages hold 58 to 60 % of the room, and the 0.2.x mini fails on the same pages.
 So the losses come from the kind of page, not from training noise.
 
     python vendors/wmb/adapter/errors.py --worst s0/val.jsonl s1/val.jsonl s2/val.jsonl
@@ -205,26 +206,3 @@ often with an oracle below 1, and which line is gold is close to arbitrary.
 | 40 | http://www.abrazohealth.com/services/mothernewborncare/treatments/resources.aspx?chunkiid=127483 | 0.51 / 1.00 | FN | 0.5 |
 | 69 | http://www.taylorpictures.net/thumbnails.php?album=815 | 0.49 / 0.81 | FN | 0.6 |
 | 70 | https://www.tattoonow.com/gallery/tattoos/artist/hyeonhwa-kim-dokhwa~8978/lost-in-translation-tattoo~143373 | 0.51 / 0.83 | FP | 1.4 |
-
-## Common Crawl: empty texts
-
-On the 7,177 Common Crawl pages, with the title dropped, the candidate returns an empty text on
-640 pages and the shipped mini on 557. trafilatura returns an empty text on 59.
-
-Most of the gap is not a model failure:
-- 322 pages are bot-challenge or JavaScript-wall interstitials. They were captured by the crawler
-  in place of the page.
-- trafilatura extracts the challenge line, typically "Please wait while your request is being
-  verified..." (13 tokens). That line passes the DCLM filter on 305 of these pages.
-- Both models return nothing on 318 to 319 of them, which is the right output.
-- The detection rule: trafilatura text of 60 tokens or fewer that contains a challenge phrase.
-  The phrases are "request is being verified", "testing whether you are a human", "The requested
-  URL was rejected" and "enable JavaScript".
-
-The candidate's remaining 321 empty pages are its real misses:
-- trafilatura's median text on them is 70 tokens, and 67 of them carry 200 tokens or more;
-- trafilatura passes DCLM on 52 of them (166 weighted) and Edu on 1;
-- across all 640 empty pages, 126 returned only the title when the title was kept.
-
-Whether these pages are empty by content, with trafilatura picking up a stray line, or real
-content the model drops, is not yet known. That needs a hand label per page.

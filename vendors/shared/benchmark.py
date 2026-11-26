@@ -10,7 +10,7 @@ from typing import Protocol
 class Benchmark(Protocol):
     name: str                                    # "wmb" / "wcxb" -- for result paths + messages
     holdout_groups: tuple                        # leave-one-out training groups (DAnIEL langs); () = unsupported
-    supports_train_limit: bool                   # the data-efficiency ladder (WMB pool prefixes)
+    supports_train_limit: bool                   # the data-efficiency ladder (nested pool subsets)
 
     def build_pages(self, tok, fold, window, cap=0, feats=None, limit=None, ids=None) -> list[dict]:
         """This board's fold -> prepared pages: empty renders dropped, z-scored
@@ -59,9 +59,9 @@ def load_benchmark(name, holdout=None, plain=False):
     if name == "wmb":
         from vendors.wmb.adapter.benchmark import WMBBenchmark
         return WMBBenchmark(plain)
-    if name == "wcxb":
+    if name == "wcxb" or name.startswith("wcxb-"):
         from vendors.wcxb.adapter.benchmark import WCXBBenchmark
-        return WCXBBenchmark()
+        return WCXBBenchmark(name.partition("-")[2] or None)
     if name == "daniel":
         from vendors.daniel.adapter.benchmark import DanielBenchmark
         return DanielBenchmark(holdout=holdout)
