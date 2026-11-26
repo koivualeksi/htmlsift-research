@@ -25,6 +25,7 @@ from vendors.shared.arms import WINDOW
 from vendors.shared.benchmark import load_benchmark
 
 BOARDS = ["wmb", "wcxb", "daniel"]
+TARGETS = [*BOARDS, "wcxb-article"]                 # --ckpt mode: single-type boards too
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -35,6 +36,8 @@ def _run_board(ck, tok, infer_fn, cap, board, out, fold, limit):
     out.parent.mkdir(parents=True, exist_ok=True)
     probs = bench.export_probs(fold, tok, infer_fn, out, WINDOW, cap, feats, limit)
     s = bench.score_fold(probs, fold, 0.5)
+    if subs := bench_ops.score_subsets(bench, probs, fold, 0.5):
+        s["subsets"] = {k: {"n": v["n"], "f1": v["f1"]} for k, v in subs.items()}
     if hasattr(bench, "score_by_language"):
         s["by_lang"] = bench.score_by_language(probs, fold, 0.5)
     if hasattr(bench, "score_by_type"):
@@ -44,6 +47,7 @@ def _run_board(ck, tok, infer_fn, cap, board, out, fold, limit):
         tail = "  [" + " ".join(f"{k} {v:.4f}" for k, v in s["by_lang"].items()) + "]"
     if "by_type" in s:
         tail += "  [" + " ".join(f"{k} {v:.4f}" for k, v in s["by_type"].items()) + "]"
+    tail += "".join(f"  [{k} {v['f1']:.4f} n={v['n']}]" for k, v in s.get("subsets", {}).items())
     print(f"{board} {fold}: f1 {s['f1']:.4f}  (n={s['n']} P={s['prec']:.4f} R={s['rec']:.4f}){tail}  -> {out}")
     return s
 
@@ -54,7 +58,7 @@ def main():
     grp = ap.add_mutually_exclusive_group(required=True)
     grp.add_argument("--model", help="board-prefixed keeper id, e.g. wmb-311m-10 (runs all boards)")
     grp.add_argument("--ckpt", help="a single ckpt (local path or repo-relative), one board")
-    ap.add_argument("--benchmark", choices=BOARDS, help="target board (--ckpt mode)")
+    ap.add_argument("--benchmark", choices=TARGETS, help="target board (--ckpt mode)")
     ap.add_argument("--out", help="probs jsonl (--ckpt mode; auto-derived for --model)")
     ap.add_argument("--boards", default=",".join(BOARDS), help="boards to run (--model mode)")
     ap.add_argument("--seeds", type=int, default=3, help="seeds to run (--model mode)")
@@ -97,7 +101,7 @@ def main():
                 folder = runs.start("generalization", launch, config, kind="eval", smoke=smoke)
                 out = ROOT / "data" / "runs" / board / "probs" / f"{mid}_s{seed}.jsonl"
                 s = _run_board(ck, tok, infer_fn, cap, board, out, args.fold, args.limit)
-                runs.finish(folder, {k: s[k] for k in ("n", "prec", "rec", "f1", "by_lang", "by_type")
+                runs.finish(folder, {k: s[k] for k in ("n", "prec", "rec", "f1", "by_lang", "by_type", "subsets")
                                      if k in s})
                 if args.push:
                     runs.push(folder.name)

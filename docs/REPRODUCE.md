@@ -206,9 +206,34 @@ Same recipe and run folders as WMB, fit to WCXB through its `Benchmark`
 assembly, not a DOM re-render). There is no carved val fold -- dev is both the train set
 and the selection monitor -- so the honest number is the test board below; `export_test`
 writes each run's val+test probs to `data/probs/<run_id>/` and adds test F1 to its result.
-`train_limit` is not supported here. A local CPU smoke before any GPU spend:
+`train_limit` is refused on this board, since its val is its training set. A local CPU
+smoke before any GPU spend:
 
     python -m trainers.train experiments/wcxb-depth-97m.yaml --smoke
+
+### Article ladder (`wcxb-article`)
+
+The data-efficiency ladder on one page type, in `CLAIMS.md`. Board `wcxb-article` narrows
+every fold to articles and carves its own val: dev articles byte-identical to a test article
+are dropped, the rest split by registrable domain into a 200-page val and a 513-page pool,
+and `train_limit` takes nested seeded subsets of the pool. Test is all 257 test articles,
+with the 155 from domains no dev article has scored beside it (`test_domain_disjoint_f1`).
+Each spec gives every rung the same `steps` budget; the `-init` specs start from the shipped
+keeper (`init`) instead of a fresh head or the pretrained backbone, and need
+`HF_MODELS_REPO`:
+
+    python -m trainers.train experiments/wcxb-article-ladder.yaml               # mini, scratch
+    python -m trainers.train experiments/wcxb-article-ladder-init.yaml          # mini, from shipped
+    python -m trainers.train experiments/wcxb-article-ladder-base.yaml          # base, scratch
+    python -m trainers.train experiments/wcxb-article-ladder-base-init.yaml     # base, from shipped
+
+Then score and render. The base's zero-shot row needs its probs first (a GPU model: run it
+on a pod, or wait for it on CPU); the mini runs are factored to rank 128 and scored on CPU
+by the harness; the third-party extractors are scored on the same pages:
+
+    python bench/accuracy/predict.py --ckpt wmb/ckpt/311m-10_s1.pt --benchmark wcxb-article         --fold val --out data/ladder/zero-shot-base-val.jsonl            # and --fold test
+    python bench/accuracy/ladder.py                    # -> results/wcxb-article-ladder.md
+    python bench/accuracy/heuristics.py --board wcxb-article --bundle data/bundles/mini
 
 ## WCXB evaluation
 

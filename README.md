@@ -240,6 +240,32 @@ benchmark's labelling policy quickly, so retraining on your own labels is cheap.
 already clear the select-all floor by 20 points (0.835 vs 0.634, best-epoch val732); 500 come
 within 3.3 points of the full 6,548-page train split (0.869 vs 0.902).
 
+On one page type a few dozen examples is enough to learn a policy. Trained on N articles from WCXB sites and scored on the 257 WCXB test articles (word-F1):
+
+| articles | mini, from scratch | mini, from the shipped model | base, from scratch | base, from the shipped model |
+|---|---|---|---|---|
+| 0 | — | 0.918 | — | 0.934 |
+| 25 | 0.897 | 0.928 | 0.948 | 0.937 |
+| 50 | 0.915 | 0.940 | 0.956 | 0.941 |
+| 100 | 0.917 | 0.944 | 0.956 | 0.955 |
+| 200 | 0.929 | 0.948 | 0.956 | 0.952 |
+| 400 | 0.948 | 0.954 | 0.959 | 0.961 |
+| 513 | 0.951 | 0.956 | 0.967 | 0.960 |
+
+Third-party extractors on the same 257 articles, no training:
+
+| extractor | F1 |
+|---|---|
+| trafilatura | 0.937 |
+| readability | 0.928 |
+| resiliparse | 0.815 |
+
+Continuing training from mini beats every heuristic from 50 articles and keeps climbing to 0.956. Trained from scratch it is behind at every size and never reaches that, so further training the shipped mini beats starting over.
+
+The base is the other way round: train it from scratch, even on a few dozen articles. It is clearly ahead up to 50 and ahead or level after. A likely reason, untested: the full encoder absorbs WMB's annotation policy more deeply than the mini's small head does, and since it learns a new policy fast anyway, starting clean costs less than unlearning WMB's.
+
+Everything but the mini from scratch flattens from about 100-200 pages. On the 155 articles from sites with no training page every cell is higher or within 0.001. Mini columns are the 3-seed mean, base one seed. This is one page type across many sites; learning one site from its own pages is untested. Val and the per-site split in [`results/wcxb-article-ladder.md`](results/wcxb-article-ladder.md); the extractors in [`results/heuristics-wcxb-article.md`](results/heuristics-wcxb-article.md).
+
 ## "Main content" is a policy, not a fact
 
 But the policy it learns is only as good as the benchmark it learned from, and the
@@ -432,6 +458,7 @@ val732 best-epoch unless a row says test545; 3 seeds where a spread is shown, el
 | width cap | truncate long blocks before windowing | 97m-6 none 0.890 vs cap64 0.896 (1 seed) | speed/width lever, not accuracy |
 | band attention | chunked band attention, bit-identical weights | GPU 18.4 -> 24.6 pg/s (311m-10) | speed lever, same accuracy |
 | data efficiency | train on 125 -> 6,548 pages | 125 pages already 0.835 vs 0.902 full | policy learns from a few hundred pages |
+| few-shot on one page type | 25 -> 513 WCXB articles, from scratch vs from the shipped model | mini from shipped 0.918 -> 0.928 at 25, 0.956 at 513; base from scratch 0.948 at 25 (test) | a few dozen pages adapt the mini; start it from the shipped model |
 | embedding table (mini) | drop the encoder: embeddings + BiGRU + feats | test 0.9114 vs 0.9288 encoder (shipped seeds) | ~1.7 pt under at the CPU tier, so the mini artifact |
 | training objective (mini) | EMA 0.999 + neighbour smoothing + a page-level soft-F1 loss, vs BCE alone | val 0.8739 vs 0.8613 (9 and 3 seeds) | +1.3 pt val; the 0.3.0 mini (`docs/objective.md`) |
 | rank-128 table (mini) | factor the trained table to rank 128, no retraining | test 0.9114 vs 0.9122 full width (s2); table 34.6 MB vs 202.4 MB | -0.08 pt for a 5.8x smaller table; ships in 0.3.0 |

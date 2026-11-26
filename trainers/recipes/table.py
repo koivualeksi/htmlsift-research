@@ -5,6 +5,9 @@ ckpt.pt; export_test reloads it through the keeper loader and scores val + test.
 
 extra: custom adds vendors/custom's pages to the train fold only, repeated extra_repeat
 times (0 is the same run without them).
+
+init: start the head from a full-width table keeper instead of a random init, and use the
+z-score it carries (never refit), so its features mean what they meant when it trained.
 """
 import numpy as np
 import torch
@@ -12,7 +15,7 @@ from transformers import AutoTokenizer
 
 from htmlsift.core.features import apply_zscore
 from htmlsift.extractor import THRESHOLD
-from core.loader import build_infer
+from core.loader import build_infer, resolve_ckpt
 from core.model import build_head, build_table_embedder, pool_table_pages
 from core.training import zscore_stats
 from trainers.loop import train_head
@@ -84,32 +87,51 @@ def _pooled(ctx, cfg, train_p, val_p, ext_p):
     return cached(ctx, "pooled", key, build)
 
 
+def _init(cfg):
+    """The keeper an init run starts from, refused unless its head fits this config."""
+    ck = resolve_ckpt(cfg["init"], torch.device("cpu"))
+    want = {"kind": "table", "model": MODELS[cfg["model"]][0], "int8": cfg["emb"] == "int8",
+            "head": cfg["head"], "feats": cfg["feats"], "hidden": cfg["hidden"]}
+    got = {k: ck.get(k) for k in want}
+    if got != want or "proj" in ck:
+        raise ValueError(f"init {cfg['init']}: needs a full-width keeper {want}, got {got}"
+                         + (" (low-rank)" if "proj" in ck else ""))
+    return ck
+
+
 def _feats(ctx, cfg, b, train_p_s):
-    """z-scored features {track_id: [n, F]} for this run, or None for text-only. A
-    train_limit refits the z-score on those N pages; extra pages use the host board's
-    stats, never refit."""
+    """(z-scored features {track_id: [n, F]}, the full-layout stats the ckpt carries),
+    or (None, None) for text-only. A train_limit refits the z-score on those N pages, and
+    the ckpt carries that refit, so it is scored as it trained; extra pages use the host
+    board's stats, never refit."""
     g = cfg["feats"]
     if not g:
-        return None
+        return None, None
+    if cfg.get("init") is not None:
+        ck = _init(cfg)
+        return bench_ops.carried_features(b, ck), ck["zscore"]
     raw, z = cached(ctx, "feats", (cfg["board"], cfg.get("holdout"), g),
                     lambda: b.load_features(g))
     if cfg["train_limit"] is not None:
         sub = {p["tid"] for p in train_p_s}
         st = zscore_stats([raw[t] for t in sub if t in raw], g)
         z = {t: apply_zscore(a, st) for t, a in raw.items()}
+        carried = bench_ops.feature_stats(b.raw_features(), sub, g)
+    else:
+        carried = b.feature_stats(g)
     src = _extra_src(cfg)
     if src:
         xr, xz = src.load_features(b.feature_stats(g), g)
         z = {**z, **xz}
-    return z
+    return z, carried
 
 
-def _save(ctx, cfg, b, head):
+def _save(ctx, cfg, head, zstats):
     ck = ctx.folder / "ckpt.pt"
     torch.save({"kind": "table", "model": MODELS[cfg["model"]][0], "int8": cfg["emb"] == "int8",
                 "head": cfg["head"], "feats": cfg["feats"], "hidden": cfg["hidden"],
                 "head_state": head.state_dict(),
-                "zscore": b.feature_stats(cfg["feats"]) if cfg["feats"] else None}, ck)
+                "zscore": zstats}, ck)
     print(f"  saved {ck}", flush=True)
     return ck
 
@@ -128,6 +150,9 @@ def _export_test(ctx, b, ck_path, result):
             pr = b.export_probs(fold, tok, infer, out, WINDOW, cap, feats, ctx.limit)
             s = b.score_fold(pr, fold, THRESHOLD)
             result.update({f"{fold}{sfx}_f1": round(s["f1"], 6), f"{fold}{sfx}_n": s["n"]})
+            for name, ss in bench_ops.score_subsets(b, pr, fold, THRESHOLD).items():
+                result.update({f"{fold}_{name}{sfx}_f1": round(ss["f1"], 6),
+                               f"{fold}_{name}{sfx}_n": ss["n"]})
         print(f"  ckpt{sfx}: val {result[f'val{sfx}_f1']:.4f} "
               f"test {result[f'test{sfx}_f1']:.4f} (n={result[f'test{sfx}_n']})", flush=True)
 
@@ -144,7 +169,7 @@ def run(cfg, ctx):
     tp = [train_p[i] for i in idx] + ext_p * n
     et = [etr[i] for i in idx] + eext * n
     yt = [train_p[i]["y"] for i in idx] + [p["y"] for p in ext_p] * n
-    z = _feats(ctx, cfg, b, [train_p[i] for i in idx])
+    z, zstats = _feats(ctx, cfg, b, [train_p[i] for i in idx])
     print(f"[table {cfg['model']} {cfg['emb']} {cfg['head']} {cfg['feats'] or 'none'} "
           f"s{cfg['seed']}: {len(tp)} train pages]", flush=True)
 
@@ -154,17 +179,19 @@ def run(cfg, ctx):
     tx, vx = cat(tp, et), cat(val_p, eva)
     torch.manual_seed(cfg["seed"])            # head init is part of the seed
     head = build_head(cfg["head"], d_in=tx[0].shape[1], hidden=cfg["hidden"]).to(ctx.dev)
+    if cfg.get("init") is not None:
+        head.load_state_dict(_init(cfg)["head_state"])
     s = train_head(head, tx, yt, vx, val_p, score_val, ctx.dev,
                    Objective(cfg, yt, [p["chars"] for p in tp], ctx.dev,
                              [p["box"] for p in tp]),
                    epochs=cfg["epochs"], seed=cfg["seed"], batch_size=cfg["batch_size"],
-                   head_lr=cfg["head_lr"], ema=cfg.get("ema", 0.0))
+                   head_lr=cfg["head_lr"], ema=cfg.get("ema", 0.0), steps=cfg.get("steps"))
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
     if cfg["extra"]:
         result["extra_pages"] = len(ext_p)
-    curves = [{"epoch": i, **m} for i, m in enumerate(s["history"], 1)]
+    curves = s["history"]
     if cfg["keep"]:
-        ck = _save(ctx, cfg, b, head)
+        ck = _save(ctx, cfg, head, zstats)
         if cfg["export_test"]:
             ctx.probs.mkdir(parents=True, exist_ok=True)
             _export_test(ctx, b, ck, result)
