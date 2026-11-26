@@ -38,10 +38,10 @@ def feature_stats(raw_full, train_ids, group="ABC"):
 
 def score_subsets(bench, probs, fold, thr):
     """{name: score_fold dict} for each id subset the board names for this fold; most boards
-    name none."""
+    name none. A subset with no page among probs (a smoke's few pages) has no score."""
     subs = bench.subsets(fold) if hasattr(bench, "subsets") else {}
-    return {name: bench.score_fold({t: p for t, p in probs.items() if t in ids}, fold, thr)
-            for name, ids in subs.items()}
+    picked = {name: {t: p for t, p in probs.items() if t in ids} for name, ids in subs.items()}
+    return {name: bench.score_fold(pr, fold, thr) for name, pr in picked.items() if pr}
 
 
 def carried_features(bench, ck):
