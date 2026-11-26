@@ -260,9 +260,9 @@ Third-party extractors on the same 257 articles, no training:
 | readability | 0.928 |
 | resiliparse | 0.815 |
 
-Continuing training from mini beats every heuristic from 50 articles and keeps climbing to 0.956. Trained from scratch it is behind at every size and never reaches that, so further training the shipped mini beats starting over. 
+Continuing training from mini beats every heuristic from 50 articles and keeps climbing to 0.956. Trained from scratch it is behind at every size and never reaches that, so further training the shipped mini beats starting over.
 
-The base is the other way round: train it from scratch, even on a few dozen articles. It is clearly ahead up to 50 and ahead or level after. A likely reason, untested: the full encoder absorbs WMB's annotation policy more deeply than the mini's small head does, and since it learns a new policy fast anyway, starting clean costs less than unlearning WMB's. 
+The base is the other way round: train it from scratch, even on a few dozen articles. It is clearly ahead up to 50 and ahead or level after. A likely reason, untested: the full encoder absorbs WMB's annotation policy more deeply than the mini's small head does, and since it learns a new policy fast anyway, starting clean costs less than unlearning WMB's.
 
 Everything but the mini from scratch flattens from about 100-200 pages. On the 155 articles from sites with no training page every cell is higher or within 0.001. Mini columns are the 3-seed mean, base one seed. This is one page type across many sites; learning one site from its own pages is untested. Val and the per-site split in [`results/wcxb-article-ladder.md`](results/wcxb-article-ladder.md); the extractors in [`results/heuristics-wcxb-article.md`](results/heuristics-wcxb-article.md).
 
