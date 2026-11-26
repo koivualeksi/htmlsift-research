@@ -94,6 +94,12 @@ class WCXBBenchmark:
         dev_doms = {d for sp, d, _ in self._meta.values() if sp == "dev"}
         return {t for t, (sp, d, _) in self._meta.items() if sp == "test" and d not in dev_doms}
 
+    def subsets(self, fold):
+        """Named id subsets of a fold, scored beside the whole fold (bench_ops.score_subsets)."""
+        if self.page_type is None or fold != "test":
+            return {}
+        return {"domain_disjoint": self.test_domain_disjoint()}
+
     def _split_rows(self, split):
         if split not in self._rows:
             labels = {}

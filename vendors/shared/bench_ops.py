@@ -36,6 +36,14 @@ def feature_stats(raw_full, train_ids, group="ABC"):
     return zscore_stats([raw_full[t] for t in train_ids if t in raw_full], group, full=True)
 
 
+def score_subsets(bench, probs, fold, thr):
+    """{name: score_fold dict} for each id subset the board names for this fold; most boards
+    name none."""
+    subs = bench.subsets(fold) if hasattr(bench, "subsets") else {}
+    return {name: bench.score_fold({t: p for t, p in probs.items() if t in ids}, fold, thr)
+            for name, ids in subs.items()}
+
+
 def carried_features(bench, ck):
     """Target board's features for a ckpt trained with them, z-scored by the ckpt's
     CARRIED (training-board) stats then sliced to the group -- a foreign board normalized

@@ -11,6 +11,7 @@ from core.quant import emb_int8_fakequant, patch_qat_w8a8, ptq_dynamic
 from core.training import feature_dim
 from trainers.loop import train_encoder
 from trainers.recipes import bench, cached
+from vendors.shared import bench_ops
 from vendors.shared.arms import WINDOW, build_arms
 
 
@@ -74,6 +75,8 @@ def _test(ctx, b, model, tok, fz, arm, result):
                   test_rec=round(t05["rec"], 6), test_n=t05["n"],
                   val_thr=vthr, val_f1_opt=round(vscan[vthr], 6),
                   test_f1_opt=round(topt["f1"], 6))
+    for name, ss in bench_ops.score_subsets(b, tp, "test", 0.5).items():
+        result.update({f"test_{name}_f1": round(ss["f1"], 6), f"test_{name}_n": ss["n"]})
     print(f"test@0.5 {t05['f1']:.4f} | val-opt thr {vthr:.2f} -> test {topt['f1']:.4f}",
           flush=True)
 
@@ -111,10 +114,11 @@ def run(cfg, ctx):
     ckpt = ctx.folder / "ckpt.pt" if cfg["keep"] else None
     hp = {"head_lr": arm["head_lr"]} if "head_lr" in arm else {}
     s = train_encoder(enc, head, *pages, ctx.dev, seed=cfg["seed"], epochs=cfg["epochs"],
-                      out_path=ckpt, meta={**arm, "seed": cfg["seed"]}, **hp)
+                      out_path=ckpt, meta={**arm, "seed": cfg["seed"]}, steps=cfg.get("steps"),
+                      **hp)
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
-    curves = [{"epoch": i, "val": m["val"], "block_f1": m["block_f1"], "loss": m["loss"]}
-              for i, m in enumerate(s["history"], 1)]
+    curves = [{"epoch": m["epoch"], "val": m["val"], "block_f1": m["block_f1"], "loss": m["loss"]}
+              for m in s["history"]]
     ctx.probs.mkdir(parents=True, exist_ok=True)
     if cfg["export_test"]:
         _test(ctx, b, (enc, head), tok, fz, arm, result)

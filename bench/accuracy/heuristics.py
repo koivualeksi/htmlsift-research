@@ -52,6 +52,7 @@ def _headline(bench, board, outputs, fold):
 def _pages(board, fold):
     """{tid: {"html": ...}} for the fold. WCXB reads the split from wcxb.jsonl; DAnIEL is
     eval-only, all 1,689."""
+    board = board.partition("-")[0]                  # wcxb-article reads wcxb's pages
     path = ROOT / "vendors" / board / "data" / f"{board}.jsonl"
     split = "test" if fold == "test" else "dev"
     pages = {}
@@ -86,7 +87,7 @@ def _ver(pkg):
 def main():
     load_dotenv()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--board", required=True, choices=["wcxb", "daniel"])
+    ap.add_argument("--board", required=True, choices=["wcxb", "wcxb-article", "daniel"])
     ap.add_argument("--fold", default="test", choices=["test", "val"])
     ap.add_argument("--bundle", type=Path, action="append", required=True,
                     help="mini bundle directory; repeat for one row each")
@@ -102,31 +103,39 @@ def main():
     pages = {t: p for t, p in _pages(args.board, args.fold).items() if t in scorable}
     assert set(pages) == scorable, scorable - set(pages)
 
+    subs = bench.subsets(args.fold) if hasattr(bench, "subsets") else {}
+    base = args.board.partition("-")[0]
+
+    def scores(out):
+        return (_headline(bench, args.board, out, args.fold),
+                {n: _headline(bench, args.board, {t: o for t, o in out.items() if t in ids},
+                              args.fold) for n, ids in subs.items()})
+
     rows = []
     for bundle in args.bundle:
         extractor = Extractor(bundle_dir=bundle, threads=args.threads)
         out = {t: (extractor.extract(pages[t]["html"], output="text"), "text") for t in scorable}
         empty = sum(not text for text, _ in out.values())
-        rows.append((f"htmlsift {_keeper(bundle)}", _headline(bench, args.board, out, args.fold),
-                     {"empty": empty, "raised": 0}))
+        rows.append((f"htmlsift {_keeper(bundle)}", *scores(out), {"empty": empty, "raised": 0}))
     for name in args.extractors.split(","):
         out, notes = ex.run(name, pages, warmup=0, text=True)   # native text where a tool has it
         cov = set(out) & scorable
-        sc = _headline(bench, args.board, {t: (out[t].text, out[t].kind) for t in cov}, args.fold)
-        rows.append((name, sc, notes))
+        rows.append((name, *scores({t: (out[t].text, out[t].kind) for t in cov}), notes))
 
     lines = [f"{args.board.upper()} {args.fold} -- CPU accuracy vs third-party extractors.", "",
              *_env(),
-             f"One population: the {len(scorable)} pages of the fold. Metric = {METRIC[args.board]} "
+             f"One population: the {len(scorable)} pages of the fold. Metric = {METRIC[base]} "
              f"over each extractor's text output (trafilatura/resiliparse native, readability flattened "
              f"via html_to_text, htmlsift the package's output=\"text\"); empty output scores 0. "
              f"Regenerate: `python bench/accuracy/heuristics.py --board {args.board} --bundle <dir> ...`.", "",
-             "| method | F1 | prec | rec | n |", "|---|---|---|---|---|"]
-    for name, sc, notes in rows:
+             "| method | F1 | prec | rec | n |" + "".join(f" F1 {n} (n) |" for n in subs),
+             "|---|---|---|---|---|" + "---|" * len(subs)]
+    for name, sc, ssc, notes in rows:
         flag = "*" if notes["empty"] or notes["raised"] else ""
-        lines.append(f"| {name}{flag} | {sc['f1']:.4f} | {sc['prec']:.4f} | {sc['rec']:.4f} | {sc['n']} |")
+        lines.append(f"| {name}{flag} | {sc['f1']:.4f} | {sc['prec']:.4f} | {sc['rec']:.4f} | {sc['n']} |"
+                     + "".join(f" {s['f1']:.4f} ({s['n']}) |" for s in ssc.values()))
     lines.append("")
-    for name, _, notes in rows:
+    for name, _, _, notes in rows:
         if notes["empty"] or notes["raised"]:
             bits = ([f"empty on {notes['empty']} (scored 0)"] if notes["empty"] else []) + \
                    ([f"crashed on {notes['raised']} (excluded)"] if notes["raised"] else [])

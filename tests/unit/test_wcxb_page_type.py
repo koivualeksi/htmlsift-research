@@ -91,3 +91,12 @@ def test_all_types_board_unchanged(data):
 def test_unknown_type_raises():
     with pytest.raises(ValueError):
         wb.WCXBBenchmark("recipe")
+
+
+def test_subsets_score_beside_the_fold(data):
+    from vendors.shared.bench_ops import score_subsets
+    b = wb.WCXBBenchmark("article")
+    assert b.subsets("val") == {} and wb.WCXBBenchmark().subsets("test") == {}
+    probs = {t: [0.9] for t in b._fold_rows("test")}
+    s = score_subsets(b, probs, "test", 0.5)
+    assert set(s) == {"domain_disjoint"} and s["domain_disjoint"]["n"] == 20

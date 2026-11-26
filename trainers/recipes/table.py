@@ -132,6 +132,9 @@ def _export_test(ctx, b, ck_path, result):
             pr = b.export_probs(fold, tok, infer, out, WINDOW, cap, feats, ctx.limit)
             s = b.score_fold(pr, fold, THRESHOLD)
             result.update({f"{fold}{sfx}_f1": round(s["f1"], 6), f"{fold}{sfx}_n": s["n"]})
+            for name, ss in bench_ops.score_subsets(b, pr, fold, THRESHOLD).items():
+                result.update({f"{fold}_{name}{sfx}_f1": round(ss["f1"], 6),
+                               f"{fold}_{name}{sfx}_n": ss["n"]})
         print(f"  ckpt{sfx}: val {result[f'val{sfx}_f1']:.4f} "
               f"test {result[f'test{sfx}_f1']:.4f} (n={result[f'test{sfx}_n']})", flush=True)
 
@@ -166,7 +169,7 @@ def run(cfg, ctx):
     result = {"best_val": s["best_val"], "best_epoch": s["best_epoch"]}
     if cfg["extra"]:
         result["extra_pages"] = len(ext_p)
-    curves = [{"epoch": i, **m} for i, m in enumerate(s["history"], 1)]
+    curves = s["history"]
     if cfg["keep"]:
         ck = _save(ctx, cfg, head, zstats)
         if cfg["export_test"]:
