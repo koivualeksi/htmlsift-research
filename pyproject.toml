@@ -18,7 +18,7 @@ namespaces = true
 
 [project.optional-dependencies]
 repro = [
-    "htmlsift @ git+https://github.com/koivualeksi/htmlsift@7e3d05a8d3dd359b13f9e667a88cdc4eac25e312",  # the inference path: render, features, prep_page, band
+    "htmlsift==0.3.0",  # the inference path: render, features, prep_page, band
     "huggingface-hub==1.12.2",
     "lxml==6.1.1",
     "html2text==2025.4.15",
