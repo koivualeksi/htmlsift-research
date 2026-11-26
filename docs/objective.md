@@ -88,7 +88,6 @@ repo. Off WMB the change is read off the delivered models, zero-shot, both throu
 
 - **WCXB.** Level (+0.0001).
 - **DAnIEL.** +1.1 pt.
-- **Common Crawl.** Yield is in `results/ccbench.md`, 0.3.0 mini only.
 
 ## Limits
 

@@ -60,3 +60,8 @@ CLAUDE.md
 Thumbs.db
 
 /temp/*
+# Common Crawl yield bench: a private page set, parked (its datatrove drop-in run is not
+# published). The working script, its pyproject extra as a patch, and its last table stay local.
+bench/ccbench.py
+bench/ccbench.pyproject.patch
+results/ccbench.md

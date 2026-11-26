@@ -380,22 +380,3 @@ all three seeds: 0/386 flips on random inputs and 0/154,523 over all 545 WMB tes
 over the three r=128 seeds on the research path (s0 0.8854, s1 0.8825, s2 0.8857). Every claim
 about the 0.3.0 mini is that seed through the package (delivered table above). Its CPU speed
 and memory are in the CPU section above, measured through the package.
-
-### Common Crawl yield — private data, context only
-
-These are FineWeb-Edu and DCLM filter passes on 7,177 CC-MAIN-2026-43 pages, weighted to 32,399.
-The page set is private (`koivualeksi/htmlsift-bench` @0ac5a811), so this is not a board and
-cannot be reproduced from published sources. Full tables are in `results/ccbench.md`.
-
-    python bench/ccbench.py --ckpt mini --drop-title --dedup        # with htmlsift 0.3.0 installed
-
-trafilatura passes 436 pages on Edu and 2,926 on DCLM (6,753 weighted). With the title dropped and
-repeated lines removed, against trafilatura:
-
-| extractor | Edu pages | DCLM pages | DCLM tokens |
-|---|---|---|---|
-| mini 0.3.0 (r=128, s2) | +0.0 % [-5.6, +6.3] | +3.1 % [-0.8, +7.3] | +40.4 % [+31.9, +50.7] |
-
-322 of the pages are bot-challenge interstitials. Their one line passes DCLM for trafilatura on
-305 of them, which is 15 % of its weighted DCLM passes. The 0.3.0 mini returns nothing on 319 of
-them. With those pages removed, its DCLM pages against trafilatura are +22.0 % [+17.7, +26.7].

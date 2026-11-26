@@ -1,9 +1,8 @@
 # Where the mini still fails
 
 This is an error analysis of the mini's training arm (`ema 0.999 + smooth_weight 1 + page_f1 4`,
-`docs/objective.md`) on WMB val732, at full width (`CLAIMS.md`), and of the 0.3.0 mini on the
-Common Crawl page set (`results/ccbench.md`). `htmlsift` 0.3.0 ships this arm, seed 2, with the
-table factored to rank 128.
+`docs/objective.md`) on WMB val732, at full width (`CLAIMS.md`). `htmlsift` 0.3.0 ships this
+arm, seed 2, with the table factored to rank 128.
 
 ## WMB val: the worst 10 % of pages
 
@@ -207,26 +206,3 @@ often with an oracle below 1, and which line is gold is close to arbitrary.
 | 40 | http://www.abrazohealth.com/services/mothernewborncare/treatments/resources.aspx?chunkiid=127483 | 0.51 / 1.00 | FN | 0.5 |
 | 69 | http://www.taylorpictures.net/thumbnails.php?album=815 | 0.49 / 0.81 | FN | 0.6 |
 | 70 | https://www.tattoonow.com/gallery/tattoos/artist/hyeonhwa-kim-dokhwa~8978/lost-in-translation-tattoo~143373 | 0.51 / 0.83 | FP | 1.4 |
-
-## Common Crawl: empty texts
-
-On the 7,177 Common Crawl pages, with the title dropped and repeated lines removed, the 0.3.0
-mini returns an empty text on 637 pages. trafilatura returns an empty text on 59.
-
-Most of the gap is not a model failure:
-- 322 pages are bot-challenge or JavaScript-wall interstitials. They were captured by the crawler
-  in place of the page.
-- trafilatura extracts the challenge line, typically "Please wait while your request is being
-  verified..." (13 tokens). That line passes the DCLM filter on 305 of these pages.
-- Returning nothing on them is the right output. The 0.3.0 mini does so on 319 of the 322.
-- The detection rule: trafilatura text of 60 tokens or fewer that contains a challenge phrase,
-  case-insensitive.
-  The phrases are "request is being verified", "testing whether you are a human", "The requested
-  URL was rejected" and "enable JavaScript".
-
-The remaining 318 empty pages (2,388 weighted) are the model's real misses. trafilatura's text on
-them is empty on 3, 20 tokens or fewer on 26, over 200 tokens on 72, median 73 tokens; it passes
-DCLM on 59 of them and Edu on 1.
-
-Whether these pages are empty by content, with trafilatura picking up a stray line, or real
-content the model drops, is not yet known. That needs a hand label per page.
